@@ -1,3 +1,4 @@
+
 //pages/Dashboard.jsx - Enhanced with real-time stats and better UX
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,14 +13,11 @@ import EmergencyContacts from '../components/EmergencyContacts';
 import ItineraryTimeline from '../components/ItineraryTimeline';
 import IoTDevicesPanel from '../components/IoTDevicesPanel';
 
-/**
- * Presents the traveller dashboard with real-time safety metrics,
- * location awareness, and quick access to emergency actions.
- */
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+
   const {
     profile,
     itinerary,
@@ -76,8 +74,8 @@ const Dashboard = () => {
     const Δλ = (lng2-lng1) * Math.PI/180;
 
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
     return R * c;
@@ -139,11 +137,13 @@ const Dashboard = () => {
   }, [currentLocation, checkSafetyZone]);
 
   const getTimeSinceActivity = useCallback(() => {
+
     const diff = new Date() - lastActivity;
     return Math.floor(diff / 60000);
   }, [lastActivity]);
 
   const handleSafeShare = useCallback(async () => {
+
     if (isSharing) {
       toast.info('Share already in progress...');
       return;
@@ -167,7 +167,9 @@ const Dashboard = () => {
         await navigator.clipboard.writeText(`Safety score ${stats.safetyScore}/100 • ${locationText}`);
         toast.success('📋 Safety status copied to clipboard!');
       } else {
+
         toast.info(`Status: ${stats.safetyScore}/100 • ${locationText}`);
+
       }
     } catch (error) {
       if (error.name === 'AbortError') {
@@ -219,6 +221,12 @@ const Dashboard = () => {
     );
   }
 
+  // Helper for safety status color and text
+  const statusColor = safetyStatus === 'warning' ? 'bg-orange-500' : 
+                      safetyStatus === 'danger' ? 'bg-red-500' : 'bg-green-500';
+  const statusText = safetyStatus === 'warning' ? 'Warning Zone' : 
+                      safetyStatus === 'danger' ? 'SOS Active' : 'All Clear';
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -260,6 +268,7 @@ const Dashboard = () => {
             <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-sm font-semibold">
               🔗 {profile?.blockchainID ? `${profile.blockchainID.slice(0, 10)}...` : 'ID Pending'}
             </span>
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -291,6 +300,26 @@ const Dashboard = () => {
           </div>
         </div>
       </motion.header>
+      
+      {/* Current Status and Location Card (JSX unchanged) */}
+      <motion.div variants={itemVariants} className={`flex items-center justify-between ${statusColor} text-white p-6 rounded-2xl shadow-xl mb-8 transition-colors duration-500`}>
+          <div>
+              <p className="text-sm font-medium opacity-80 mb-1">Your Current Safety Status</p>
+              <h2 className="text-3xl font-bold">{statusText}</h2>
+              <p className="text-sm mt-3">
+                  {currentLocation 
+                      ? `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`
+                      : 'Acquiring GPS Signal...'
+                  }
+              </p>
+              <p className="text-xs opacity-70 mt-1">
+                Last activity: {getTimeSinceActivity()} min ago
+              </p>
+          </div>
+          <div className="text-5xl">
+              {safetyStatus === 'safe' ? '💚' : safetyStatus === 'warning' ? '🧡' : '🛑'}
+          </div>
+      </motion.div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statCards.map((stat, index) => (
@@ -322,6 +351,7 @@ const Dashboard = () => {
 
       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {quickActions.map((action, index) => (
+
           <motion.button
             key={action.text}
             initial={{ opacity: 0, scale: 0.85 }}
@@ -338,7 +368,6 @@ const Dashboard = () => {
           </motion.button>
         ))}
       </motion.div>
-
       <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         <div className="xl:col-span-2 space-y-6">
           <div className="bg-white/85 border border-slate-200 rounded-3xl p-6">
@@ -347,6 +376,7 @@ const Dashboard = () => {
             <button
               onClick={() => setShowItinerary(true)}
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-900 text-white hover:bg-black"
+
             >
               View full itinerary
             </button>
@@ -362,10 +392,10 @@ const Dashboard = () => {
         </div>
         <IoTDevicesPanel devices={iotDevices} />
       </motion.div>
-
       <motion.div variants={itemVariants} className="flex justify-center" id="sos-anchor">
         <div className="bg-white/85 backdrop-blur-lg rounded-3xl p-6 shadow-lg border border-white/20">
           <SOSButton currentLocation={currentLocation} user={profile} />
+
         </div>
       </motion.div>
 
