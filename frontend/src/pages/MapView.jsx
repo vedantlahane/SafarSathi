@@ -81,7 +81,7 @@ const MapView = () => {
   const trackingRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return undefined;
 
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     const handleChange = (event) => {
@@ -91,16 +91,19 @@ const MapView = () => {
       }
     };
 
-    if (mediaQuery.matches) {
-      setIsControlPanelOpen(false);
-      setActivePanel('safety');
+    handleChange(mediaQuery);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
     }
 
-    mediaQuery.addEventListener('change', handleChange);
+    if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(handleChange);
+      return () => mediaQuery.removeListener(handleChange);
+    }
 
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
+    return undefined;
   }, []);
 
   // Enhanced unsafe zones with time-based risk
@@ -287,7 +290,6 @@ const MapView = () => {
     }
     
     setIsTracking(true);
-    toast.success('🔍 Real-time tracking started');
     
     const options = {
       enableHighAccuracy: true,
@@ -320,7 +322,6 @@ const MapView = () => {
       trackingRef.current = null;
     }
     setIsTracking(false);
-    toast.info('📍 Tracking stopped');
   }, []);
 
   // Safe sharing function to prevent multiple simultaneous shares
@@ -510,33 +511,33 @@ const MapView = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="relative flex min-h-screen flex-col bg-slate-100 lg:flex-row">
       {/* Enhanced Map Controls - Sidebar */}
       <motion.div
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="w-80 bg-white/90 backdrop-blur-lg shadow-xl p-6 overflow-y-auto border-r border-slate-200"
+        className="hidden w-full max-w-xs flex-col gap-6 border-slate-200 bg-white/90 p-6 shadow-xl backdrop-blur-lg lg:flex"
       >
         {/* Safety Score Card */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 mb-6 border border-blue-200"
+          className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 p-6"
         >
-          <h3 className="text-lg font-bold text-slate-800 mb-4">🛡️ Safety Score</h3>
-          <div className="flex items-center justify-center mb-4">
+          <h3 className="mb-4 text-lg font-bold text-slate-800">🛡️ Safety Score</h3>
+          <div className="mb-4 flex items-center justify-center">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-              className={`relative w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white ${
-                safetyScore > 70 
-                  ? 'bg-gradient-to-r from-green-500 to-green-600' 
-                  : safetyScore > 40 
-                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500' 
-                    : 'bg-gradient-to-r from-red-500 to-red-600'
+              transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
+              className={`relative flex h-24 w-24 items-center justify-center rounded-full text-2xl font-bold text-white ${
+                safetyScore > 70
+                  ? 'bg-gradient-to-r from-green-500 to-green-600'
+                  : safetyScore > 40
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500'
+                  : 'bg-gradient-to-r from-red-500 to-red-600'
               }`}
             >
               <motion.span
@@ -547,26 +548,30 @@ const MapView = () => {
               >
                 {safetyScore}
               </motion.span>
-              <span className="text-sm absolute -bottom-1 right-0">/100</span>
+              <span className="absolute -bottom-1 right-0 text-sm">/100</span>
             </motion.div>
           </div>
-          <p className={`text-center font-semibold ${
-            safetyScore > 70 ? 'text-green-700' : 
-            safetyScore > 40 ? 'text-orange-700' : 'text-red-700'
-          }`}>
-            {safetyScore > 70 ? '✅ Safe Area' : 
-             safetyScore > 40 ? '⚠️ Stay Alert' : '🚨 High Risk'}
+          <p
+            className={`text-center font-semibold ${
+              safetyScore > 70
+                ? 'text-green-700'
+                : safetyScore > 40
+                ? 'text-orange-700'
+                : 'text-red-700'
+            }`}
+          >
+            {safetyScore > 70 ? '✅ Safe Area' : safetyScore > 40 ? '⚠️ Stay Alert' : '🚨 High Risk'}
           </p>
         </motion.div>
-        
+
         {/* Control Group */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="bg-white/80 rounded-2xl p-6 mb-6 border border-slate-200"
+          className="rounded-2xl border border-slate-200 bg-white/80 p-6"
         >
-          <h3 className="text-lg font-bold text-slate-800 mb-4">📍 Location Services</h3>
+          <h3 className="mb-4 text-lg font-bold text-slate-800">📍 Location Services</h3>
           <div className="space-y-3">
             <AnimatePresence mode="wait">
               {!isTracking ? (
@@ -578,7 +583,7 @@ const MapView = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={startTracking}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+                  className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-700"
                 >
                   🔍 Start Tracking
                 </motion.button>
@@ -591,33 +596,33 @@ const MapView = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={stopTracking}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:from-red-600 hover:to-red-700 transition-all duration-200"
+                  className="w-full rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-red-600 hover:to-red-700"
                 >
                   ⏹️ Stop Tracking
                 </motion.button>
               )}
             </AnimatePresence>
-            
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSafeShare}
               disabled={isSharing}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:from-purple-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-purple-600 hover:to-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSharing ? '⏳ Sharing...' : '📤 Share Location'}
             </motion.button>
           </div>
         </motion.div>
-        
+
         {/* Stats Group */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="bg-white/80 rounded-2xl p-6 border border-slate-200"
+          className="rounded-2xl border border-slate-200 bg-white/80 p-6"
         >
-          <h4 className="text-lg font-bold text-slate-800 mb-4">📊 Area Statistics</h4>
+          <h4 className="mb-4 text-lg font-bold text-slate-800">📊 Area Statistics</h4>
           <div className="space-y-3">
             {[
               { label: 'Recent Incidents', value: incidents.length },
@@ -629,10 +634,10 @@ const MapView = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
-                className="flex justify-between items-center py-2 px-3 bg-slate-50 rounded-lg"
+                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
               >
-                <span className="text-slate-600 font-medium">{stat.label}:</span>
-                <span className="text-slate-800 font-bold">{stat.value}</span>
+                <span className="font-medium text-slate-600">{stat.label}:</span>
+                <span className="font-bold text-slate-800">{stat.value}</span>
               </motion.div>
             ))}
           </div>
@@ -640,18 +645,18 @@ const MapView = () => {
       </motion.div>
 
       {/* Map Container */}
-      <div className="flex-1 relative">
+      <div className="relative w-full flex-1 min-h-screen lg:min-h-screen">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
           className="h-full w-full"
         >
           <MapContainer
             center={mapCenter}
             zoom={13}
-            style={{ height: '100%', width: '100%' }}
-            className="rounded-lg"
+            style={{ height: '100%', width: '100%', minHeight: '100vh' }}
+            className="h-full w-full rounded-none border border-white/40 shadow-sm lg:rounded-lg"
           >
             <MapUpdater center={userLocation} />
             
@@ -738,35 +743,111 @@ const MapView = () => {
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.8, type: "spring", stiffness: 200 }}
-          className="absolute bottom-6 right-6 z-[1000]"
+          transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}
+          className="absolute right-4 bottom-28 z-[1000] sm:right-6 sm:bottom-6"
         >
           <SOSButton currentLocation={{ lat: userLocation[0], lng: userLocation[1] }} user={user} />
         </motion.div>
-        
+
         {/* Safety Status */}
         <motion.div
-          initial={{ y: 50, opacity: 0 }}
+          initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="absolute top-6 right-6 z-[1000]"
+          className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0"
         >
-          <div className={`flex items-center space-x-2 px-4 py-2 rounded-full shadow-lg backdrop-blur-lg border ${
-            isTracking 
-              ? 'bg-green-500/90 text-white border-green-400' 
-              : 'bg-slate-500/90 text-white border-slate-400'
-          }`}>
+          <div
+            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-lg ${
+              isTracking
+                ? 'border-green-400 bg-green-500/90 text-white'
+                : 'border-slate-400 bg-slate-500/90 text-white'
+            }`}
+          >
             <motion.span
               animate={{ scale: isTracking ? [1, 1.2, 1] : 1 }}
               transition={{ duration: 2, repeat: isTracking ? Infinity : 0 }}
-              className={`w-2 h-2 rounded-full ${isTracking ? 'bg-white' : 'bg-gray-300'}`}
+              className={`h-2 w-2 rounded-full ${isTracking ? 'bg-white' : 'bg-gray-200'}`}
             />
-            <span className="text-sm font-medium">
-              {isTracking ? '🔍 Real-time Tracking Active' : '📍 Location Tracking Inactive'}
-            </span>
+            <span>{isTracking ? 'Tracking active' : 'Tracking paused'}</span>
           </div>
         </motion.div>
-      </div>
+  </div>
+
+      {/* Mobile Controls Trigger */}
+      <motion.button
+        type="button"
+        onClick={() => setIsControlPanelOpen(true)}
+        disabled={isControlPanelOpen}
+        whileHover={isControlPanelOpen ? {} : { scale: 1.04 }}
+        whileTap={{ scale: 0.96 }}
+        className="fixed bottom-4 left-1/2 z-[1100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-xl lg:hidden disabled:cursor-default disabled:opacity-80"
+      >
+        Safety controls
+        <span className="text-xs font-medium text-slate-300">
+          {controlTabs.find(tab => tab.id === activePanel)?.description}
+        </span>
+      </motion.button>
+
+      <AnimatePresence>
+        {isControlPanelOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1200] lg:hidden"
+          >
+            <motion.div
+              className="absolute inset-0 bg-black/40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsControlPanelOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white p-6 shadow-2xl"
+            >
+              <div className="mx-auto h-1.5 w-14 rounded-full bg-slate-300" />
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+                {controlTabs.map(tab => {
+                  const isActive = tab.id === activePanel;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActivePanel(tab.id)}
+                      className={`min-w-[120px] rounded-2xl border px-3 py-2 text-left text-xs transition-all duration-200 ${
+                        isActive
+                          ? 'border-slate-900 bg-slate-900 text-white shadow-md'
+                          : 'border-slate-200 bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <p className="font-semibold">{tab.label}</p>
+                      <p className="mt-1 text-[11px] text-slate-400">{tab.description}</p>
+                      <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-widest text-slate-300">
+                        {tab.status}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-5 space-y-5 overflow-y-auto">
+                {renderPanelContent()}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsControlPanelOpen(false)}
+                className="mt-6 w-full rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600"
+              >
+                Close panel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
