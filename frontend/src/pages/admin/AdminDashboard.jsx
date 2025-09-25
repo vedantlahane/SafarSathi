@@ -5,11 +5,11 @@ import AdminStatCard from '../../components/admin/AdminStatCard';
 import AlertsPanel from '../../components/admin/AlertsPanel';
 import TouristTable from '../../components/admin/TouristTable';
 import ActivityTimeline from '../../components/admin/ActivityTimeline';
-import { getMockStats, mockAlerts, mockTourists, mockUnits } from '../../mock/adminData';
+import { getAuthorityStats, alerts, tourists, responseUnits } from '../../mock/appData';
 
 const AdminDashboard = () => {
-  const stats = useMemo(() => getMockStats(), []);
-  const [selectedUnit, setSelectedUnit] = useState(mockUnits[0]);
+  const stats = useMemo(() => getAuthorityStats(), []);
+  const [selectedUnit, setSelectedUnit] = useState(responseUnits[0]);
   const [focusTourist, setFocusTourist] = useState(null);
 
   return (
@@ -23,12 +23,12 @@ const AdminDashboard = () => {
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         <div className="xl:col-span-2">
-          <AlertsPanel alerts={mockAlerts} onSelectAlert={(alert) => setFocusTourist(alert.touristId)} />
+          <AlertsPanel alerts={alerts} onSelectAlert={(alert) => setFocusTourist(alert.touristId)} />
         </div>
         <motion.div className="bg-white/5 border border-white/10 rounded-2xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Response Units</h2>
           <div className="space-y-4">
-            {mockUnits.map(unit => (
+            {responseUnits.map(unit => (
               <motion.button
                 key={unit.id}
                 onClick={() => setSelectedUnit(unit)}
@@ -50,11 +50,11 @@ const AdminDashboard = () => {
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <TouristTable
-            tourists={mockTourists}
+            tourists={tourists}
             onFocusTourist={(tourist) => setFocusTourist(tourist.id)}
           />
         </div>
-        <ActivityTimeline alerts={mockAlerts} tourists={mockTourists} />
+        <ActivityTimeline alerts={alerts} tourists={tourists} />
       </section>
     </AdminLayout>
   );

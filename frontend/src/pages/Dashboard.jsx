@@ -1,10 +1,11 @@
 //pages/Dashboard.jsx - Enhanced with real-time stats and better UX
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
 import SOSButton from '../components/SOSButton';
 import { motion } from 'framer-motion';
+import { useTouristData } from '../services/TouristDataContext';
 
 /**
  * Presents the traveller dashboard with real-time safety metrics,
@@ -13,40 +14,42 @@ import { motion } from 'framer-motion';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [stats, setStats] = useState({
-    safePlaces: 0,
-    alertsSent: 0,
-    activeTime: 0,
-    safetyScore: 85
-  });
+  const {
+    touristProfile,
+    travellerStats,
+    safetyTrend,
+    itinerary,
+    emergencyContacts,
+    anomalyFeed,
+    acknowledgedAnomalies,
+    wearableStatus,
+    travellerTips,
+    geoFences
+  } = useTouristData();
   const [currentLocation, setCurrentLocation] = useState(null);
   const [safetyStatus, setSafetyStatus] = useState('safe');
-  const [lastActivity, setLastActivity] = useState(new Date());
   const [isSharing, setIsSharing] = useState(false);
-  
-  // Calculate stats and initialize location
+
+  const currentSafetyScore = useMemo(() => {
+    if (!safetyTrend.length) return 80;
+    return safetyTrend[safetyTrend.length - 1];
+  }, [safetyTrend]);
+
+  const activeAnomalies = useMemo(
+    () => anomalyFeed.filter(anomaly => !acknowledgedAnomalies.has(anomaly.id)),
+    [anomalyFeed, acknowledgedAnomalies]
+  );
+
+  const highRiskZones = useMemo(
+    () => geoFences.filter(zone => zone.baseRisk === 'high'),
+    [geoFences]
+  );
+
+  const itineraryPreview = useMemo(() => itinerary.slice(0, 3), [itinerary]);
+  const primaryContact = useMemo(() => emergencyContacts[0] ?? null, [emergencyContacts]);
+
   useEffect(() => {
-    // Get current location
     getCurrentLocation();
-    
-    // Update activity timestamp
-    const activityInterval = setInterval(() => {
-      setLastActivity(new Date());
-    }, 30000); // Update every 30 seconds
-    
-    const statsInterval = setInterval(() => {
-      setStats(prev => ({
-        ...prev,
-        activeTime: prev.activeTime + 1,
-        safePlaces: Math.floor(Math.random() * 10) + 5,
-        alertsSent: Math.floor(Math.random() * 3)
-      }));
-    }, 60000);
-    
-    return () => {
-      clearInterval(activityInterval);
-      clearInterval(statsInterval);
-    };
   }, []);
 
   /**
@@ -78,21 +81,26 @@ const Dashboard = () => {
    * @param {number} lng - Current longitude.
    */
   const checkSafetyZone = (lat, lng) => {
-    // Mock unsafe zones for demo
-    const unsafeZones = [
-      { lat: 28.6139, lng: 77.2090, radius: 1000 }, // Delhi area
-      { lat: 19.0760, lng: 72.8777, radius: 800 }   // Mumbai area
-    ];
+    const hour = new Date().getHours();
+    const isNight = hour >= 20 || hour <= 6;
 
-    const isInUnsafeZone = unsafeZones.some(zone => {
-      const distance = calculateDistance(lat, lng, zone.lat, zone.lng);
-      return distance < zone.radius;
+    let triggeredZone = null;
+
+    geoFences.forEach(zone => {
+      const [zoneLat, zoneLng] = zone.position;
+      const distance = calculateDistance(lat, lng, zoneLat, zoneLng);
+      const riskRadius = zone.radius;
+      const isHighRisk = zone.baseRisk === 'high' || (zone.baseRisk === 'medium' && isNight);
+
+      if (!triggeredZone && isHighRisk && distance < riskRadius) {
+        triggeredZone = zone;
+      }
     });
 
-    if (isInUnsafeZone && safetyStatus === 'safe') {
+    if (triggeredZone && safetyStatus === 'safe') {
       setSafetyStatus('warning');
-      toast.warning('⚠️ You are entering an unsafe zone!');
-    } else if (!isInUnsafeZone && safetyStatus === 'warning') {
+      toast.warning(`⚠️ High risk zone detected: ${triggeredZone.name}`);
+    } else if (!triggeredZone && safetyStatus === 'warning') {
       setSafetyStatus('safe');
       toast.success('✅ You are now in a safe zone');
     }
@@ -122,16 +130,6 @@ const Dashboard = () => {
     return R * c;
   };
 
-  /**
-   * Convenience helper tracking idle time for future UX prompts.
-   * @returns {number} Minutes since the last recorded activity.
-   */
-  const getTimeSinceActivity = () => {
-    const diff = new Date() - lastActivity;
-    const minutes = Math.floor(diff / 60000);
-    return minutes;
-  };
-
   // Safe sharing function to prevent multiple simultaneous shares
   /**
    * Shares or copies the current safety status using the Web Share API with fallbacks.
@@ -148,13 +146,13 @@ const Dashboard = () => {
       if ('share' in navigator) {
         await navigator.share({
           title: 'SafarSathi - Safety Check-in',
-          text: `I'm checking in safely via SafarSathi. Current safety score: ${stats.safetyScore}/100. 🛡️`,
+          text: `I'm checking in safely via SafarSathi. Current safety score: ${currentSafetyScore}/100. 🛡️`,
           url: window.location.origin
         });
         toast.success('📤 Safety status shared successfully!');
       } else {
         // Fallback for browsers that don't support native sharing
-        const statusText = `SafarSathi Safety Check-in: I'm safe! Current safety score: ${stats.safetyScore}/100 🛡️ - ${window.location.origin}`;
+  const statusText = `SafarSathi Safety Check-in: I'm safe! Current safety score: ${currentSafetyScore}/100 🛡️ - ${window.location.origin}`;
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(statusText);
           toast.success('📋 Safety status copied to clipboard!');
@@ -228,6 +226,16 @@ const Dashboard = () => {
             >
               🔗 {user?.blockchainID?.slice(0, 8)}...
             </motion.span>
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.6, type: "spring" }}
+              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                safetyStatus === 'warning' ? 'bg-amber-500/20 text-amber-700 border border-amber-400/60' : 'bg-green-500/20 text-green-700 border border-green-400/60'
+              }`}
+            >
+              {touristProfile?.status?.toUpperCase() || 'SAFE'} ZONE
+            </motion.span>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -243,10 +251,10 @@ const Dashboard = () => {
       {/* Quick Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { icon: "🛡️", title: "Safety Score", value: `${stats.safetyScore}/100`, color: "from-blue-500 to-blue-600" },
-          { icon: "✅", title: "Safe Places", value: stats.safePlaces, color: "from-green-500 to-green-600" },
-          { icon: "⚠️", title: "Alerts Sent", value: stats.alertsSent, color: "from-yellow-500 to-orange-500" },
-          { icon: "⏱️", title: "Active Time", value: `${stats.activeTime} min`, color: "from-purple-500 to-purple-600" }
+          { icon: "🛡️", title: "Safety Score", value: `${currentSafetyScore}/100`, color: "from-blue-500 to-blue-600" },
+          { icon: "✅", title: "Safe Places", value: travellerStats?.safePlaces ?? 0, color: "from-green-500 to-green-600" },
+          { icon: "⚠️", title: "Alerts Sent", value: travellerStats?.alertsSent ?? 0, color: "from-yellow-500 to-orange-500" },
+          { icon: "🛰️", title: "High-Risk Zones", value: highRiskZones.length, color: "from-purple-500 to-purple-600" }
         ].map((stat, index) => (
           <motion.div
             key={index}
@@ -275,12 +283,25 @@ const Dashboard = () => {
       </motion.div>
       
       {/* Quick Actions */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {[
           { icon: "🗺️", text: "Safety Map", onClick: () => navigate('/map'), color: "from-teal-500 to-blue-500" },
-          { icon: "🆘", text: "Quick SOS", onClick: () => {}, color: "from-red-500 to-pink-500" },
+          { icon: "🚨", text: "Alerts Center", onClick: () => navigate('/alerts'), color: "from-red-500 to-pink-500" },
+          { icon: "🆔", text: "Digital ID", onClick: () => navigate('/id-vault'), color: "from-cyan-500 to-blue-500" },
           { icon: "📤", text: "Share Location", onClick: handleSafeShare, disabled: isSharing, color: "from-purple-500 to-indigo-500" },
-          { icon: "📞", text: "Emergency Contacts", onClick: () => {}, color: "from-orange-500 to-red-500" }
+          {
+            icon: "📞",
+            text: primaryContact ? `Call ${primaryContact.name}` : 'Add Contact',
+            onClick: () => {
+              if (primaryContact) {
+                window.open(`tel:${primaryContact.phone}`);
+              } else {
+                navigate('/id-vault');
+              }
+            },
+            disabled: !primaryContact,
+            color: "from-orange-500 to-red-500"
+          }
         ].map((action, index) => (
           <motion.button
             key={index}
@@ -310,11 +331,7 @@ const Dashboard = () => {
           💡 Safety Tips
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            "Always keep your phone charged above 20% for emergencies",
-            "Share your live location with trusted contacts when traveling",
-            "Avoid displaying expensive items in crowded areas"
-          ].map((tip, index) => (
+          {travellerTips.map((tip, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -329,13 +346,153 @@ const Dashboard = () => {
         </div>
       </motion.div>
       
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-slate-800">🤖 AI Anomaly Watch</h2>
+            <span className="text-sm text-slate-500">{activeAnomalies.length} open</span>
+          </div>
+          <div className="space-y-4">
+            {activeAnomalies.length ? (
+              activeAnomalies.slice(0, 3).map(anomaly => (
+                <div
+                  key={anomaly.id}
+                  className="border border-amber-200 rounded-xl px-4 py-3 bg-amber-50"
+                >
+                  <p className="text-sm font-semibold text-amber-900">{anomaly.description}</p>
+                  <p className="text-xs text-amber-700 mt-1 uppercase tracking-wide">Severity: {anomaly.severity}</p>
+                  <p className="text-xs text-amber-700 mt-1">Detected {new Date(anomaly.detectedAt).toLocaleString('en-IN')}</p>
+                  <button
+                    onClick={() => navigate('/alerts')}
+                    className="mt-2 text-xs font-semibold text-amber-900 underline"
+                  >
+                    View details
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-600">No unresolved anomalies. You're in the clear!</p>
+            )}
+          </div>
+        </motion.div>
+
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-800">🧭 Today's Itinerary</h2>
+              <button
+                onClick={() => navigate('/id-vault')}
+                className="text-xs text-teal-600 font-semibold underline"
+              >
+                Manage itinerary
+              </button>
+            </div>
+            <div className="space-y-3">
+              {itineraryPreview.length ? (
+                itineraryPreview.map(stop => (
+                  <div key={stop.id} className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-700">{stop.location}</p>
+                    <p className="text-xs text-slate-500">ETA: {new Date(stop.eta).toLocaleString('en-IN')}</p>
+                    <span className="inline-block mt-1 text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-600 uppercase tracking-wide">{stop.status}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-600">Upload your itinerary in the Digital ID vault to unlock smart routing.</p>
+              )}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-800">⌚ Wearable Status</h2>
+              <span className={`text-xs font-semibold uppercase ${wearableStatus?.connected ? 'text-green-600' : 'text-red-500'}`}>
+                {wearableStatus?.connected ? 'Connected' : 'Offline'}
+              </span>
+            </div>
+            {wearableStatus ? (
+              <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
+                <div className="bg-white rounded-xl p-4 border border-slate-100">
+                  <p className="text-xs uppercase text-slate-400">Device ID</p>
+                  <p className="text-base font-semibold text-slate-800">{wearableStatus.deviceId}</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-100">
+                  <p className="text-xs uppercase text-slate-400">Battery</p>
+                  <p className="text-2xl font-bold text-slate-800">{wearableStatus.battery}%</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-100">
+                  <p className="text-xs uppercase text-slate-400">Heart rate</p>
+                  <p className="text-2xl font-bold text-slate-800">{wearableStatus.heartRate} bpm</p>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-slate-100">
+                  <p className="text-xs uppercase text-slate-400">Last sync</p>
+                  <p className="text-xs text-slate-700">{new Date(wearableStatus.lastSync).toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">Link a SafarSathi smart band to receive health and motion telemetry here.</p>
+            )}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+            className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-800">📞 Emergency Contacts</h2>
+              <button
+                onClick={() => navigate('/id-vault')}
+                className="text-xs text-teal-600 font-semibold underline"
+              >
+                Manage contacts
+              </button>
+            </div>
+            <div className="space-y-3">
+              {emergencyContacts.slice(0, 3).map(contact => (
+                <div key={contact.id} className="bg-white rounded-xl px-4 py-3 border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{contact.name}</p>
+                    <p className="text-xs text-slate-500">{contact.relation}</p>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => window.open(`tel:${contact.phone}`)}
+                    className="text-xs font-semibold text-teal-600 underline"
+                  >
+                    Call
+                  </motion.button>
+                </div>
+              ))}
+              {!emergencyContacts.length && <p className="text-sm text-slate-600">Add trusted contacts in the Digital ID vault to enable rapid notifications.</p>}
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+
       {/* Emergency Section */}
       <motion.div
         variants={itemVariants}
         className="flex justify-center"
       >
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
-          <SOSButton currentLocation={null} user={user} />
+          <SOSButton currentLocation={currentLocation} user={user} />
         </div>
       </motion.div>
     </motion.div>

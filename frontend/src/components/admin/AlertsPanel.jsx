@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { formatTime } from '../../mock/adminData';
+import { formatTime } from '../../mock/appData';
 
 const priorityColor = {
   critical: 'border-red-500/60 bg-red-500/10 text-red-200',

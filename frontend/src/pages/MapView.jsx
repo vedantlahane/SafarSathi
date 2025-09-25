@@ -1,12 +1,14 @@
 //pages/MapView.jsx - Enhanced with AI safety scoring and real-time features
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
 import { debounce, calculateDistance } from '../utils/helpers';
 import SOSButton from '../components/SOSButton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTouristData } from '../services/TouristDataContext';
+import { policeStations as authorityStations, recentIncidents } from '../mock/appData';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -68,10 +70,17 @@ const MapUpdater = ({ center }) => {
  */
 const MapView = () => {
   const { user } = useAuth();
+  const {
+    geoFences,
+    itinerary,
+    anomalyFeed,
+    acknowledgedAnomalies,
+    wearableStatus,
+    touristProfile
+  } = useTouristData();
   const [userLocation, setUserLocation] = useState([28.6139, 77.2090]);
   const [isTracking, setIsTracking] = useState(false);
   const [safetyScore, setSafetyScore] = useState(85);
-  const [incidents, setIncidents] = useState([]);
   const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]);
   const [isSharing, setIsSharing] = useState(false);
   const trackingRef = useRef(null);
@@ -81,47 +90,25 @@ const MapView = () => {
     const hour = new Date().getHours();
     const isNight = hour >= 20 || hour <= 6;
     
-    return [
-      {
-        id: 1,
-        position: [28.6129, 77.2295],
-        radius: 500,
-        name: "Chandni Chowk Area",
-        description: isNight ? "High risk after dark" : "Moderate pickpocketing risk",
-        riskLevel: isNight ? "high" : "medium",
-        incidents: 12
-      },
-      {
-        id: 2,
-        position: [28.5355, 77.3910],
-        radius: 800,
-        name: "Noida Sector 18",
-        description: "Commercial area - stay alert",
-        riskLevel: "medium",
-        incidents: 7
-      }
-    ];
-  }, []);
+    return geoFences.map(zone => ({
+      ...zone,
+      riskLevel: zone.baseRisk === 'high' || (zone.baseRisk === 'medium' && isNight) ? 'high' : 'medium',
+      description: isNight ? zone.descriptionNight : zone.descriptionDay
+    }));
+  }, [geoFences]);
+
+  const itineraryPath = useMemo(
+    () => itinerary.filter(leg => Array.isArray(leg.coords)).map(leg => leg.coords),
+    [itinerary]
+  );
+
+  const visibleAnomalies = useMemo(
+    () => anomalyFeed.filter(anomaly => !acknowledgedAnomalies.has(anomaly.id)),
+    [anomalyFeed, acknowledgedAnomalies]
+  );
 
   // Police stations with real-time availability
-  const policeStations = [
-    {
-      id: 1,
-      position: [28.6289, 77.2065],
-      name: "CP Police Station",
-      contact: "100",
-      available: true,
-      responseTime: "3-5 min"
-    },
-    {
-      id: 2,
-      position: [28.6562, 77.2410],
-      name: "Red Fort Police",
-      contact: "100",
-      available: true,
-      responseTime: "5-7 min"
-    }
-  ];
+  const policeStations = useMemo(() => authorityStations, []);
 
   // AI-powered safety score calculation
   /**
@@ -164,6 +151,12 @@ const MapView = () => {
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
+  useEffect(() => {
+    if (wearableStatus && !wearableStatus.connected) {
+      toast.warning('⚠️ Smart wearable disconnected. Authorities notified.');
+    }
+  }, [wearableStatus]);
 
   /**
    * Fetches the latest device position and recalculates contextual safety data.
@@ -319,14 +312,6 @@ const MapView = () => {
       );
     }
     
-    // Generate recent incidents for demo
-    const mockIncidents = [
-      { id: 1, lat: 28.6149, lng: 77.2090, type: 'theft', time: '2 hours ago' },
-      { id: 2, lat: 28.6200, lng: 77.2100, type: 'harassment', time: '5 hours ago' },
-      { id: 3, lat: 28.5400, lng: 77.3900, type: 'scam', time: '1 day ago' }
-    ];
-    setIncidents(mockIncidents);
-    
     // Cleanup on unmount
     return () => {
       if (trackingRef.current) {
@@ -446,9 +431,10 @@ const MapView = () => {
           <h4 className="text-lg font-bold text-slate-800 mb-4">📊 Area Statistics</h4>
           <div className="space-y-3">
             {[
-              { label: 'Recent Incidents', value: incidents.length },
+              { label: 'Recent Incidents', value: recentIncidents.length },
               { label: 'Police Nearby', value: policeStations.length },
-              { label: 'Response Time', value: '~5 min' }
+              { label: 'Active Anomalies', value: visibleAnomalies.length },
+              { label: 'Wearable Status', value: wearableStatus?.connected ? 'Connected' : 'Offline' }
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -485,6 +471,13 @@ const MapView = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+
+            {itineraryPath.length > 1 && (
+              <Polyline
+                positions={itineraryPath}
+                pathOptions={{ color: '#0ea5e9', weight: 4, opacity: 0.6, dashArray: '8 4' }}
+              />
+            )}
 
             {/* User Location */}
             <Marker position={userLocation}>
@@ -544,11 +537,11 @@ const MapView = () => {
             ))}
             
             {/* Recent Incidents */}
-            {incidents.map(incident => (
+            {recentIncidents.map(incident => (
               <Circle
                 key={incident.id}
                 center={[incident.lat, incident.lng]}
-                radius={100}
+                radius={120}
                 pathOptions={{
                   color: '#ff6b6b',
                   fillColor: '#ff6b6b',
@@ -556,6 +549,23 @@ const MapView = () => {
                   weight: 1
                 }}
               />
+            ))}
+
+            {/* AI Anomaly Pings */}
+            {visibleAnomalies.map(anomaly => (
+              <Marker
+                key={anomaly.id}
+                position={Array.isArray(anomaly.coords) ? anomaly.coords : userLocation}
+                icon={dangerIcon}
+              >
+                <Popup>
+                  <div className="p-2">
+                    <strong className="text-red-600">⚠️ {anomaly.type}</strong>
+                    <p className="text-sm text-slate-600">{anomaly.description}</p>
+                    <p className="text-xs text-slate-400 mt-1">Severity: {anomaly.severity}</p>
+                  </div>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
         </motion.div>

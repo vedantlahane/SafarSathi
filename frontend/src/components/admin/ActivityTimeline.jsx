@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { formatTime } from '../../mock/adminData';
+import { formatTime } from '../../mock/appData';
 
 const ActivityTimeline = ({ alerts = [], tourists = [] }) => {
   const events = [

@@ -15,6 +15,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import MapView from './pages/MapView';
+import TouristIDVault from './pages/TouristIDVault';
+import TravellerAlerts from './pages/TravellerAlerts';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminMapView from './pages/admin/AdminMapView';
@@ -22,7 +24,9 @@ import AdminAlerts from './pages/admin/AdminAlerts';
 
 // Services
 import { AuthProvider, useAuth } from './services/AuthContext';
+import { TouristDataProvider } from './services/TouristDataContext';
 import { AdminAuthProvider, useAdminAuth } from './services/AdminAuthContext';
+import { AdminDataProvider } from './services/AdminDataContext';
 
 // Protected Route Component
 /**
@@ -55,9 +59,11 @@ const AdminProtectedRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <AdminAuthProvider>
-        <Router>
-          <div className="App">
+      <TouristDataProvider>
+        <AdminAuthProvider>
+          <AdminDataProvider>
+            <Router>
+              <div className="App">
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -74,6 +80,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MapView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/id-vault"
+                element={
+                  <ProtectedRoute>
+                    <TouristIDVault />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/alerts"
+                element={
+                  <ProtectedRoute>
+                    <TravellerAlerts />
                   </ProtectedRoute>
                 }
               />
@@ -117,9 +139,11 @@ function App() {
               draggable
               pauseOnHover
             />
-          </div>
-        </Router>
-      </AdminAuthProvider>
+              </div>
+            </Router>
+          </AdminDataProvider>
+        </AdminAuthProvider>
+      </TouristDataProvider>
     </AuthProvider>
   );
 }

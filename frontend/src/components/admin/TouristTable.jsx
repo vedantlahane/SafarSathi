@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { formatTime } from '../../mock/adminData';
+import { formatTime } from '../../mock/appData';
 
 const statusBadge = {
   safe: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/40',

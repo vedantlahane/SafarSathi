@@ -3,9 +3,9 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl, LayerGro
 import L from 'leaflet';
 import { motion } from 'framer-motion';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { mockTourists, mockAlerts } from '../../mock/adminData';
+import { tourists, alerts, watchZones } from '../../mock/appData';
 
-const { BaseLayer, Overlay } = LayersControl;
+const { Overlay } = LayersControl;
 
 const touristIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
@@ -41,7 +41,7 @@ const AdminMapView = () => {
             <LayersControl position="topright">
               <Overlay checked name="Tourist Locations">
                 <LayerGroup>
-                  {mockTourists.map(tourist => (
+                  {tourists.map(tourist => (
                     <Marker
                       key={tourist.id}
                       position={[tourist.location.lat, tourist.location.lng]}
@@ -65,7 +65,7 @@ const AdminMapView = () => {
 
               <Overlay checked name="SOS Radius">
                 <LayerGroup>
-                  {mockAlerts
+                  {alerts
                     .filter(alert => alert.priority === 'critical')
                     .map(alert => (
                       <Circle
@@ -75,6 +75,24 @@ const AdminMapView = () => {
                         pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15 }}
                       />
                     ))}
+                </LayerGroup>
+              </Overlay>
+
+              <Overlay name="Watch Zones">
+                <LayerGroup>
+                  {watchZones.map(zone => (
+                    <Circle
+                      key={zone.id}
+                      center={zone.position}
+                      radius={zone.radius}
+                      pathOptions={{
+                        color: zone.baseRisk === 'high' ? '#f97316' : '#0ea5e9',
+                        fillColor: zone.baseRisk === 'high' ? '#f97316' : '#0ea5e9',
+                        fillOpacity: 0.12,
+                        dashArray: zone.baseRisk === 'high' ? '10 6' : undefined
+                      }}
+                    />
+                  ))}
                 </LayerGroup>
               </Overlay>
             </LayersControl>

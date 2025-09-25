@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { getBatteryLevel, getNetworkInfo } from '../utils/helpers';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTouristData } from '../services/TouristDataContext';
 
 /**
  * Hold-to-activate emergency button that persists SOS requests with offline support
@@ -10,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
  * @param {{ currentLocation?: {lat: number, lng: number}, user?: object }} props
  */
 const SOSButton = ({ currentLocation, user }) => {
+  const { emergencyContacts } = useTouristData();
   const [isActivated, setIsActivated] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [holdProgress, setHoldProgress] = useState(0);
@@ -49,6 +51,10 @@ const SOSButton = ({ currentLocation, user }) => {
     const existingSOS = JSON.parse(localStorage.getItem('pending_sos') || '[]');
     existingSOS.push(sosData);
     localStorage.setItem('pending_sos', JSON.stringify(existingSOS));
+
+    emergencyContacts.forEach(contact => {
+      toast.info(`📞 Notifying ${contact.name} (${contact.phone})`);
+    });
 
     try {
       if (navigator.onLine) {

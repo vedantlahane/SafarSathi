@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AlertsPanel from '../../components/admin/AlertsPanel';
 import ActivityTimeline from '../../components/admin/ActivityTimeline';
-import { mockAlerts, mockTourists } from '../../mock/adminData';
+import { alerts, tourists } from '../../mock/appData';
 
 const AdminAlerts = () => {
-  const [selectedAlert, setSelectedAlert] = useState(mockAlerts[0]);
+  const [selectedAlert, setSelectedAlert] = useState(alerts[0]);
 
   return (
     <AdminLayout title="Alert Center" subtitle="Review and acknowledge all incoming SOS and geo-fence notifications.">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <AlertsPanel alerts={mockAlerts} onSelectAlert={setSelectedAlert} />
+          <AlertsPanel alerts={alerts} onSelectAlert={setSelectedAlert} />
         </div>
         <div className="space-y-6">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[220px]">
@@ -29,7 +29,7 @@ const AdminAlerts = () => {
               <p className="text-sm text-slate-400">Select an alert to see full context.</p>
             )}
           </div>
-          <ActivityTimeline alerts={mockAlerts} tourists={mockTourists} />
+          <ActivityTimeline alerts={alerts} tourists={tourists} />
         </div>
       </div>
     </AdminLayout>
