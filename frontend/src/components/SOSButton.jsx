@@ -80,6 +80,25 @@ const SOSButton = ({ currentLocation, user }) => {
     }, 60000);
   }, [currentLocation, user]);
 
+  /**
+   * Displays a visual countdown before the SOS payload is dispatched.
+   */
+  const startCountdown = useCallback(() => {
+    let count = 3;
+    setCountdown(count);
+    
+    countdownTimer.current = setInterval(() => {
+      count -= 1;
+      setCountdown(count);
+      
+      if (count === 0) {
+        clearInterval(countdownTimer.current);
+        setCountdown(0);
+        activateSOS();
+      }
+    }, 1000);
+  }, [activateSOS]);
+
   // Enhanced hold-to-activate with visual feedback
   /**
    * Kicks off the press-and-hold progress animation.
@@ -108,25 +127,6 @@ const SOSButton = ({ currentLocation, user }) => {
       setHoldProgress(0);
     }
   }, []);
-  
-  /**
-   * Displays a visual countdown before the SOS payload is dispatched.
-   */
-  const startCountdown = useCallback(() => {
-    let count = 3;
-    setCountdown(count);
-    
-    countdownTimer.current = setInterval(() => {
-      count -= 1;
-      setCountdown(count);
-      
-      if (count === 0) {
-        clearInterval(countdownTimer.current);
-        setCountdown(0);
-        activateSOS();
-      }
-    }, 1000);
-  }, [activateSOS]);
 
   /**
    * Aborts the pending SOS while the countdown overlay is active.
