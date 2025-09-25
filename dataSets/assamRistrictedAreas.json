@@ -1,0 +1,130 @@
+{
+  "assam_restricted_areas": [
+    {
+      "district_name": "Baksa",
+      "restricted_zones": [
+        {
+          "area_name": "Manas National Park (Core & Border Areas)",
+          "reason_for_restriction": "Nature (Dense Jungle, Wild Animals), Proximity to International Border (Bhutan), Past Insurgency.",
+          "restricted_timings": "Entry prohibited from Sunset to Sunrise (approx. 5:30 PM to 6:00 AM). Night travel on approach roads is not advised.",
+          "nearest_police_station": "Bansbari Police Outpost",
+          "distance_to_police_station_km": 1.5,
+          "threat_level": "Moderate",
+          "advice_for_tourists": "Always use an authorized forest guide. Do not leave the designated safari trails. Avoid displaying valuables. Inform your hotel about your travel plans."
+        }
+      ]
+    },
+    {
+      "district_name": "Chirang",
+      "restricted_zones": [
+        {
+          "area_name": "Manas National Park (Panbari Range)",
+          "reason_for_restriction": "Nature (Dense Forest), International Border Sensitivity, Historically affected by insurgency.",
+          "restricted_timings": "Movement is strictly advised only during daylight hours (approx. 7:00 AM to 4:00 PM).",
+          "nearest_police_station": "Panbari Police Station",
+          "distance_to_police_station_km": 4,
+          "threat_level": "Moderate",
+          "advice_for_tourists": "Travel in groups. Use official park vehicles. Check for the latest travel advisories from local authorities before visiting."
+        }
+      ]
+    },
+    {
+      "district_name": "Dima Hasao",
+      "restricted_zones": [
+        {
+          "area_name": "Remote areas outside Haflong town (e.g., Maibang, Umrangso routes)",
+          "reason_for_restriction": "Insurgency (dormant but sensitive), Hilly & isolated terrain, Potential for opportunistic crime.",
+          "restricted_timings": "Strictly avoid road travel after 5:00 PM. Night travel is highly discouraged.",
+          "nearest_police_station": "Haflong Sadar Police Station",
+          "distance_to_police_station_km": "Varies (up to 50+ km from remote spots)",
+          "threat_level": "High",
+          "advice_for_tourists": "Travel only during the day. Use reliable and known transport operators. Avoid traveling alone. Keep police and local contacts handy."
+        }
+      ]
+    },
+    {
+      "district_name": "Golaghat",
+      "restricted_zones": [
+        {
+          "area_name": "Kaziranga National Park (Animal Corridors on NH-37)",
+          "reason_for_restriction": "Nature (High-risk of animal-vehicle collision, especially rhinos and elephants).",
+          "restricted_timings": "Speed restrictions and no-stopping zones are enforced 24/7. Avoid travel on the highway stretch through the park late at night.",
+          "nearest_police_station": "Kohora Police Outpost",
+          "distance_to_police_station_km": "Varies, outposts are located along the highway.",
+          "threat_level": "Moderate (due to wildlife)",
+          "advice_for_tourists": "Never get down from your vehicle in animal corridors. Adhere to speed limits strictly. Do not feed wild animals."
+        }
+      ]
+    },
+    {
+      "district_name": "Karbi Anglong",
+      "restricted_zones": [
+        {
+          "area_name": "Forest areas bordering Nagaland and remote interiors.",
+          "reason_for_restriction": "Insurgency (Historically active area), Ethnic sensitivities, Illegal resource extraction activities.",
+          "restricted_timings": "Road travel should be concluded by 4:00 PM. Night halts should only be at recognized towns like Diphu.",
+          "nearest_police_station": "Diphu Police Station",
+          "distance_to_police_station_km": "Varies significantly (can be over 60 km)",
+          "threat_level": "High",
+          "advice_for_tourists": "Foreign nationals may require permits. Travel with a local guide who is aware of the current situation. Avoid unplanned detours into forested roads."
+        }
+      ]
+    },
+    {
+      "district_name": "Kokrajhar",
+      "restricted_zones": [
+        {
+          "area_name": "Areas bordering Bhutan and remote rural interiors.",
+          "reason_for_restriction": "Historically affected by insurgency and ethnic conflict, Border sensitivity.",
+          "restricted_timings": "Avoid travel after sunset (approx. 5:30 PM). Limit movement to main towns and highways.",
+          "nearest_police_station": "Kokrajhar Sadar Police Station",
+          "distance_to_police_station_km": "Varies (up to 40 km from border areas)",
+          "threat_level": "Moderate",
+          "advice_for_tourists": "Stay in well-known hotels. Be sensitive to local customs. Avoid discussions on political or ethnic issues. Keep travel documents secure."
+        }
+      ]
+    },
+    {
+      "district_name": "Sonitpur",
+      "restricted_zones": [
+        {
+          "area_name": "Nameri National Park & Forest Reserve (areas bordering Arunachal Pradesh)",
+          "reason_for_restriction": "Nature (Dense forest, River crossings, Wildlife), Interstate border sensitivity.",
+          "restricted_timings": "Park activities like rafting and trekking are restricted from 4:00 PM to 7:00 AM. Avoid border roads at night.",
+          "nearest_police_station": "Chariduar Police Station",
+          "distance_to_police_station_km": 15,
+          "threat_level": "Moderate",
+          "advice_for_tourists": "An armed forest guard is mandatory for trekking/walking inside the park. Follow all park regulations strictly. Be cautious of strong river currents."
+        }
+      ]
+    },
+    {
+      "district_name": "Tinsukia",
+      "restricted_zones": [
+        {
+          "area_name": "Dehing Patkai National Park & areas near the Arunachal/Myanmar border (e.g., Ledo, Jagun)",
+          "reason_for_restriction": "Insurgency (Historically used as transit routes), Nature (Extremely dense rainforest), Illegal mining activities.",
+          "restricted_timings": "All travel should be completed between sunrise and sunset. Night travel is extremely risky and not advised.",
+          "nearest_police_station": "Digboi Police Station / Ledo Police Station",
+          "distance_to_police_station_km": "Varies (20-30 km from park entrances)",
+          "threat_level": "High",
+          "advice_for_tourists": "Visit only with reputed tour operators. Foreign nationals must check for permit requirements. Do not venture into unmarked trails. Keep emergency contacts readily available."
+        }
+      ]
+    },
+    {
+      "district_name": "Udalguri",
+      "restricted_zones": [
+        {
+          "area_name": "Areas along the Bhutan border, including Bornadi Wildlife Sanctuary.",
+          "reason_for_restriction": "International Border Sensitivity, Past insurgency, Human-elephant conflict.",
+          "restricted_timings": "Movement is not advised after 5:00 PM, especially in forested and border areas.",
+          "nearest_police_station": "Udalguri Sadar Police Station",
+          "distance_to_police_station_km": "Varies (up to 35 km)",
+          "threat_level": "Moderate",
+          "advice_for_tourists": "Be aware of elephant corridors and avoid them, especially in the evening. Use local guides for any excursions. Do not photograph border outposts."
+        }
+      ]
+    }
+  ]
+}
