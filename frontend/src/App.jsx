@@ -4,7 +4,6 @@
  * for the SafarSathi frontend experience.
  */
 
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -23,6 +22,10 @@ import AdminAlerts from './pages/admin/AdminAlerts';
 // Services
 import { AuthProvider, useAuth } from './services/AuthContext';
 import { AdminAuthProvider, useAdminAuth } from './services/AdminAuthContext';
+import { TouristDataProvider } from './services/TouristDataContext';
+
+import DigitalID from './pages/DigitalID';
+import SafetyCenter from './pages/SafetyCenter';
 
 // Protected Route Component
 /**
@@ -56,9 +59,10 @@ function App() {
   return (
     <AuthProvider>
       <AdminAuthProvider>
-        <Router>
-          <div className="App">
-            <Routes>
+        <TouristDataProvider>
+          <Router>
+            <div className="App">
+              <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route
@@ -74,6 +78,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MapView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/id"
+                element={
+                  <ProtectedRoute>
+                    <DigitalID />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/safety"
+                element={
+                  <ProtectedRoute>
+                    <SafetyCenter />
                   </ProtectedRoute>
                 }
               />
@@ -117,8 +137,9 @@ function App() {
               draggable
               pauseOnHover
             />
-          </div>
-        </Router>
+            </div>
+          </Router>
+        </TouristDataProvider>
       </AdminAuthProvider>
     </AuthProvider>
   );

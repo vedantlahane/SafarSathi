@@ -1,34 +1,61 @@
 # SafarSathi Frontend
 
-SafarSathi is a travel safety companion showcasing secure onboarding, live risk awareness,
-and SOS tooling. The React codebase now includes JSDoc-style documentation across the
-primary pages, components, utilities, and the authentication context to make onboarding
-new contributors easier.
+SafarSathi delivers a Smart Tourist Safety experience powered by AI insights, blockchain-based identity, geo-fencing, and opt-in IoT tracking. The frontend is built with **React 19 + Vite** and mocks the full digital ecosystem described in the product blueprint.
 
-## Developer Notes
+## ✨ Feature Highlights
 
-- Page components (`Login`, `Register`, `Dashboard`, `MapView`) document their key event
-	handlers and effects, outlining validation, geolocation, and sharing workflows.
-- Shared services such as `AuthContext` and helpers in `src/utils/helpers.js` include
-	parameter/return annotations for quick reference.
-- Trigger `npm run build` to validate edits; the output warns about bundle size but still
-	succeeds.
+- **Digital Tourist ID** — Blockchain-backed identity card with QR verification, validity window, and secure download/share actions.
+- **Traveller Dashboard** — Multilingual UX with live safety score, geo-fence posture, itinerary preview, IoT wearable health, and hold-to-activate SOS button.
+- **Safety Center** — AI anomaly feed, geo-fence alerts, tracking preference toggles, and voice assistance for elders or differently abled travellers.
+- **Command & Control (Admin)** — Alert triage, live mission map, and automated E-FIR drafts wired to the mocked backend services.
+- **Mocked Services Layer** — `src/services/mockApi.js` simulates blockchain logs, anomaly detection, itinerary data, IoT signals, and preference updates.
 
----
+## 🗺️ Frontend Surface
 
-# React + Vite
+| Route | Purpose |
+|-------|---------|
+| `/register`, `/login` | Traveller onboarding with OCR-ready KYC form (mocked) |
+| `/dashboard` | Real-time traveller home with safety stats, quick actions, and SOS |
+| `/map` | Leaflet map with AI safety scoring, incident overlays, and tracking controls |
+| `/id` | Digital ID wallet: QR verification, blockchain log review, privacy notes |
+| `/safety` | Safety Center: anomaly triage, geo-fence alerts, tracking toggles, voice assist |
+| `/admin/*` | Authority console: dashboards, alerts, live map, automated e-FIR generation |
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🌐 Multilingual Support
 
-Currently, two official plugins are available:
+Internationalisation is handled via **i18next** with auto language detection. The UI ships with English plus four Indian languages (Hindi, Assamese, Bengali, Tamil). Extend translations by editing `src/services/i18n.js` and referencing keys through `useTranslation()`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🧰 Project Structure
 
-## React Compiler
+- `src/services/TouristDataContext.jsx` — React context that hydrates traveller data, anomalies, and preferences from the mock API and exposes helper actions.
+- `src/services/mockApi.js` — Centralised mocks for profiles, itinerary, AI events, IoT metrics, blockchain trails, and e-FIR drafting.
+- `src/components/` — Feature widgets including `DigitalIDCard`, `TrackingPreferences`, `VoiceAssistance`, and admin `EFIRGenerator`.
+- `src/pages/` — Route-level screens split between traveller and admin workspaces.
 
-The React Compiler is not enabled on this template. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Getting Started
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The dev server launches on [http://localhost:5173](http://localhost:5173). Traveller and admin flows reuse the same mocked backend context; no additional services are required.
+
+## ✅ Quality Gates
+
+Run lint/build before committing changes:
+
+```bash
+npm run lint
+npm run build
+```
+
+## 📦 Tech Stack
+
+- React 19, React Router v7, Framer Motion, React Leaflet
+- React Toastify for notifications
+- React QR Code & html-to-image for digital ID exports
+- Day.js (with relative time) for human-friendly timestamps
+- i18next + browser language detector for localisation
+
+Feel free to plug a real backend underneath the `mockApi` layer once the server-side services are ready.

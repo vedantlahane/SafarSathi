@@ -6,6 +6,18 @@ import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
 import OCRService from '../services/ocrService';
 
+const FIELD_LABELS = {
+  name: 'Full Name',
+  email: 'Email',
+  phone: 'Phone',
+  idNumber: 'ID Number',
+  dateOfBirth: 'Date of Birth',
+  address: 'Address',
+  emergencyContact: 'Emergency Contact',
+  gender: 'Gender',
+  nationality: 'Nationality'
+};
+
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -22,358 +34,146 @@ const Register = () => {
   });
   const [idImage, setIdImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [documentDetails, setDocumentDetails] = useState({ type: '', fields: [] });
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateExtractedData = (data = {}) => {
+    const cleaned = {};
+
+    if (typeof data.name === 'string') {
+      const name = data.name.trim();
+      if (/^[A-Za-z\s]{2,50}$/.test(name)) {
+        cleaned.name = name;
+      }
+    }
+
+    if (typeof data.idNumber === 'string') {
+      const id = data.idNumber.replace(/\s+/g, '').toUpperCase();
+      if (/^\d{12}$/.test(id) || /^[A-Z]\d{7}$/.test(id) || /^[A-Z0-9]{8,12}$/.test(id)) {
+        cleaned.idNumber = id;
+      }
+    }
+
+    if (typeof data.dateOfBirth === 'string') {
+      const dob = data.dateOfBirth.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+        cleaned.dateOfBirth = dob;
+      }
+    }
+
+    if (typeof data.address === 'string') {
+      const address = data.address.trim();
+      if (address.length >= 10) {
+        cleaned.address = address.slice(0, 200);
+      }
+    }
+
+    if (typeof data.phone === 'string') {
+      const digits = data.phone.replace(/[^\d]/g, '');
+      if (digits.length === 10) {
+        cleaned.phone = digits;
+      } else if (digits.length === 12 && digits.startsWith('91')) {
+        cleaned.phone = digits.slice(2);
+      }
+    }
+
+    if (typeof data.gender === 'string') {
+      const gender = data.gender.toLowerCase();
+      if (gender === 'male' || gender === 'm') {
+        cleaned.gender = 'Male';
+      } else if (gender === 'female' || gender === 'f') {
+        cleaned.gender = 'Female';
+      }
+    }
+
+    if (typeof data.nationality === 'string') {
+      const nationality = data.nationality.trim();
+      if (nationality.length >= 2) {
+        cleaned.nationality = nationality;
+      }
+    }
+
+    return cleaned;
+  };
+
+  const applyExtractedData = (validated, raw) => {
+    const appliedKeys = Object.keys(validated);
+    setDocumentDetails({
+      type: raw?.documentType || 'unknown',
+      fields: appliedKeys.map(key => ({ key, value: validated[key] }))
     });
-  };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setIdImage(file);
-      processImageWithOCR(file);
+    if (!appliedKeys.length) {
+      toast.warning('⚠️ Could not auto-fill details. Please enter them manually.');
+      return;
     }
-  };
 
-  const handleDeleteImage = () => {
-    setIdImage(null);
-    // Reset the file input
-    const fileInput = document.querySelector('input[type="file"]');
-    if (fileInput) {
-      fileInput.value = '';
-    }
-    // Show confirmation
-    toast.info('📄 Document removed. You can upload a new one.');
+    setFormData(prev => ({ ...prev, ...validated }));
+    toast.success(`✅ Auto-filled: ${appliedKeys.join(', ')}`);
   };
 
   const processImageWithOCR = async (file) => {
     setIsProcessing(true);
-    toast.info('🔍 Analyzing your ID document...');
+    const toastId = toast.loading('🤖 Analyzing document...');
 
     try {
-      // Use the enhanced OCR service
-      const extractedData = await OCRService.processDocument(file, (progress) => {
-        toast.info(`🤖 AI Processing... ${progress}%`);
+      const extracted = await OCRService.processDocument(file, (progress) => {
+        if (typeof progress === 'number') {
+          toast.update(toastId, {
+            render: `🤖 Analyzing document… ${Math.round(progress * 100)}%`,
+            isLoading: true
+          });
+        }
       });
 
-      console.log('Extracted Data:', extractedData);
-      
-      // Validate extracted data
-      const validatedData = validateExtractedData(extractedData);
-      
-      // Update form with extracted data
-      if (Object.keys(validatedData).length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          ...validatedData
-        }));
-
-        // Show success message with extracted fields
-        const extractedFields = Object.keys(validatedData).join(', ');
-        toast.success(`✅ Successfully extracted: ${extractedFields}`);
-        
-        // Show document type detected
-        if (extractedData.documentType) {
-          const docTypeMsg = extractedData.documentType === 'aadhaar' ? 'Aadhaar Card' : 
-                            extractedData.documentType === 'passport' ? 'Passport' : 'ID Document';
-          setTimeout(() => {
-            let message = `📄 ${docTypeMsg} detected! Please verify the auto-filled information.`;
-            if (extractedData.documentType === 'aadhaar') {
-              message += ' 🇮🇳 Nationality set to Indian.';
-            }
-            toast.info(message, {
-              autoClose: 5000
-            });
-          }, 1000);
-        }
-      } else {
-        toast.warning('⚠️ Could not extract information automatically. Please fill the form manually.');
-      }
+      const validated = validateExtractedData(extracted);
+      applyExtractedData(validated, extracted);
     } catch (error) {
-      console.error('OCR Error:', error);
-      toast.error('❌ Unable to extract information from document. Please fill the form manually.');
+      console.error('OCR processing failed', error);
+      toast.error('❌ Unable to extract information automatically. Please fill the form manually.');
     } finally {
+      toast.dismiss(toastId);
       setIsProcessing(false);
     }
   };
 
-  const validateExtractedData = (data) => {
-    const validated = {};
-    
-    // Validate name
-    if (data.name && data.name.length >= 2 && data.name.length <= 50 && /^[A-Za-z\s]+$/.test(data.name)) {
-      validated.name = data.name;
-    }
-    
-    // Validate ID number
-    if (data.idNumber) {
-      const cleanId = data.idNumber.replace(/\s/g, '');
-      if (/^\d{12}$/.test(cleanId) || /^[A-Z]\d{7}$/.test(cleanId) || /^[A-Z0-9]{8}$/.test(cleanId)) {
-        validated.idNumber = cleanId;
-      }
-    }
-    
-    // Validate date of birth
-    if (data.dateOfBirth && /^\d{4}-\d{2}-\d{2}$/.test(data.dateOfBirth)) {
-      const date = new Date(data.dateOfBirth);
-      const now = new Date();
-      if (date < now && date.getFullYear() > 1900) {
-        validated.dateOfBirth = data.dateOfBirth;
-      }
-    }
-    
-    // Validate address
-    if (data.address && data.address.length >= 10 && data.address.length <= 200) {
-      validated.address = data.address;
-    }
-    
-    // Validate phone
-    if (data.phone) {
-      const cleanPhone = data.phone.replace(/[^\d]/g, '');
-      if (/^\d{10}$/.test(cleanPhone) || /^91\d{10}$/.test(cleanPhone)) {
-        validated.phone = cleanPhone.length === 12 ? cleanPhone.substring(2) : cleanPhone;
-      }
-    }
-    
-    // Validate gender
-    if (data.gender && (data.gender === 'Male' || data.gender === 'Female')) {
-      validated.gender = data.gender;
-    }
-    
-    // Validate nationality
-    if (data.nationality && data.nationality.length > 0) {
-      validated.nationality = data.nationality;
-    }
-    
-    return validated;
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIdImage(file);
+    processImageWithOCR(file);
   };
 
-  const extractDataFromOCR = (text) => {
-    const extracted = {};
-    const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    
-    console.log('Cleaned OCR Text:', cleanText);
-    
-    // Enhanced patterns for Indian Aadhaar and Passport
-    const patterns = {
-      // Aadhaar patterns
-      aadhaarNumber: [
-        /(\d{4}\s*\d{4}\s*\d{4})/g,
-        /Aadhaar\s*No[:\s]*(\d{4}\s*\d{4}\s*\d{4})/i,
-        /UID[:\s]*(\d{4}\s*\d{4}\s*\d{4})/i
-      ],
-      
-      // Passport patterns
-      passportNumber: [
-        /Passport\s*No[:\s]*([A-Z]\d{7})/i,
-        /([A-Z]\d{7})/g,
-        /Passport[:\s]*([A-Z0-9]{8})/i
-      ],
-      
-      // Name patterns (more comprehensive)
-      name: [
-        /Name[:\s]*([A-Z][A-Za-z\s]{2,40})/i,
-        /^([A-Z][A-Za-z\s]{2,40})\s*(?:D\/O|S\/O|W\/O)/i,
-        /(?:Mr|Ms|Mrs|Dr)\.?\s*([A-Z][A-Za-z\s]{2,40})/i,
-        /([A-Z][A-Za-z\s]{2,40})\s*D\/O/i
-      ],
-      
-      // Date of Birth patterns
-      dateOfBirth: [
-        /(?:DOB|Date of Birth|Born)[:\s]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/i,
-        /(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/g,
-        /Born[:\s]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})/i
-      ],
-      
-      // Address patterns
-      address: [
-        /Address[:\s]*([A-Za-z0-9\s,.\-\/]{10,200})/i,
-        /(?:S\/O|D\/O|W\/O)[^,]*,\s*([A-Za-z0-9\s,.\-\/]{10,200})/i,
-        /PIN[:\s]*\d{6}[^,]*,?\s*([A-Za-z0-9\s,.\-\/]{10,100})/i
-      ],
-      
-      // Phone patterns
-      phone: [
-        /(?:Mobile|Phone|Mob)[:\s]*(\+?91\s*\d{10})/i,
-        /(\+?91\s*\d{10})/g,
-        /(\d{10})/g
-      ],
-      
-      // Gender patterns
-      gender: [
-        /(?:Gender|Sex)[:\s]*(Male|Female|M|F)/i,
-        /(Male|Female)\s/i
-      ]
-    };
-
-    // Extract Aadhaar or Passport number first to determine document type
-    let documentType = 'unknown';
-    let idNumber = '';
-    
-    // Check for Aadhaar
-    for (const pattern of patterns.aadhaarNumber) {
-      const matches = cleanText.match(pattern);
-      if (matches) {
-        idNumber = matches[0].replace(/\s/g, '');
-        if (idNumber.length === 12 && /^\d{12}$/.test(idNumber)) {
-          documentType = 'aadhaar';
-          extracted.idNumber = idNumber;
-          break;
-        }
-      }
+  const handleDeleteImage = () => {
+    setIdImage(null);
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
     }
-    
-    // Check for Passport if not Aadhaar
-    if (documentType === 'unknown') {
-      for (const pattern of patterns.passportNumber) {
-        const matches = cleanText.match(pattern);
-        if (matches) {
-          const potentialPassport = matches[0].replace(/\s/g, '');
-          if (/^[A-Z]\d{7}$/.test(potentialPassport) || /^[A-Z0-9]{8}$/.test(potentialPassport)) {
-            documentType = 'passport';
-            extracted.idNumber = potentialPassport;
-            break;
-          }
-        }
-      }
-    }
-    
-    console.log('Document Type Detected:', documentType);
-    
-    // Extract name
-    for (const pattern of patterns.name) {
-      const match = cleanText.match(pattern);
-      if (match && match[1]) {
-        const name = match[1].trim();
-        // Validate name (should be 2-40 chars, only letters and spaces)
-        if (name.length >= 2 && name.length <= 40 && /^[A-Za-z\s]+$/.test(name)) {
-          extracted.name = name;
-          break;
-        }
-      }
-    }
-    
-    // Extract date of birth
-    for (const pattern of patterns.dateOfBirth) {
-      const matches = cleanText.match(pattern);
-      if (matches) {
-        for (const match of matches) {
-          const dateStr = match.replace(/[^\d\/\-\.]/g, '');
-          if (dateStr && dateStr.length >= 8) {
-            // Convert to YYYY-MM-DD format for date input
-            const dateParts = dateStr.split(/[\/\-\.]/);
-            if (dateParts.length === 3) {
-              let day, month, year;
-              
-              // Handle different date formats
-              if (dateParts[2].length === 4) {
-                day = dateParts[0].padStart(2, '0');
-                month = dateParts[1].padStart(2, '0');
-                year = dateParts[2];
-              } else if (dateParts[0].length === 4) {
-                year = dateParts[0];
-                month = dateParts[1].padStart(2, '0');
-                day = dateParts[2].padStart(2, '0');
-              }
-              
-              if (year && month && day && year.length === 4) {
-                const formattedDate = `${year}-${month}-${day}`;
-                // Validate date
-                const dateObj = new Date(formattedDate);
-                if (dateObj.getFullYear() == year && dateObj.getMonth() + 1 == month && dateObj.getDate() == day) {
-                  extracted.dateOfBirth = formattedDate;
-                  break;
-                }
-              }
-            }
-          }
-        }
-        if (extracted.dateOfBirth) break;
-      }
-    }
-    
-    // Extract address
-    for (const pattern of patterns.address) {
-      const match = cleanText.match(pattern);
-      if (match && match[1]) {
-        let address = match[1].trim();
-        // Clean up address
-        address = address.replace(/\s+/g, ' ').substring(0, 200);
-        if (address.length >= 10) {
-          extracted.address = address;
-          break;
-        }
-      }
-    }
-    
-    // Extract phone number
-    for (const pattern of patterns.phone) {
-      const matches = cleanText.match(pattern);
-      if (matches) {
-        for (const match of matches) {
-          const phone = match.replace(/[^\d]/g, '');
-          if (phone.length === 10 || (phone.length === 12 && phone.startsWith('91'))) {
-            extracted.phone = phone.length === 12 ? phone : phone;
-            break;
-          }
-        }
-        if (extracted.phone) break;
-      }
-    }
-    
-    // Document-specific extraction
-    if (documentType === 'aadhaar') {
-      // Aadhaar-specific patterns
-      const pinMatch = cleanText.match(/PIN[:\s]*(\d{6})/i);
-      if (pinMatch) {
-        extracted.pinCode = pinMatch[1];
-      }
-      
-      // Extract father's/husband's name for Aadhaar
-      const relativeName = cleanText.match(/(?:S\/O|D\/O|W\/O)[:\s]*([A-Za-z\s]{2,40})/i);
-      if (relativeName) {
-        extracted.guardianName = relativeName[1].trim();
-      }
-    }
-    
-    if (documentType === 'passport') {
-      // Passport-specific patterns
-      const placeOfBirth = cleanText.match(/Place of Birth[:\s]*([A-Za-z\s,]{2,50})/i);
-      if (placeOfBirth) {
-        extracted.placeOfBirth = placeOfBirth[1].trim();
-      }
-      
-      const issuePlace = cleanText.match(/Place of Issue[:\s]*([A-Za-z\s,]{2,50})/i);
-      if (issuePlace) {
-        extracted.issuePlace = issuePlace[1].trim();
-      }
-    }
-    
-    console.log('Extracted Data:', extracted);
-    return extracted;
+    setDocumentDetails({ type: '', fields: [] });
+    toast.info('📄 Document removed. You can upload a new one.');
   };
 
   const generateBlockchainID = (userData) => {
-    // Simple hash simulation for demo
-    const data = `${userData.name}-${userData.idNumber}-${Date.now()}`;
-    return btoa(data).substring(0, 16).toUpperCase();
+    const payload = `${userData.name}-${userData.idNumber}-${Date.now()}`;
+    return btoa(payload).substring(0, 16).toUpperCase();
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
     if (!formData.name || !formData.email || !formData.phone) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     try {
-      // Generate blockchain ID
       const blockchainID = generateBlockchainID(formData);
-      
       const userData = {
         ...formData,
         blockchainID,
@@ -381,13 +181,9 @@ const Register = () => {
         isActive: true
       };
 
-      // Simulate API call - replace with actual backend
-      setTimeout(() => {
-        login(userData);
-        toast.success('Registration successful!');
-        navigate('/dashboard');
-      }, 1000);
-
+      login(userData);
+      toast.success('Registration successful!');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Registration error:', error);
       toast.error('Registration failed. Please try again.');
@@ -541,6 +337,25 @@ const Register = () => {
                 <li>• Make sure all text is readable</li>
               </ul>
             </motion.div>
+
+            {documentDetails.fields.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-3"
+              >
+                <p className="text-teal-200 text-sm font-semibold mb-2">
+                  ✅ Auto-filled details {documentDetails.type ? `(${documentDetails.type.toUpperCase()})` : ''}
+                </p>
+                <ul className="space-y-1 text-xs text-teal-100/90">
+                  {documentDetails.fields.map(({ key, value }) => (
+                    <li key={key}>
+                      <span className="font-semibold">{FIELD_LABELS[key] || key}:</span> {value}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Personal Information Grid */}
