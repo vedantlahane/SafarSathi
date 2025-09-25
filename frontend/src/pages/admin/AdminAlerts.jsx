@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import AlertsPanel from '../../components/admin/AlertsPanel';
 import ActivityTimeline from '../../components/admin/ActivityTimeline';
+import EFIRGenerator from '../../components/admin/EFIRGenerator';
 import { mockAlerts, mockTourists } from '../../mock/adminData';
 
 const AdminAlerts = () => {
   const [selectedAlert, setSelectedAlert] = useState(mockAlerts[0]);
+
+  const focusTourist = mockTourists.find(t => t.id === selectedAlert?.touristId);
 
   return (
     <AdminLayout title="Alert Center" subtitle="Review and acknowledge all incoming SOS and geo-fence notifications.">
@@ -29,6 +32,7 @@ const AdminAlerts = () => {
               <p className="text-sm text-slate-400">Select an alert to see full context.</p>
             )}
           </div>
+          <EFIRGenerator defaultTourist={focusTourist} />
           <ActivityTimeline alerts={mockAlerts} tourists={mockTourists} />
         </div>
       </div>

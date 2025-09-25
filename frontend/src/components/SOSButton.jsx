@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { getBatteryLevel, getNetworkInfo } from '../utils/helpers';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,6 +69,7 @@ const SOSButton = ({ currentLocation, user }) => {
         toast.warning('📡 Offline: SOS saved, will send when connected');
       }
     } catch (error) {
+      console.error('Failed to dispatch SOS', error);
       toast.error('Network error: SOS saved locally');
     }
     
@@ -96,7 +97,7 @@ const SOSButton = ({ currentLocation, user }) => {
         startCountdown();
       }
     }, 30);
-  }, [isActivated]);
+  }, [isActivated, startCountdown]);
   
   /**
    * Resets the press-and-hold progress when the user releases early.

@@ -1,5 +1,5 @@
 //services/AuthContext.jsx - Enhanced with better error handling and persistence
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const AuthContext = createContext();
 
@@ -7,6 +7,7 @@ const AuthContext = createContext();
  * Convenience hook for consuming the authentication context with guard rails.
  * @returns {{ user: object|null, login: Function, logout: Function, updateUser: Function, loading: boolean }}
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }) => {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {
+        console.error('Failed to parse stored user session', e);
         localStorage.removeItem('safarsathi_user');
       }
     }
