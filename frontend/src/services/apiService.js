@@ -2,7 +2,17 @@ import axios from 'axios';
 
 // Set the base URL for your Spring Boot backend
 // IMPORTANT: Update this URL to match your backend's running port/address
-const API_BASE_URL = 'http://localhost:8080/api'; 
+const viteEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
+const legacyEnv = typeof process !== 'undefined' ? process.env : undefined;
+const backendTarget =
+  viteEnv?.VITE_BACKEND_TARGET ??
+  legacyEnv?.REACT_APP_BACKEND_TARGET ??
+  '';
+
+const API_BASE_URL =
+  backendTarget === 'friend'
+    ? 'http://localhost:8080/api'
+    : 'http://localhost:8081/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

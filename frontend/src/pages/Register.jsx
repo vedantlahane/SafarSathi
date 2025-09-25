@@ -188,14 +188,14 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 relative overflow-hidden bg-gradient-to-br from-purple-900 via-slate-900 to-teal-900">
+    <div className="min-h-screen flex items-center justify-center py-10 px-4 sm:px-6 lg:px-12 relative overflow-hidden bg-gradient-to-br from-purple-900 via-slate-900 to-teal-900">
       {/* ... Animated Background and Header (JSX unchanged) ... */}
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
+        className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 sm:p-8 lg:p-10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto relative"
       >
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
         
@@ -203,12 +203,12 @@ const Register = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
         >
-          <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-teal-400 bg-clip-text text-transparent">
             🛡️ SafarSathi Registration
           </h2>
-          <p className="text-white/80 text-lg">Register for secure and safe tourism</p>
+          <p className="text-white/80 text-base sm:text-lg">Register for secure and safe tourism</p>
         </motion.div>
 
         <motion.form
@@ -216,7 +216,7 @@ const Register = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.6 }}
           onSubmit={handleSubmit}
-          className="space-y-6"
+          className="space-y-5 sm:space-y-6"
         >
           {/* ID Document Upload (JSX unchanged) */}
           <motion.div
@@ -227,10 +227,10 @@ const Register = () => {
           >
             {/* ... (Image upload and processing status JSX) ... */}
             <div>
-              <label className="block text-white/90 font-semibold mb-2">
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">
                 📄 Upload ID Document (Aadhaar/Passport)
               </label>
-              <p className="text-white/60 text-sm mb-3">
+              <p className="text-white/60 text-xs sm:text-sm mb-3">
                 💡 For best results: Use clear, well-lit photos with all text visible
               </p>
               <div className="relative">
@@ -238,7 +238,7 @@ const Register = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="w-full bg-white/10 border border-white/20 text-white p-3 rounded-lg backdrop-blur-md file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-teal-500/20 file:text-teal-200 file:font-semibold hover:file:bg-teal-500/30 transition-all duration-300"
+                  className="w-full bg-white/10 border border-white/20 text-white p-3 sm:p-3.5 rounded-lg backdrop-blur-md file:mr-3 sm:file:mr-4 file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:bg-teal-500/20 file:text-teal-200 file:font-semibold hover:file:bg-teal-500/30 transition-all duration-300"
                 />
                 {isProcessing && (
                   <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
@@ -261,13 +261,13 @@ const Register = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 className="relative"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-white/80 text-sm">📷 Uploaded Image:</p>
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <p className="text-white/80 text-xs sm:text-sm">📷 Uploaded Image:</p>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleDeleteImage}
-                    className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 px-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 flex items-center space-x-1"
+                    className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 flex items-center space-x-1"
                   >
                     <span>🗑️</span>
                     <span>Delete</span>
@@ -277,7 +277,7 @@ const Register = () => {
                   <img
                     src={URL.createObjectURL(idImage)}
                     alt="Uploaded ID"
-                    className="w-full max-h-40 object-contain rounded-lg"
+                    className="w-full max-h-36 sm:max-h-40 object-contain rounded-lg"
                   />
                 </div>
               </motion.div>
@@ -309,10 +309,10 @@ const Register = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3"
+              className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 sm:p-4"
             >
-              <p className="text-purple-300 text-sm font-medium mb-1">📝 Tips for better extraction:</p>
-              <ul className="text-purple-200/80 text-xs space-y-1">
+              <p className="text-purple-300 text-xs sm:text-sm font-medium mb-1">📝 Tips for better extraction:</p>
+              <ul className="text-purple-200/80 text-[11px] sm:text-xs space-y-1">
                 <li>• Ensure good lighting and avoid shadows</li>
                 <li>• Keep the document flat and fully visible</li>
                 <li>• Avoid blur - hold steady while taking photo</li>
@@ -322,14 +322,14 @@ const Register = () => {
           </motion.div>
 
           {/* Personal Information Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             {/* ... Name, Email, Phone, ID Number, DOB, Gender, Nationality (JSX unchanged) ... */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Full Name *</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Full Name *</label>
               <input
                 type="text"
                 name="name"
@@ -346,7 +346,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.7, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Email *</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Email *</label>
               <input
                 type="email"
                 name="email"
@@ -363,7 +363,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Phone Number *</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Phone Number *</label>
               <input
                 type="tel"
                 name="phone"
@@ -380,7 +380,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.9, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">ID Number *</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">ID Number *</label>
               <input
                 type="text"
                 name="idNumber"
@@ -397,7 +397,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.0, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Date of Birth</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Date of Birth</label>
               <input
                 type="date"
                 name="dateOfBirth"
@@ -412,7 +412,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.1, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Gender</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Gender</label>
               <select
                 name="gender"
                 value={formData.gender}
@@ -431,7 +431,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.2, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Nationality</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Nationality</label>
               <select
                 name="nationality"
                 value={formData.nationality}
@@ -460,7 +460,7 @@ const Register = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.3, duration: 0.6 }}
             >
-              <label className="block text-white/90 font-semibold mb-2">Emergency Contact *</label>
+              <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Emergency Contact *</label>
               <input
                 type="tel"
                 name="emergencyContact"
@@ -480,7 +480,7 @@ const Register = () => {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="w-full"
           >
-            <label className="block text-white/90 font-semibold mb-2">Set Password *</label>
+            <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Set Password *</label>
             <input
               type="password"
               name="password"
@@ -497,7 +497,7 @@ const Register = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4, duration: 0.6 }}
           >
-            <label className="block text-white/90 font-semibold mb-2">Address</label>
+            <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Address</label>
             <textarea
               name="address"
               value={formData.address}
@@ -516,7 +516,7 @@ const Register = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={isProcessing || isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-500 to-teal-500 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-purple-600 hover:to-teal-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 relative overflow-hidden group"
+            className="w-full bg-gradient-to-r from-purple-500 to-teal-500 text-white font-semibold py-3 sm:py-3.5 px-5 sm:px-6 rounded-lg shadow-lg hover:from-purple-600 hover:to-teal-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 relative overflow-hidden group"
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
@@ -531,7 +531,7 @@ const Register = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.6, duration: 0.6 }}
-          className="mt-6 text-center text-white/70"
+          className="mt-5 sm:mt-6 text-center text-white/70 text-sm sm:text-base"
         >
           Already have an account?{' '}
           <motion.button
