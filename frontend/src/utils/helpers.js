@@ -1,4 +1,14 @@
 // utils/helpers.js - Utility functions for SafarSathi
+
+/**
+ * Returns a debounced function that delays invoking `func` until after `wait` milliseconds
+ * have elapsed since the last call.
+ *
+ * @template {(...args: any[]) => void} T
+ * @param {T} func - Function to debounce.
+ * @param {number} wait - Delay in milliseconds.
+ * @returns {(...args: Parameters<T>) => void}
+ */
 export const debounce = (func, wait) => {
   let timeout;
   return function executedFunction(...args) {
@@ -11,6 +21,15 @@ export const debounce = (func, wait) => {
   };
 };
 
+/**
+ * Haversine distance between two latitude/longitude pairs in meters.
+ *
+ * @param {number} lat1
+ * @param {number} lng1
+ * @param {number} lat2
+ * @param {number} lng2
+ * @returns {number}
+ */
 export const calculateDistance = (lat1, lng1, lat2, lng2) => {
   const R = 6371e3; // Earth's radius in meters
   const φ1 = lat1 * Math.PI / 180;
@@ -26,6 +45,10 @@ export const calculateDistance = (lat1, lng1, lat2, lng2) => {
   return R * c;
 };
 
+/**
+ * Generates a pseudo-unique blockchain-style identifier string.
+ * @returns {string}
+ */
 export const generateSecureId = () => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
@@ -33,6 +56,10 @@ export const generateSecureId = () => {
   return `BC${random}${hash.substring(0, 8)}`.toUpperCase();
 };
 
+/**
+ * Attempts to read the device battery level using the Battery Status API.
+ * @returns {Promise<number|null>} Percentage from 0-100 or null when unavailable.
+ */
 export const getBatteryLevel = async () => {
   if ('getBattery' in navigator) {
     try {
@@ -45,6 +72,10 @@ export const getBatteryLevel = async () => {
   return null;
 };
 
+/**
+ * Reads the connection information to infer effective network characteristics.
+ * @returns {{ effectiveType: string, downlink?: number, rtt?: number }}
+ */
 export const getNetworkInfo = () => {
   if ('connection' in navigator) {
     return {

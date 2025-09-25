@@ -6,6 +6,10 @@ import { useAuth } from '../services/AuthContext';
 import SOSButton from '../components/SOSButton';
 import { motion } from 'framer-motion';
 
+/**
+ * Presents the traveller dashboard with real-time safety metrics,
+ * location awareness, and quick access to emergency actions.
+ */
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -45,6 +49,9 @@ const Dashboard = () => {
     };
   }, []);
 
+  /**
+   * Retrieves the device location (subject to permissions) and evaluates the surrounding zone.
+   */
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -63,6 +70,13 @@ const Dashboard = () => {
     }
   };
 
+  /**
+   * Determines if the user is currently inside one of the mocked unsafe regions
+   * and raises contextual toasts when the status changes.
+   *
+   * @param {number} lat - Current latitude.
+   * @param {number} lng - Current longitude.
+   */
   const checkSafetyZone = (lat, lng) => {
     // Mock unsafe zones for demo
     const unsafeZones = [
@@ -84,6 +98,15 @@ const Dashboard = () => {
     }
   };
 
+  /**
+   * Haversine distance between two coordinate pairs in meters.
+   *
+   * @param {number} lat1
+   * @param {number} lng1
+   * @param {number} lat2
+   * @param {number} lng2
+   * @returns {number} Distance in meters.
+   */
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI/180;
@@ -99,6 +122,10 @@ const Dashboard = () => {
     return R * c;
   };
 
+  /**
+   * Convenience helper tracking idle time for future UX prompts.
+   * @returns {number} Minutes since the last recorded activity.
+   */
   const getTimeSinceActivity = () => {
     const diff = new Date() - lastActivity;
     const minutes = Math.floor(diff / 60000);
@@ -106,6 +133,9 @@ const Dashboard = () => {
   };
 
   // Safe sharing function to prevent multiple simultaneous shares
+  /**
+   * Shares or copies the current safety status using the Web Share API with fallbacks.
+   */
   const handleSafeShare = async () => {
     if (isSharing) {
       toast.info('Share already in progress...');
