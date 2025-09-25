@@ -7,6 +7,7 @@ import { useAuth } from '../services/AuthContext';
 import { debounce, calculateDistance } from '../utils/helpers';
 import SOSButton from '../components/SOSButton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTouristData } from '../services/TouristDataContext';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -68,6 +69,7 @@ const MapUpdater = ({ center }) => {
  */
 const MapView = () => {
   const { user } = useAuth();
+  const { zones: contextZones } = useTouristData();
   const [userLocation, setUserLocation] = useState([28.6139, 77.2090]);
   const [isTracking, setIsTracking] = useState(false);
   const [safetyScore, setSafetyScore] = useState(85);
@@ -80,8 +82,18 @@ const MapView = () => {
   const unsafeZones = useMemo(() => {
     const hour = new Date().getHours();
     const isNight = hour >= 20 || hour <= 6;
-    
+    const mappedContextZones = (contextZones || []).map(zone => ({
+      id: zone.id,
+      position: [zone.center.lat, zone.center.lng],
+      radius: zone.radius,
+      name: zone.name,
+      description: zone.reason,
+      riskLevel: zone.level === 'critical' ? 'high' : zone.level === 'warning' ? 'medium' : 'low',
+      incidents: zone.level === 'critical' ? 8 : 3
+    }));
+
     return [
+      ...mappedContextZones,
       {
         id: 1,
         position: [28.6129, 77.2295],
@@ -101,7 +113,7 @@ const MapView = () => {
         incidents: 7
       }
     ];
-  }, []);
+  }, [contextZones]);
 
   // Police stations with real-time availability
   const policeStations = [
@@ -163,12 +175,12 @@ const MapView = () => {
 
   useEffect(() => {
     getCurrentLocation();
-  }, []);
+  }, [getCurrentLocation]);
 
   /**
    * Fetches the latest device position and recalculates contextual safety data.
    */
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -184,7 +196,7 @@ const MapView = () => {
         }
       );
     }
-  };
+  }, [calculateSafetyScore, checkProximityAlerts]);
 
   // Enhanced location tracking with battery optimization
   /**
@@ -219,7 +231,7 @@ const MapView = () => {
       },
       options
     );
-  }, [calculateSafetyScore]);
+  }, [calculateSafetyScore, checkProximityAlerts]);
   
   /**
    * Stops the active geolocation watcher and informs the user.
@@ -487,7 +499,7 @@ const MapView = () => {
             />
 
             {/* User Location */}
-            <Marker position={userLocation}>
+            <Marker position={userLocation} icon={userIcon}>
               <Popup>
                 <div className="p-2">
                   <strong className="text-blue-600">📍 Your Location</strong>
@@ -511,7 +523,7 @@ const MapView = () => {
                     dashArray: zone.riskLevel === 'high' ? '10, 5' : null
                   }}
                 />
-                <Marker position={zone.position}>
+                <Marker position={zone.position} icon={dangerIcon}>
                   <Popup>
                     <div className="p-2">
                       <strong className="text-red-600">⚠️ {zone.name}</strong>
@@ -526,7 +538,7 @@ const MapView = () => {
 
             {/* Police Stations */}
             {policeStations.map(station => (
-              <Marker key={station.id} position={station.position}>
+              <Marker key={station.id} position={station.position} icon={policeIcon}>
                 <Popup>
                   <div className="p-2">
                     <strong className="text-green-600">🚔 {station.name}</strong>
