@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const AdminAuthContext = createContext();
 
@@ -16,6 +16,7 @@ export const AdminAuthProvider = ({ children }) => {
       try {
         setAdmin(JSON.parse(savedAdmin));
       } catch (e) {
+        console.error('Failed to parse stored admin session', e);
         localStorage.removeItem('safarsathi_admin');
       }
     }
@@ -71,6 +72,7 @@ export const AdminAuthProvider = ({ children }) => {
 /**
  * Convenience hook for consuming the admin auth context.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
   if (!context) {

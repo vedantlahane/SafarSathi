@@ -10,7 +10,11 @@ import { getMockStats, mockAlerts, mockTourists, mockUnits } from '../../mock/ad
 const AdminDashboard = () => {
   const stats = useMemo(() => getMockStats(), []);
   const [selectedUnit, setSelectedUnit] = useState(mockUnits[0]);
-  const [focusTourist, setFocusTourist] = useState(null);
+  const [focusedTouristId, setFocusedTouristId] = useState(null);
+  const focusedTourist = useMemo(
+    () => mockTourists.find(tourist => tourist.id === focusedTouristId) || null,
+    [focusedTouristId]
+  );
 
   return (
     <AdminLayout title="Command Dashboard" subtitle="Monitor SOS events, track tourists, and coordinate response units in real time.">
@@ -23,7 +27,7 @@ const AdminDashboard = () => {
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         <div className="xl:col-span-2">
-          <AlertsPanel alerts={mockAlerts} onSelectAlert={(alert) => setFocusTourist(alert.touristId)} />
+          <AlertsPanel alerts={mockAlerts} onSelectAlert={(alert) => setFocusedTouristId(alert.touristId)} />
         </div>
         <motion.div className="bg-white/5 border border-white/10 rounded-2xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Response Units</h2>
@@ -45,13 +49,29 @@ const AdminDashboard = () => {
             ))}
           </div>
         </motion.div>
+        {focusedTourist && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/5 border border-white/10 rounded-2xl p-6"
+          >
+            <h2 className="text-lg font-semibold text-white mb-3">Focused Tourist</h2>
+            <div className="space-y-2 text-sm text-slate-200">
+              <p className="text-base font-semibold text-white">{focusedTourist.name}</p>
+              <p>Status: <span className="font-semibold uppercase">{focusedTourist.status}</span></p>
+              <p>Last ping: {focusedTourist.lastPing}</p>
+              <p>Last known area: {focusedTourist.lastKnownArea}</p>
+              <p>Battery: {focusedTourist.battery}%</p>
+            </div>
+          </motion.div>
+        )}
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <TouristTable
             tourists={mockTourists}
-            onFocusTourist={(tourist) => setFocusTourist(tourist.id)}
+            onFocusTourist={(tourist) => setFocusedTouristId(tourist.id)}
           />
         </div>
         <ActivityTimeline alerts={mockAlerts} tourists={mockTourists} />

@@ -66,6 +66,7 @@ export const getBatteryLevel = async () => {
       const battery = await navigator.getBattery();
       return Math.round(battery.level * 100);
     } catch (error) {
+      console.error('Unable to read battery information', error);
       return null;
     }
   }
