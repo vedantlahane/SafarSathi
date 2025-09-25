@@ -1,4 +1,4 @@
-//services/AuthContext.js - Enhanced with better error handling and persistence
+//services/AuthContext.jsx - Enhanced with better error handling and persistence
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const AuthContext = createContext();
