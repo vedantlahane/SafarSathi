@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 /**
  * Registration page supporting OCR-assisted onboarding and blockchain ID generation.
- * Handles file uploads, extracts structured data, and persists mock user accounts.
+ * Handles file uploads, extracts structured vLdata, and persists mock user accounts.
  */
 const Register = () => {
   const navigate = useNavigate();
