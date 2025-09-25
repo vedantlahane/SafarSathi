@@ -15,9 +15,14 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import MapView from './pages/MapView';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminMapView from './pages/admin/AdminMapView';
+import AdminAlerts from './pages/admin/AdminAlerts';
 
 // Services
 import { AuthProvider, useAuth } from './services/AuthContext';
+import { AdminAuthProvider, useAdminAuth } from './services/AdminAuthContext';
 
 // Protected Route Component
 /**
@@ -33,6 +38,15 @@ const ProtectedRoute = ({ children }) => {
 };
 
 /**
+ * Guards admin routes by ensuring an authority session is active.
+ * Redirects to the command login when not authenticated.
+ */
+const AdminProtectedRoute = ({ children }) => {
+  const { admin } = useAdminAuth();
+  return admin ? children : <Navigate to="/admin/login" />;
+};
+
+/**
  * Root application component wiring together the authentication provider,
  * router configuration, and global toast container.
  *
@@ -41,42 +55,71 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
+      <AdminAuthProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/map"
+                element={
+                  <ProtectedRoute>
+                    <MapView />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminDashboard />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/map"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminMapView />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/alerts"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminAlerts />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+            </Routes>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
             />
-            <Route 
-              path="/map" 
-              element={
-                <ProtectedRoute>
-                  <MapView />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-          </Routes>
-          <ToastContainer 
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
-        </div>
-      </Router>
+          </div>
+        </Router>
+      </AdminAuthProvider>
     </AuthProvider>
   );
 }
