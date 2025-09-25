@@ -3,6 +3,12 @@ import { toast } from 'react-toastify';
 import { getBatteryLevel, getNetworkInfo } from '../utils/helpers';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * Hold-to-activate emergency button that persists SOS requests with offline support
+ * and provides rich feedback during activation.
+ *
+ * @param {{ currentLocation?: {lat: number, lng: number}, user?: object }} props
+ */
 const SOSButton = ({ currentLocation, user }) => {
   const [isActivated, setIsActivated] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -11,6 +17,9 @@ const SOSButton = ({ currentLocation, user }) => {
   const countdownTimer = useRef(null);
 
   // Enhanced SOS with offline support and better UX
+  /**
+   * Dispatches the SOS event, vibrates the device, and queues it when offline.
+   */
   const activateSOS = useCallback(async () => {
     setIsActivated(true);
     
@@ -71,6 +80,9 @@ const SOSButton = ({ currentLocation, user }) => {
   }, [currentLocation, user]);
 
   // Enhanced hold-to-activate with visual feedback
+  /**
+   * Kicks off the press-and-hold progress animation.
+   */
   const handleMouseDown = useCallback(() => {
     if (isActivated) return;
     
@@ -86,6 +98,9 @@ const SOSButton = ({ currentLocation, user }) => {
     }, 30);
   }, [isActivated]);
   
+  /**
+   * Resets the press-and-hold progress when the user releases early.
+   */
   const handleMouseUp = useCallback(() => {
     if (holdTimer.current) {
       clearInterval(holdTimer.current);
@@ -93,6 +108,9 @@ const SOSButton = ({ currentLocation, user }) => {
     }
   }, []);
   
+  /**
+   * Displays a visual countdown before the SOS payload is dispatched.
+   */
   const startCountdown = useCallback(() => {
     let count = 3;
     setCountdown(count);
@@ -109,6 +127,9 @@ const SOSButton = ({ currentLocation, user }) => {
     }, 1000);
   }, [activateSOS]);
 
+  /**
+   * Aborts the pending SOS while the countdown overlay is active.
+   */
   const cancelSOS = useCallback(() => {
     clearInterval(countdownTimer.current);
     setCountdown(0);
