@@ -37,4 +37,7 @@ public interface TouristService {
      * @return A mock security token (TBD).
      */
     String login(String phone);
+
+    public Tourist validateTouristLoginByEmail(String email, String rawPassword);
+
 }

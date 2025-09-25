@@ -1,9 +1,9 @@
-//pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
+import apiService from '../services/apiService'; // 🔑 Import the API service
 
 const Login = () => {
   const navigate = useNavigate();
@@ -26,34 +26,46 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Simulate API call - replace with actual backend
-      setTimeout(() => {
-        // Mock user data for demo
-        const userData = {
-          name: 'Demo User',
-          email: formData.email,
-          phone: '+91-9876543210',
-          blockchainID: 'BC' + Math.random().toString(36).substr(2, 12).toUpperCase(),
-          registeredAt: new Date().toISOString(),
-          isActive: true
-        };
+      // ----------------------------------------------------
+      // 🔑 REAL API CALL: Connect to Spring Boot /api/auth/login
+      // ----------------------------------------------------
+      
+      // 1. Call the API service with the collected credentials
+      const apiResponse = await apiService.loginTourist(formData.email, formData.password); 
 
-        login(userData);
-        toast.success('Login successful!');
-        navigate('/dashboard');
-        setIsLoading(false);
-      }, 1000);
+      // 2. Extract key data from the backend response
+      const { token, touristId, qr_content } = apiResponse;
+
+      // 3. Prepare the user session data
+      // Note: We reconstruct the user object using the login data and response data.
+      const userData = {
+        name: 'Tourist', // Placeholder or fetch actual name later
+        email: formData.email,
+        // The backend returns the phone number implicitly via the token payload, 
+        // but for session simplicity, we might fetch the full profile later.
+        id: touristId, 
+        token: token,
+        qrContent: qr_content,
+        isActive: true
+      };
+
+      // 4. Update Auth Context and Redirect
+      login(userData);
+      toast.success('Login successful! Welcome back! 👋');
+      navigate('/dashboard');
 
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please try again.');
+      // Display the specific error message provided by the backend, if available
+      toast.error(error.message || 'Login failed. Please verify your credentials.');
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-5 relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Animated Background */}
+      {/* Animated Background (JSX unchanged) */}
       <motion.div
         className="absolute inset-0 opacity-30"
         animate={{
@@ -75,7 +87,7 @@ const Login = () => {
         {/* Top Border Accent */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
         
-        {/* Header */}
+        {/* Header (JSX unchanged) */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,10 +166,10 @@ const Login = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mt-6"
+          className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-lg mt-6"
         >
-          <p className="text-blue-700 font-semibold text-sm">🚀 Hackathon Demo Mode</p>
-          <p className="text-blue-600 text-sm">Use any email and password to login</p>
+          <p className="text-purple-300 font-semibold text-sm">🚀 Hackathon Demo Mode</p>
+          <p className="text-purple-200 text-sm">Authentication is now connected to the Spring Boot API! Use a registered email and password to log in.</p>
         </motion.div>
 
         <motion.p
@@ -176,7 +188,8 @@ const Login = () => {
             Register here
           </motion.button>
         </motion.p>
-
+        
+        {/* Key Features (JSX unchanged) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
