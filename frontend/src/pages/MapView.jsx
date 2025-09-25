@@ -8,6 +8,7 @@ import { debounce, calculateDistance } from '../utils/helpers';
 import SOSButton from '../components/SOSButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTouristData } from '../services/TouristDataContext';
+import apiService from '../services/apiService';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -43,18 +44,18 @@ const policeIcon = L.divIcon({
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #38bdf8, #0284c7 70%);
+      background: radial-gradient(circle at 30% 30%, #10b981, #059669 70%);
       border: 2px solid #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 14px rgba(2, 132, 199, 0.35);
+      box-shadow: 0 6px 14px rgba(5, 150, 105, 0.35);
     ">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="5" y="9" width="14" height="9" rx="1.4" fill="#fff"/>
-        <path d="M9 9V6.8C9 5.8 9.8 5 10.9 5H13.1C14.2 5 15 5.8 15 6.8V9" stroke="#0284c7" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M7 18V19.5C7 20.3 7.7 21 8.5 21H15.5C16.3 21 17 20.3 17 19.5V18" fill="#bae6fd"/>
-        <path d="M12 12.5C10.9 12.5 10 13.4 10 14.5C10 15.6 10.9 16.5 12 16.5C13.1 16.5 14 15.6 14 14.5C14 13.4 13.1 12.5 12 12.5ZM12 15.2C11.5 15.2 11.2 14.9 11.2 14.4C11.2 13.9 11.5 13.6 12 13.6C12.5 13.6 12.8 13.9 12.8 14.4C12.8 14.9 12.5 15.2 12 15.2Z" fill="#0284c7"/>
+        <path d="M12 2L3 7V10C3 16 7 20.5 12 22C17 20.5 21 16 21 10V7L12 2Z" fill="#fff"/>
+        <path d="M12 4L6 7.5V10C6 14.5 9 18 12 19.5C15 18 18 14.5 18 10V7.5L12 4Z" fill="#059669"/>
+        <path d="M10 12L11.5 13.5L15 10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="12" cy="8.5" r="1.5" fill="#fff"/>
       </svg>
     </div>
   `,
@@ -97,6 +98,20 @@ const MapView = () => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
   const [activePanel, setActivePanel] = useState('safety');
   const trackingRef = useRef(null);
+
+  const queueLocationPing = useMemo(() => {
+    if (!user?.token || !user?.id) {
+      return () => {};
+    }
+
+    return debounce((lat, lng, accuracy) => {
+      apiService
+        .locationPing(user.token, user.id, { lat, lng, accuracy })
+        .catch((error) => {
+          console.error('Location ping failed', error);
+        });
+    }, 2000);
+  }, [user?.token, user?.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -279,11 +294,14 @@ const MapView = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newLocation = [position.coords.latitude, position.coords.longitude];
+          const { latitude, longitude, accuracy: rawAccuracy } = position.coords;
+          const newLocation = [latitude, longitude];
+          const accuracy = Number.isFinite(rawAccuracy) ? Math.round(rawAccuracy) : null;
           setUserLocation(newLocation);
           setMapCenter(newLocation);
-          calculateSafetyScore(position.coords.latitude, position.coords.longitude);
-          checkProximityAlerts(position.coords.latitude, position.coords.longitude);
+          calculateSafetyScore(latitude, longitude);
+          checkProximityAlerts(latitude, longitude);
+          queueLocationPing(latitude, longitude, accuracy);
         },
         (error) => {
           console.error('Location error:', error);
@@ -291,7 +309,7 @@ const MapView = () => {
         }
       );
     }
-  }, [calculateSafetyScore, checkProximityAlerts]);
+  }, [calculateSafetyScore, checkProximityAlerts, queueLocationPing]);
 
   useEffect(() => {
     getCurrentLocation();
@@ -317,10 +335,13 @@ const MapView = () => {
     
     trackingRef.current = navigator.geolocation.watchPosition(
       (position) => {
-        const newLocation = [position.coords.latitude, position.coords.longitude];
+        const { latitude, longitude, accuracy: rawAccuracy } = position.coords;
+        const newLocation = [latitude, longitude];
+        const accuracy = Number.isFinite(rawAccuracy) ? Math.round(rawAccuracy) : null;
         setUserLocation(newLocation);
-        calculateSafetyScore(position.coords.latitude, position.coords.longitude);
-        checkProximityAlerts(position.coords.latitude, position.coords.longitude);
+        calculateSafetyScore(latitude, longitude);
+        checkProximityAlerts(latitude, longitude);
+        queueLocationPing(latitude, longitude, accuracy);
       },
       (error) => {
         console.error('Tracking error:', error);
@@ -329,7 +350,7 @@ const MapView = () => {
       },
       options
     );
-  }, [calculateSafetyScore, checkProximityAlerts]);
+  }, [calculateSafetyScore, checkProximityAlerts, queueLocationPing]);
   
   /**
    * Stops the active geolocation watcher and informs the user.

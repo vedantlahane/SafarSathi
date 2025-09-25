@@ -116,4 +116,11 @@ public class AdminController {
         Alert updatedAlert = alertService.updateAlertStatus(alertId, status.toUpperCase());
         return ResponseEntity.ok(updatedAlert);
     }
+
+    // GET /api/admin/tourists
+    // Provides the full roster of tourists with their most recent location.
+    @GetMapping("/tourists")
+    public ResponseEntity<List<Tourist>> getAllTourists() {
+        return ResponseEntity.ok(touristService.getAllTourists());
+    }
 }

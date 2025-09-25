@@ -121,18 +121,30 @@ const apiService = {
   },
 
   /**
-   * Authenticates an admin/police department via the Spring Boot backend.
-   * @param {string} email - The admin's email.
-   * @param {string} password - The admin's password.
-   * @returns {Promise<object>} The response data (token, admin details).
+   * Retrieves the full list of tourists for the admin mission map.
+   * @returns {Promise<object[]>} Array of tourists with last known coordinates.
    */
-  adminLogin: async (email, password) => {
+  getAdminTourists: async () => {
     try {
-      const response = await api.post('/admin/login', { email, password });
+      const response = await api.get('/admin/tourists');
       return response.data;
     } catch (error) {
-      console.error("Admin Login Error:", error.response || error);
-      throw new Error(error.response?.data?.message || 'Admin login failed. Please check your credentials.');
+      console.error('Admin Tourist Fetch Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to load live tourist roster.');
+    }
+  },
+
+  /**
+   * Retrieves the current set of active alerts for the admin dashboard.
+   * @returns {Promise<object[]>} Array of alert objects.
+   */
+  getAdminAlerts: async () => {
+    try {
+      const response = await api.get('/admin/alerts');
+      return response.data;
+    } catch (error) {
+      console.error('Admin Alerts Fetch Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to load alerts feed.');
     }
   },
 
