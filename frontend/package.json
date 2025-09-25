@@ -20,7 +20,7 @@
     "leaflet": "^1.9.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-i18next": "^15.5.2",
+    "react-i18next": "^15.7.3",
     "react-leaflet": "^5.0.0",
     "react-qr-code": "^2.0.15",
     "react-router-dom": "^7.9.2",
