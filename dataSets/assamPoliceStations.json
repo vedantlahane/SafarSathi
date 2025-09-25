@@ -1,0 +1,361 @@
+{
+  "assamPoliceStations": {
+    "Baksa": [
+      { "id": 1, "position": [26.6575, 91.5544], "name": "Goreswar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 2, "position": [26.7167, 91.1667], "name": "Simla Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 3, "position": [26.6333, 91.4333], "name": "Tamulpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 4, "position": [26.6000, 91.3167], "name": "Barama Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 5, "position": [26.7667, 91.0500], "name": "Salbari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 6, "position": [26.7500, 90.8667], "name": "Gobardhana Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 7, "position": [26.6833, 91.3333], "name": "Mushalpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 8, "position": [26.6667, 91.3000], "name": "Barbari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Bajali": [
+      { "id": 9, "position": [26.5189, 91.1731], "name": "Pathsala Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 10, "position": [26.4947, 91.1892], "name": "Patacharkuchi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Barpeta": [
+      { "id": 11, "position": [26.3262, 91.0011], "name": "Barpeta Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 12, "position": [26.4950, 90.9667], "name": "Barpeta Road Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 13, "position": [26.2333, 90.8667], "name": "Kalgachia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 14, "position": [26.4833, 90.8833], "name": "Sorbhog Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 15, "position": [26.4167, 90.9667], "name": "Howly Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 16, "position": [26.2167, 90.9667], "name": "Baghbor Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 17, "position": [26.1500, 90.8833], "name": "Alopatichar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 18, "position": [26.3333, 90.9000], "name": "Tarabari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 19, "position": [26.2000, 90.7500], "name": "Kachumara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 20, "position": [26.4333, 91.0833], "name": "Sarthebari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 21, "position": [26.5000, 90.9500], "name": "Simlaguri Police Point", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Bongaigaon": [
+      { "id": 22, "position": [26.4746, 90.5613], "name": "Bongaigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 23, "position": [26.3333, 90.7333], "name": "Manikpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 24, "position": [26.3667, 90.6167], "name": "Boitamari Police Outpost", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 25, "position": [26.3333, 90.6667], "name": "Abhayapuri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 26, "position": [26.2333, 90.6000], "name": "Jogighopa Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 27, "position": [26.2000, 90.5833], "name": "Mererchar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Chirang": [
+      { "id": 28, "position": [26.5333, 90.4333], "name": "Basugaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 29, "position": [26.5167, 90.6667], "name": "Bijni Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 30, "position": [26.5333, 90.5500], "name": "Sidli Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 31, "position": [26.4833, 90.5833], "name": "Dhaligaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 32, "position": [26.7167, 90.5667], "name": "Amguri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 33, "position": [26.6333, 90.6333], "name": "Panbari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 34, "position": [26.5500, 90.6167], "name": "Kajalgaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 35, "position": [26.6500, 90.4833], "name": "Runikhata Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Dhubri": [
+      { "id": 36, "position": [26.0270, 89.9700], "name": "Dhubri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 37, "position": [26.0833, 89.9667], "name": "Gauripur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 38, "position": [26.2167, 89.8667], "name": "Tamarhat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 39, "position": [26.1167, 89.8500], "name": "Golokganj Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 40, "position": [26.2333, 89.8333], "name": "Agomoni Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 41, "position": [25.9000, 90.1333], "name": "Fakirganj Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 42, "position": [26.2500, 90.3667], "name": "Bilasipara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 43, "position": [26.3333, 90.2500], "name": "Sapatgram Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 44, "position": [26.2833, 90.4667], "name": "Chapar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 45, "position": [26.2167, 90.1667], "name": "Bagribari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Goalpara": [
+      { "id": 46, "position": [26.1700, 90.6200], "name": "Goalpara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 47, "position": [26.0000, 90.4833], "name": "Lakhipur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 48, "position": [25.9833, 90.7667], "name": "Dudhnoi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 49, "position": [26.0167, 90.8667], "name": "Dhupdhara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 50, "position": [26.0500, 90.9667], "name": "Rangjuli Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 51, "position": [25.9500, 90.7500], "name": "Krishnai Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 52, "position": [26.0833, 90.6667], "name": "Matia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 53, "position": [26.1167, 90.7167], "name": "Mornoi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 54, "position": [26.0833, 90.5833], "name": "Agia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 55, "position": [26.1000, 90.5000], "name": "Chunari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 56, "position": [26.1333, 90.4333], "name": "Baguan Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Kamrup": [
+      { "id": 57, "position": [26.1950, 91.9540], "name": "Pragjyotishpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 58, "position": [26.3333, 91.7000], "name": "Baihata Chariali Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 59, "position": [26.3167, 91.6167], "name": "Kamalpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 60, "position": [26.2333, 91.5333], "name": "Hajo Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 61, "position": [26.2167, 91.6167], "name": "Sualkuchi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 62, "position": [26.0833, 91.5500], "name": "Palashbari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 63, "position": [26.1167, 91.1333], "name": "Nagarbera Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 64, "position": [25.9667, 91.2833], "name": "Boko Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 65, "position": [26.0333, 91.4333], "name": "Chaygaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 66, "position": [26.4000, 91.4333], "name": "Rangia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 67, "position": [26.2500, 91.6833], "name": "Changsari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 68, "position": [26.2667, 91.5000], "name": "Koya Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 69, "position": [26.2000, 91.7333], "name": "North Guwahati Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "KamrupMetropolitan": [
+      { "id": 70, "position": [26.1792, 91.7533], "name": "Paltan Bazaar Police Station", "contact": "0361-2540126", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 71, "position": [26.1445, 91.7900], "name": "Dispur Police Station", "contact": "0361-2261510", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 72, "position": [26.1333, 91.7833], "name": "Hatigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 73, "position": [26.1833, 91.7667], "name": "Chandmari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 74, "position": [26.1667, 91.8333], "name": "Satgaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 75, "position": [26.1667, 91.6833], "name": "Jalukbari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 76, "position": [26.1833, 91.7333], "name": "Pan Bazaar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 77, "position": [26.1167, 91.7000], "name": "Gorchuk Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 78, "position": [26.1500, 91.7667], "name": "Bhangagarh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 79, "position": [26.1333, 91.6500], "name": "Azara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 80, "position": [26.1000, 91.7833], "name": "Basistha Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 81, "position": [26.1917, 91.8000], "name": "Noonmati Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 82, "position": [26.1750, 91.7833], "name": "Geetanagar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 83, "position": [26.1833, 91.7500], "name": "Latasil Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 84, "position": [26.1750, 91.7250], "name": "Bharalumukh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 85, "position": [26.1500, 91.9667], "name": "Sonapur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 86, "position": [26.1000, 92.0833], "name": "Khetri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 87, "position": [26.1833, 91.7417], "name": "All Women Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Kokrajhar": [
+      { "id": 88, "position": [26.4000, 90.2667], "name": "Kokrajhar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 89, "position": [26.3500, 90.1500], "name": "Kazigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 90, "position": [26.3833, 90.0500], "name": "Fakiragram Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 91, "position": [26.2167, 90.1667], "name": "Bogribari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 92, "position": [26.4167, 90.1667], "name": "Dotma Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 93, "position": [26.5000, 90.0833], "name": "Serfanguri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 94, "position": [26.4167, 89.8333], "name": "Gossaigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 95, "position": [26.4833, 89.9667], "name": "Kachugaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Nalbari": [
+      { "id": 96, "position": [26.4500, 91.4333], "name": "Nalbari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 97, "position": [26.3667, 91.5000], "name": "Mukalmua Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 98, "position": [26.5167, 91.3667], "name": "Ghograpar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 99, "position": [26.3000, 91.4333], "name": "Bhangnamari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 100, "position": [26.4000, 91.2667], "name": "Belsor Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 101, "position": [26.2500, 91.4167], "name": "Sialmari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 102, "position": [26.5000, 91.2500], "name": "Tihu Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "SouthSalmaraMankachar": [
+      { "id": 103, "position": [25.8000, 89.8500], "name": "South Salmara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 104, "position": [25.5333, 89.8500], "name": "Mankachar Police Station", "contact": "03662-285229", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Tamulpur": [
+      { "id": 105, "position": [26.6333, 91.4333], "name": "Tamulpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Biswanath": [
+      { "id": 106, "position": [26.7000, 93.1667], "name": "Biswanath Chariali Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 107, "position": [26.8833, 93.6333], "name": "Gohpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 108, "position": [26.8667, 93.3833], "name": "Helem Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 109, "position": [26.8167, 93.2667], "name": "Behali Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 110, "position": [26.7500, 93.2167], "name": "Ginjia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 111, "position": [26.7167, 92.9333], "name": "Sootea Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Darrang": [
+      { "id": 112, "position": [26.4500, 92.0333], "name": "Mangaldoi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 113, "position": [26.5333, 92.1333], "name": "Dalgaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 114, "position": [26.4833, 92.1000], "name": "Dhula Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 115, "position": [26.4167, 91.9000], "name": "Sipajhar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 116, "position": [26.4000, 91.8500], "name": "Shyampur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 117, "position": [26.4333, 92.1000], "name": "Kharupetia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 118, "position": [26.6333, 92.0000], "name": "Kalaigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 119, "position": [26.7000, 91.9333], "name": "Paneri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 120, "position": [26.6667, 91.8833], "name": "Tangla Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Sonitpur": [
+      { "id": 121, "position": [26.6333, 92.8000], "name": "Tezpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 122, "position": [26.7000, 92.5000], "name": "Dhekiajuli Police Station", "contact": "9435144488", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 123, "position": [26.8833, 92.8667], "name": "Chariduar Police Station", "contact": "8071636966", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 124, "position": [26.6833, 92.8333], "name": "Bihaguri Outpost", "contact": "9854811318", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 125, "position": [26.7333, 92.7333], "name": "Thalamara Police Station", "contact": "9954710433", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 126, "position": [26.8000, 92.6833], "name": "Borsola Police Station", "contact": "9435369121", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 127, "position": [26.8500, 92.6500], "name": "Rangapara Police Station", "contact": "9435713833", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 128, "position": [26.7833, 93.0833], "name": "Jamugurihat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 129, "position": [26.8000, 92.6000], "name": "Missamari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 130, "position": [26.7167, 92.9333], "name": "Sootea Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Udalguri": [
+      { "id": 131, "position": [26.7500, 92.1333], "name": "Udalguri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 132, "position": [26.6667, 91.8833], "name": "Tangla Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 133, "position": [26.7000, 91.9333], "name": "Paneri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 134, "position": [26.6333, 92.0000], "name": "Kalaigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 135, "position": [26.8000, 91.9667], "name": "Dimakuchi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 136, "position": [26.6167, 92.2167], "name": "Orang Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Charaideo": [
+      { "id": 137, "position": [27.0667, 95.0333], "name": "Sonari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 138, "position": [26.9667, 94.9000], "name": "Mathurapur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 139, "position": [27.0500, 95.1667], "name": "Charaipung Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 140, "position": [27.1833, 94.8667], "name": "Moranhat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 141, "position": [27.0000, 95.2167], "name": "Borhat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 142, "position": [27.1000, 95.2000], "name": "Sapekhati Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 143, "position": [27.0000, 94.9500], "name": "Kakotibari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 144, "position": [27.0167, 95.1000], "name": "Namtola Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Dhemaji": [
+      { "id": 145, "position": [27.4833, 94.5833], "name": "Dhemaji Police Station", "contact": "03753-224220", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 146, "position": [27.6500, 94.7500], "name": "Silapathar Police Station", "contact": "03753-245810", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 147, "position": [27.6667, 95.2333], "name": "Jonai Police Station", "contact": "03758-222230", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 148, "position": [27.3167, 94.2333], "name": "Gogamukh Police Station", "contact": "03752-252343", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 149, "position": [27.5667, 94.4000], "name": "Gerukamukh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 150, "position": [27.6000, 94.6667], "name": "Simenchapori Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 151, "position": [27.6333, 94.8500], "name": "Chengajanghat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Dibrugarh": [
+      { "id": 152, "position": [27.4728, 94.9120], "name": "Dibrugarh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 153, "position": [27.3333, 95.3333], "name": "Duliajan Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 154, "position": [27.4667, 94.9000], "name": "Milan Nagar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 155, "position": [27.5833, 95.1000], "name": "Chabua Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 156, "position": [27.2667, 95.4333], "name": "Joypur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 157, "position": [27.3000, 94.9000], "name": "Khowang Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 158, "position": [27.4500, 95.0333], "name": "Lahowal Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 159, "position": [27.1833, 94.8667], "name": "Moran Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 160, "position": [27.2833, 95.3333], "name": "Naharkatia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 161, "position": [27.2333, 95.3333], "name": "Namrup Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 162, "position": [27.3667, 95.1333], "name": "Tengakhat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 163, "position": [27.2833, 95.0833], "name": "Tingkhong Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Golaghat": [
+      { "id": 164, "position": [26.5167, 93.9667], "name": "Golaghat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 165, "position": [26.3000, 93.8500], "name": "Barpathar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 166, "position": [26.6500, 93.8833], "name": "Kamargaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 167, "position": [26.3833, 94.1000], "name": "Chungajan Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 168, "position": [26.6000, 93.8000], "name": "Numaligarh Police Out Post", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 169, "position": [26.6667, 93.9500], "name": "Dergaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 170, "position": [26.4000, 94.1833], "name": "Merapani Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 171, "position": [26.1833, 93.7667], "name": "Sarupathar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Jorhat": [
+      { "id": 172, "position": [26.7500, 94.2167], "name": "Jorhat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 173, "position": [26.6000, 94.2000], "name": "Titabar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 174, "position": [26.7167, 94.2333], "name": "Cinnamara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 175, "position": [26.7000, 94.3167], "name": "Lahdoigarh Police Outpost", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 176, "position": [26.8333, 94.3333], "name": "Teok Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 177, "position": [26.7667, 94.1667], "name": "Pulibor Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 178, "position": [26.7000, 94.1000], "name": "Bhogamukh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Lakhimpur": [
+      { "id": 179, "position": [27.2333, 94.1000], "name": "North Lakhimpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 180, "position": [27.3000, 94.2333], "name": "Boginadi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 181, "position": [27.2167, 94.1500], "name": "Panigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 182, "position": [27.1167, 93.9333], "name": "Laluk Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 183, "position": [26.9833, 93.7500], "name": "Narayanpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 184, "position": [26.9667, 93.8833], "name": "Bihpuria Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 185, "position": [27.3167, 94.4333], "name": "Dhakuakhana Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 186, "position": [27.2333, 94.3333], "name": "Ghilamora Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Majuli": [
+      { "id": 187, "position": [26.9000, 94.2167], "name": "Majuli Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 188, "position": [27.0167, 94.3167], "name": "Jengraimukh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 189, "position": [26.9000, 94.2167], "name": "Garmur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Sivasagar": [
+      { "id": 190, "position": [26.9833, 94.6333], "name": "Sivasagar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 191, "position": [26.8833, 94.5167], "name": "Amguri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 192, "position": [27.1333, 94.7500], "name": "Demow Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 193, "position": [26.9167, 94.4667], "name": "Gaurisagar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 194, "position": [26.8833, 94.7000], "name": "Geleki Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 195, "position": [26.9000, 94.7333], "name": "Nazira Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 196, "position": [26.9500, 94.7833], "name": "Simaluguri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Tinsukia": [
+      { "id": 197, "position": [27.5000, 95.3667], "name": "Tinsukia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 198, "position": [27.5000, 95.4500], "name": "Makum Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 199, "position": [27.3833, 95.6167], "name": "Digboi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 200, "position": [27.3000, 95.6833], "name": "Margherita Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 201, "position": [27.6500, 95.4833], "name": "Doomdooma Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 202, "position": [27.6500, 95.6667], "name": "Kakopathar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 203, "position": [27.3333, 95.8333], "name": "Lekhapani Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 204, "position": [27.7500, 95.7500], "name": "Dholla Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 205, "position": [27.7833, 95.8333], "name": "Sadia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "DimaHasao": [
+      { "id": 206, "position": [25.1833, 93.0333], "name": "Haflong Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 207, "position": [25.3000, 93.1667], "name": "Maibang Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 208, "position": [25.5500, 92.8333], "name": "Diyungmukh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 209, "position": [25.4333, 93.0833], "name": "Langting Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 210, "position": [25.0333, 92.8167], "name": "Harangajao Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 211, "position": [25.5333, 92.3167], "name": "Umrangso Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 212, "position": [25.2667, 93.1167], "name": "Mahur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 213, "position": [25.6167, 92.9000], "name": "Dehangi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Hojai": [
+      { "id": 214, "position": [26.0000, 92.8700], "name": "Hojai Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 215, "position": [25.7500, 93.1667], "name": "Lumding Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 216, "position": [25.8833, 92.9333], "name": "Lanka Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 217, "position": [26.0833, 92.7500], "name": "Murajhar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 218, "position": [26.1167, 92.6500], "name": "Jamunamukh Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 219, "position": [26.0667, 92.5833], "name": "Doboka Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 220, "position": [25.9667, 92.9333], "name": "Kaki Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "KarbiAnglong": [
+      { "id": 221, "position": [25.8333, 93.4333], "name": "Diphu Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 222, "position": [25.9500, 93.3167], "name": "Manja Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 223, "position": [26.0667, 93.1500], "name": "Dokmoka Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 224, "position": [26.1000, 93.3000], "name": "Barlangphar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 225, "position": [26.1500, 93.1667], "name": "Howraghat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 226, "position": [26.3000, 93.4167], "name": "Bokolia Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 227, "position": [26.0167, 93.2500], "name": "Anjokpani Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 228, "position": [26.1167, 93.0667], "name": "Samelangsho Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 229, "position": [26.1333, 93.6333], "name": "Bokajan Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 230, "position": [26.2167, 93.5833], "name": "Barpathar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 231, "position": [26.3333, 93.5000], "name": "Deithor Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 232, "position": [26.2667, 93.6667], "name": "Dolamora Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 233, "position": [26.1000, 93.7000], "name": "Khatkhati Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 234, "position": [26.1833, 93.5333], "name": "Dillai Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 235, "position": [26.2500, 93.5833], "name": "Chowkiholla Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 236, "position": [26.0500, 93.0000], "name": "Rongmongwe Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Morigaon": [
+      { "id": 237, "position": [26.2500, 92.3333], "name": "Morigaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 238, "position": [26.2500, 92.1333], "name": "Mayong Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 239, "position": [26.2167, 92.2000], "name": "Jagiroad Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 240, "position": [26.3000, 92.2500], "name": "Mikirbheta Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 241, "position": [26.3333, 92.4333], "name": "Laharighat Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 242, "position": [26.1833, 92.3833], "name": "Dharamtul Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 243, "position": [26.3667, 92.3167], "name": "Moirabari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 244, "position": [26.4000, 92.5167], "name": "Bhelowguri Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 245, "position": [26.2833, 92.4333], "name": "Bhuragaon Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Nagaon": [
+      { "id": 246, "position": [26.3500, 92.6833], "name": "Nagaon Sadar Police Station", "contact": "03672-235606", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 247, "position": [26.2333, 92.5833], "name": "Jajori Police Station", "contact": "03672-288456", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 248, "position": [26.5000, 93.0000], "name": "Kaliabor Police Station", "contact": "03672-276624", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 249, "position": [26.4167, 92.6667], "name": "Rupahihat Police Station", "contact": "03672-265975", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 250, "position": [26.4500, 92.6000], "name": "Juria Police Station", "contact": "03672-245677", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 251, "position": [26.4000, 92.7500], "name": "Khatowal Police Station", "contact": "03672-238622", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 252, "position": [26.4833, 92.8667], "name": "Samaguri Police Station", "contact": "03672-229613", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 253, "position": [26.5167, 92.9333], "name": "Uluani Police Station", "contact": "03672-276510", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 254, "position": [26.2500, 92.5000], "name": "Raha Police Station", "contact": "03672-285640", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 255, "position": [26.4000, 92.4833], "name": "Dhing Police Station", "contact": "03672-260656", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 256, "position": [26.3167, 92.4833], "name": "Kachua Police Station", "contact": "03672-244354", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 257, "position": [26.1667, 92.7333], "name": "Kampur Police Station", "contact": "03672-266422", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 258, "position": [26.3833, 92.6000], "name": "Bordowa Police Station", "contact": "03672-293418", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 259, "position": [26.5667, 93.1000], "name": "Jakhalabandha Police Station", "contact": "03672-299617", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "WestKarbiAnglong": [
+      { "id": 260, "position": [25.9500, 92.7333], "name": "Hamren Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 261, "position": [25.9333, 92.5333], "name": "Baithalangso Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 262, "position": [25.9000, 92.8167], "name": "Kheroni Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 263, "position": [25.8167, 92.6167], "name": "Jirikindeng Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Cachar": [
+      { "id": 264, "position": [24.8167, 92.8000], "name": "Silchar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 265, "position": [24.9333, 92.7667], "name": "Borkhola Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 266, "position": [24.9333, 92.5833], "name": "Katigorah Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 267, "position": [24.6833, 92.8333], "name": "Dholai Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 268, "position": [24.7500, 92.9667], "name": "Sonai Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 269, "position": [24.8000, 93.1333], "name": "Lakhipur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 270, "position": [24.8833, 92.9000], "name": "Udarbond Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 271, "position": [24.8000, 92.7833], "name": "Rangirkhari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 272, "position": [24.8333, 92.7667], "name": "Malugram Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 273, "position": [24.7000, 92.9500], "name": "Kachudaram Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Hailakandi": [
+      { "id": 274, "position": [24.6833, 92.5667], "name": "Hailakandi Sadar Police Station", "contact": "03844-222253", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 275, "position": [24.5667, 92.6167], "name": "Lala Police Station", "contact": "03844-244243", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 276, "position": [24.4500, 92.6333], "name": "Katlichera Police Station", "contact": "03844-285424", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 277, "position": [24.7667, 92.6333], "name": "Algapur Police Station", "contact": "03844-281424", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 278, "position": [24.5000, 92.5333], "name": "Ramnathpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 279, "position": [24.8167, 92.6833], "name": "Panchgram Police Station", "contact": "03845-273231", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 280, "position": [24.6000, 92.4167], "name": "Ratabari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ],
+    "Karimganj": [
+      { "id": 281, "position": [24.8667, 92.3500], "name": "Karimganj Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 282, "position": [24.9000, 92.5833], "name": "Badarpur Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 283, "position": [24.6667, 92.2833], "name": "Ramkrishna Nagar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 284, "position": [24.6333, 92.3000], "name": "Patharkandi Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 285, "position": [24.6000, 92.4167], "name": "Ratabari Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 286, "position": [24.7500, 92.3833], "name": "Nilambazar Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" },
+      { "id": 287, "position": [24.5500, 92.3500], "name": "Bazarichara Police Station", "contact": "112", "available": true, "responseTime": "10-25 min (Urban-Rural Est.)" }
+    ]
+  }
+}
