@@ -35,6 +35,9 @@ const Register = () => {
   });
   const [idImage, setIdImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [documentDetails, setDocumentDetails] = useState({ type: null, fields: [] });
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -42,23 +45,125 @@ const Register = () => {
   };
 
   const validateExtractedData = (data = {}) => {
-    const cleaned = {};
-
-      }
+    if (!data || typeof data !== 'object') {
+      const fallback = { type: null, fields: [] };
+      setDocumentDetails(fallback);
+      return fallback;
     }
 
+    const { documentType = null, ...rawFields } = data;
+    const allowedKeys = ['name', 'phone', 'idNumber', 'dateOfBirth', 'address', 'gender', 'nationality'];
+
+    const cleanedEntries = Object.entries(rawFields)
+      .filter(([key, value]) => allowedKeys.includes(key) && value)
+      .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+      .filter(([, value]) => value);
+
+    if (cleanedEntries.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        ...Object.fromEntries(cleanedEntries)
+      }));
+    }
+
+    const details = {
+      type: documentType,
+      fields: cleanedEntries.map(([key, value]) => ({ key, value }))
+    };
+
+    setDocumentDetails(details);
+    return details;
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIdImage(file);
+    setProcessingProgress(0);
+    setIsProcessing(true);
+    setDocumentDetails({ type: null, fields: [] });
+    toast.info('Processing ID document...');
+
+    try {
+      const extractedData = await OCRService.processDocument(file, (progress) => {
+        if (typeof progress === 'number') {
+          setProcessingProgress(Math.round(progress * 100));
+        }
+      });
+
+      const details = validateExtractedData(extractedData);
+      if (details.fields.length > 0) {
+        toast.success('Document details extracted! Please review the auto-filled fields.');
+      } else {
+        toast.warn('Document processed, but we could not detect key details. Please fill the form manually.');
+      }
+    } catch (error) {
+      console.error('Document processing failed:', error);
+      setIdImage(null);
+      toast.error('Unable to analyze the document. Please try another image or enter details manually.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteImage = () => {
+    setIdImage(null);
+    setDocumentDetails({ type: null, fields: [] });
+    setProcessingProgress(0);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (isProcessing) {
+      toast.warn('Please wait for the document analysis to complete.');
+      return;
+    }
+
+    const requiredFields = ['name', 'email', 'phone', 'idNumber', 'emergencyContact', 'password'];
+    const missingFields = requiredFields.filter((field) => {
+      const value = formData[field];
+      return !value || (typeof value === 'string' && !value.trim());
+    });
+
+    if (missingFields.length > 0) {
+      const readable = missingFields.map((field) => FIELD_LABELS[field] || field);
+      toast.error(`Please complete: ${readable.join(', ')}`);
       return;
     }
 
     setIsSubmitting(true);
     toast.info('Submitting registration...');
-    
+
     try {
+      const payload = {
+        ...formData,
+        phone: formData.phone.trim(),
+        emergencyContact: formData.emergencyContact.trim(),
+      };
+
+      const response = await apiService.registerTourist(payload);
+      const { token, touristId, qr_content, ...rest } = response || {};
+
+      const userProfile = {
+        ...rest,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        id: touristId ?? rest?.id,
+        token: token ?? rest?.token,
+        qrContent: qr_content ?? rest?.qrContent,
+      };
+
+      login(userProfile);
+      toast.success('Registration successful! Welcome to SafarSathi.');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.message || 'Registration failed. Please check your data and ensure the backend is running.');
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -124,6 +229,11 @@ const Register = () => {
                         className="w-5 h-5 border-2 border-teal-400 border-t-transparent rounded-full inline-block mr-2"
                       />
                       <span className="text-teal-400 font-medium">AI Processing...</span>
+                      {processingProgress > 0 && (
+                        <p className="text-teal-200 text-xs text-center mt-1">
+                          {processingProgress}% complete
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -177,6 +287,11 @@ const Register = () => {
                 <p className="text-teal-300/70 text-xs mt-1">
                   This may take a few seconds
                 </p>
+                {processingProgress > 0 && (
+                  <p className="text-teal-200/80 text-xs mt-1">
+                    Progress: {processingProgress}%
+                  </p>
+                )}
               </motion.div>
             )}
 
