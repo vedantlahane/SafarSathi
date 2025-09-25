@@ -76,7 +76,32 @@ const MapView = () => {
   const [incidents, setIncidents] = useState([]);
   const [mapCenter, setMapCenter] = useState([28.6139, 77.2090]);
   const [isSharing, setIsSharing] = useState(false);
+  const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState('safety');
   const trackingRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const handleChange = (event) => {
+      if (event.matches) {
+        setIsControlPanelOpen(false);
+        setActivePanel('safety');
+      }
+    };
+
+    if (mediaQuery.matches) {
+      setIsControlPanelOpen(false);
+      setActivePanel('safety');
+    }
+
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
 
   // Enhanced unsafe zones with time-based risk
   const unsafeZones = useMemo(() => {
@@ -135,6 +160,31 @@ const MapView = () => {
     }
   ];
 
+  const controlTabs = useMemo(
+    () => [
+      {
+        id: 'safety',
+        label: 'Safety',
+        description: `${safetyScore}/100`,
+        status:
+          safetyScore > 70 ? 'Stable' : safetyScore > 40 ? 'Caution' : 'Risk'
+      },
+      {
+        id: 'services',
+        label: isTracking ? 'Tracking On' : 'Tracking Off',
+        description: isTracking ? 'Live updates active' : 'Tap to start',
+        status: isTracking ? 'Active' : 'Idle'
+      },
+      {
+        id: 'stats',
+        label: 'Nearby Data',
+        description: `${incidents.length} alerts • ${policeStations.length} police`,
+        status: 'Insights'
+      }
+    ],
+    [safetyScore, isTracking, incidents.length, policeStations.length]
+  );
+
   // AI-powered safety score calculation
   /**
    * Estimates a contextual safety score by blending proximity to unsafe zones,
@@ -173,9 +223,33 @@ const MapView = () => {
     setMapCenter(userLocation);
   }, [userLocation]);
 
-  useEffect(() => {
-    getCurrentLocation();
-  }, [getCurrentLocation]);
+  // Smart proximity alerts with throttling
+  /**
+   * Emits throttled warnings when the user enters a high-risk zone and logs it to the console.
+   */
+  const checkProximityAlerts = useCallback(
+    debounce((lat, lng) => {
+      unsafeZones.forEach(zone => {
+        const distance = calculateDistance(lat, lng, zone.position[0], zone.position[1]);
+        
+        if (distance < zone.radius && zone.riskLevel === 'high') {
+          toast.warning(`⚠️ High risk area: ${zone.name}`, {
+            toastId: `zone-${zone.id}` // Prevent duplicate toasts
+          });
+          
+          // Log to blockchain
+          const log = {
+            userId: user?.blockchainID,
+            event: 'high_risk_zone_entry',
+            zone: zone.name,
+            timestamp: new Date().toISOString()
+          };
+          console.log('Blockchain Log:', log);
+        }
+      });
+    }, 2000),
+    [unsafeZones, user]
+  );
 
   /**
    * Fetches the latest device position and recalculates contextual safety data.
@@ -197,6 +271,10 @@ const MapView = () => {
       );
     }
   }, [calculateSafetyScore, checkProximityAlerts]);
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, [getCurrentLocation]);
 
   // Enhanced location tracking with battery optimization
   /**
@@ -290,34 +368,6 @@ const MapView = () => {
     }
   }, [userLocation, isSharing]);
 
-  // Smart proximity alerts with throttling
-  /**
-   * Emits throttled warnings when the user enters a high-risk zone and logs it to the console.
-   */
-  const checkProximityAlerts = useCallback(
-    debounce((lat, lng) => {
-      unsafeZones.forEach(zone => {
-        const distance = calculateDistance(lat, lng, zone.position[0], zone.position[1]);
-        
-        if (distance < zone.radius && zone.riskLevel === 'high') {
-          toast.warning(`⚠️ High risk area: ${zone.name}`, {
-            toastId: `zone-${zone.id}` // Prevent duplicate toasts
-          });
-          
-          // Log to blockchain
-          const log = {
-            userId: user?.blockchainID,
-            event: 'high_risk_zone_entry',
-            zone: zone.name,
-            timestamp: new Date().toISOString()
-          };
-          console.log('Blockchain Log:', log);
-        }
-      });
-    }, 2000),
-    [unsafeZones, user]
-  );
-  
   // Initialize location and incidents on mount
   useEffect(() => {
     if (navigator.geolocation) {
@@ -346,6 +396,118 @@ const MapView = () => {
       }
     };
   }, [calculateSafetyScore]);
+
+  const renderPanelContent = () => {
+    if (activePanel === 'services') {
+      return (
+        <div className="space-y-5">
+          <div className="grid gap-3">
+            {!isTracking ? (
+              <button
+                onClick={startTracking}
+                className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+              >
+                Enable real-time tracking
+              </button>
+            ) : (
+              <button
+                onClick={stopTracking}
+                className="w-full rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:from-red-600 hover:to-red-700 transition-all duration-200"
+              >
+                Stop tracking
+              </button>
+            )}
+            <button
+              onClick={handleSafeShare}
+              disabled={isSharing}
+              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSharing ? 'Sharing status…' : 'Share my live location'}
+            </button>
+          </div>
+          <div className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">
+            <p className="font-semibold text-slate-800">Quick tips</p>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              <li>Keep tracking on while travelling solo.</li>
+              <li>Use share to notify trusted contacts.</li>
+              <li>Tap SOS anytime if you feel unsafe.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    if (activePanel === 'stats') {
+      return (
+        <div className="space-y-5 text-sm">
+          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 p-4">
+            <p className="font-semibold text-slate-800 mb-3">High-risk zones nearby</p>
+            <div className="space-y-3">
+              {unsafeZones.slice(0, 3).map(zone => (
+                <div key={zone.id} className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-slate-700">{zone.name}</p>
+                    <p className="text-xs text-slate-500">{zone.description}</p>
+                  </div>
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                    zone.riskLevel === 'high'
+                      ? 'bg-red-100 text-red-600'
+                      : zone.riskLevel === 'medium'
+                      ? 'bg-amber-100 text-amber-600'
+                      : 'bg-emerald-100 text-emerald-600'
+                  }`}>{zone.riskLevel}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 p-4">
+            <p className="font-semibold text-slate-800 mb-3">Recent incidents</p>
+            <div className="space-y-2">
+              {incidents.slice(0, 4).map(incident => (
+                <div key={incident.id} className="flex items-center justify-between">
+                  <span className="text-slate-600 capitalize">{incident.type}</span>
+                  <span className="text-xs text-slate-500">{incident.time}</span>
+                </div>
+              ))}
+              {incidents.length === 0 && (
+                <p className="text-xs text-slate-400">No recent reports nearby.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-5">
+        <div
+          className={`rounded-3xl p-6 text-center text-white shadow-lg bg-gradient-to-br ${
+            safetyScore > 70
+              ? 'from-green-500 to-emerald-500'
+              : safetyScore > 40
+              ? 'from-yellow-500 to-orange-500'
+              : 'from-red-500 to-rose-500'
+          }`}
+        >
+          <p className="text-xs uppercase tracking-widest opacity-80">Live safety score</p>
+          <p className="mt-4 text-5xl font-black">{safetyScore}</p>
+          <p className="text-sm font-medium opacity-90">out of 100</p>
+          <p className="mt-4 text-sm font-semibold">
+            {safetyScore > 70 ? 'Area looks safe right now.' : safetyScore > 40 ? 'Stay alert and keep tracking on.' : 'High risk nearby. Plan your exit and prepare SOS.'}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white border border-slate-200 p-4 text-sm text-slate-600 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-800">Tracking status</span>
+            <span className={`text-xs font-semibold ${isTracking ? 'text-emerald-600' : 'text-slate-500'}`}>
+              {isTracking ? 'Active' : 'Paused'}
+            </span>
+          </div>
+          <p className="mt-2 text-xs">{isTracking ? 'We are updating your location every few seconds.' : 'Enable tracking to get proactive alerts and safety tips.'}</p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-slate-100">
