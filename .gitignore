@@ -60,3 +60,5 @@ temp/
 *.ntvs*
 *.njsproj
 *.sln
+backendapi/src/main/resources/application.properties
+frontend/package-lock.json

@@ -163,13 +163,15 @@ const Register = () => {
         
         console.log("Registration API Response:", apiResponse);
 
-        const { token, touristId, qr_content } = apiResponse;
+        const { token, touristId, qr_content, user } = apiResponse;
         
         const userDataForSession = {
-            ...payload,
             id: touristId,
             token: token,
-            qrContent: qr_content
+            qrContent: qr_content,
+            isActive: true,
+            // Include all user profile data from backend
+            ...user
         };
 
         login(userDataForSession);

@@ -5,26 +5,7 @@ import dayjs from 'dayjs';
 
 const wait = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms));
 
-const baseProfile = {
-  id: 'tourist-9101',
-  blockchainID: 'BC-79F4A12D94EA',
-  name: 'Aarav Sharma',
-  nationality: 'Indian',
-  email: 'aarav.sharma@example.com',
-  phone: '+91 98200 12345',
-  avatar: 'https://avatars.dicebear.com/api/avataaars/aarav-sharma.svg',
-  passportNumber: 'M1234567',
-  aadhaar: '2345 6789 0123',
-  tripStart: dayjs().subtract(2, 'day').toISOString(),
-  tripEnd: dayjs().add(5, 'day').toISOString(),
-  emergencyOptIn: true,
-  preferences: {
-    shareLiveLocation: true,
-    allowGeoFenceAlerts: true,
-    allowIoTTracking: false,
-    preferredLanguage: 'en'
-  }
-};
+// baseProfile removed - now using dynamic data from backend
 
 const itinerary = [
   {
@@ -59,27 +40,19 @@ const itinerary = [
 const emergencyContacts = [
   {
     id: 'em-1',
-    name: 'Local Control Room',
+    name: 'Nearest Police Station',
     type: 'police',
-    phone: '112',
-    description: '24/7 Police Response',
+    phone: '100',
+    description: 'Local Police Emergency Helpline',
     priority: 'critical'
   },
   {
     id: 'em-2',
-    name: 'Tourism Helpline',
+    name: 'Assam State Tourism Helpline',
     type: 'tourism',
     phone: '1800-209-9055',
-    description: 'Assam Tourism Department helpline',
+    description: 'Assam Tourism Department 24x7 Support',
     priority: 'high'
-  },
-  {
-    id: 'em-3',
-    name: 'Family - Priya Sharma',
-    type: 'family',
-    phone: '+91 99876 54321',
-    description: 'Emergency contact (sister)',
-    priority: 'medium'
   }
 ];
 
@@ -159,10 +132,7 @@ const blockchainLogs = [
   }
 ];
 
-export const fetchTouristProfile = async () => {
-  await wait();
-  return JSON.parse(JSON.stringify(baseProfile));
-};
+// fetchTouristProfile removed - now using dynamic data from backend
 
 export const fetchItinerary = async () => {
   await wait();
@@ -196,16 +166,29 @@ export const fetchBlockchainLogs = async () => {
 
 export const updatePreferences = async (partialPrefs) => {
   await wait(300);
-  Object.assign(baseProfile.preferences, partialPrefs);
-  return JSON.parse(JSON.stringify(baseProfile.preferences));
+  // For now, just return the updated preferences
+  // In a real implementation, this would update the backend
+  const defaultPrefs = {
+    shareLiveLocation: true,
+    allowGeoFenceAlerts: true,
+    allowIoTTracking: false,
+    preferredLanguage: 'en'
+  };
+  return JSON.parse(JSON.stringify({ ...defaultPrefs, ...partialPrefs }));
 };
 
 export const generateDigitalIdPayload = async () => {
   await wait(250);
+  // Fallback data when no real profile is available
   return {
-    ...baseProfile,
+    id: 'tourist-fallback',
+    blockchainID: 'BC-FALLBACK',
+    name: 'Tourist',
+    nationality: 'Unknown',
+    email: 'tourist@safarsathi.com',
+    phone: '+91 00000 00000',
     issuedAt: dayjs().subtract(2, 'day').toISOString(),
-    expiresAt: baseProfile.tripEnd,
+    expiresAt: dayjs().add(5, 'day').toISOString(),
     safetyScore: 87,
     lastKnownLocation: {
       lat: 26.2006,

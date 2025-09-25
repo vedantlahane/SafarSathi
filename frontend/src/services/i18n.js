@@ -88,8 +88,8 @@ const resources = {
         tipsTitle: 'সুৰক্ষা টিপছ'
       },
       digitalId: {
-        title: 'ডিজিটেল পৰ্যটক আইডি',
-        download: 'আইডি কাৰ্ড ডাউনলোড কৰক',
+        title: 'ডিজিটেল পৰ্যটক আইডী',
+        download: 'আইডী কাৰ্ড ডাউনলোড কৰক',
         share: 'সুৰক্ষিত লিংক শ্বেয়াৰ কৰক',
         itinerary: 'আসন্ন ভ্ৰমণ পৰিকল্পনা',
         blockchainLog: 'ব্লকচেইন ৰেকৰ্ড'
@@ -161,7 +161,7 @@ const resources = {
         blockchainLog: 'பிளாக்செயின் பதிவுகள்'
       },
       safetyCenter: {
-        title: 'பாதுகாப்பு மையம்',
+        title: 'பாதুகாப்பு மையம்',
         anomalyFeed: 'ஏ.ஐ. அசாதாரண செயல்பாடுகள்',
         geofence: 'ஜியோ-வேலி எச்சரிக்கைகள்',
         tracking: 'பின்தொடர்பு விருப்பங்கள்'

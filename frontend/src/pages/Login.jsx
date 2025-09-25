@@ -34,19 +34,16 @@ const Login = () => {
       const apiResponse = await apiService.loginTourist(formData.email, formData.password); 
 
       // 2. Extract key data from the backend response
-      const { token, touristId, qr_content } = apiResponse;
+      const { token, touristId, qr_content, user } = apiResponse;
 
-      // 3. Prepare the user session data
-      // Note: We reconstruct the user object using the login data and response data.
+      // 3. Prepare the user session data using backend user data
       const userData = {
-        name: 'Tourist', // Placeholder or fetch actual name later
-        email: formData.email,
-        // The backend returns the phone number implicitly via the token payload, 
-        // but for session simplicity, we might fetch the full profile later.
         id: touristId, 
         token: token,
         qrContent: qr_content,
-        isActive: true
+        isActive: true,
+        // Include all user profile data from backend
+        ...user
       };
 
       // 4. Update Auth Context and Redirect

@@ -90,6 +90,26 @@ const apiService = {
     }
   },
 
+  /**
+   * Fetches the tourist's profile data from the backend.
+   * @param {string} touristId - The ID of the tourist.
+   * @param {string} token - JWT token from the user session.
+   * @returns {Promise<object>} The tourist's profile data.
+   */
+  getTouristProfile: async (touristId, token) => {
+    try {
+      const response = await api.get(`/auth/profile/${touristId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Profile Fetch Error:", error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch profile data.');
+    }
+  },
+
 };
 
 export default apiService;

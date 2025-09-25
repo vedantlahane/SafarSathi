@@ -5,7 +5,7 @@ const languages = [
   { code: 'hi', label: 'हिन्दी' },
   { code: 'as', label: 'অসমীয়া' },
   { code: 'bn', label: 'বাংলা' },
-  { code: 'ta', label: 'தமிழ்' }
+  { code: 'ta', label: 'தমিழ்' }
 ];
 
 const LanguageSwitcher = ({ compact = false }) => {
