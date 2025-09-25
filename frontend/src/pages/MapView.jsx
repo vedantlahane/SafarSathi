@@ -43,18 +43,18 @@ const policeIcon = L.divIcon({
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #059669, #047857 70%);
+      background: radial-gradient(circle at 30% 30%, #38bdf8, #0284c7 70%);
       border: 2px solid #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 14px rgba(5, 150, 105, 0.35);
+      box-shadow: 0 6px 14px rgba(2, 132, 199, 0.35);
     ">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L15 8H21L16 12L18 18L12 15L6 18L8 12L3 8H9L12 2Z" fill="#fff" stroke="#047857" stroke-width="1"/>
-        <circle cx="12" cy="10" r="2" fill="#047857"/>
-        <rect x="10" y="14" width="4" height="6" rx="1" fill="#fff" stroke="#047857" stroke-width="0.8"/>
-        <rect x="11" y="16" width="2" height="2" fill="#047857"/>
+        <rect x="5" y="9" width="14" height="9" rx="1.4" fill="#fff"/>
+        <path d="M9 9V6.8C9 5.8 9.8 5 10.9 5H13.1C14.2 5 15 5.8 15 6.8V9" stroke="#0284c7" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M7 18V19.5C7 20.3 7.7 21 8.5 21H15.5C16.3 21 17 20.3 17 19.5V18" fill="#bae6fd"/>
+        <path d="M12 12.5C10.9 12.5 10 13.4 10 14.5C10 15.6 10.9 16.5 12 16.5C13.1 16.5 14 15.6 14 14.5C14 13.4 13.1 12.5 12 12.5ZM12 15.2C11.5 15.2 11.2 14.9 11.2 14.4C11.2 13.9 11.5 13.6 12 13.6C12.5 13.6 12.8 13.9 12.8 14.4C12.8 14.9 12.5 15.2 12 15.2Z" fill="#0284c7"/>
       </svg>
     </div>
   `,
