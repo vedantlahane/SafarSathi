@@ -38,6 +38,19 @@ public interface TouristService {
      */
     String login(String phone);
 
+    /**
+     * Validates tourist login by email and password.
+     * @param email Tourist's email.
+     * @param rawPassword Tourist's raw password.
+     * @return The authenticated Tourist object or null if invalid.
+     */
     public Tourist validateTouristLoginByEmail(String email, String rawPassword);
+
+    /**
+     * Retrieves a tourist by their UUID.
+     * @param touristId The UUID of the tourist.
+     * @return The found Tourist object or null if not found.
+     */
+    Tourist getTouristById(UUID touristId);
 
 }

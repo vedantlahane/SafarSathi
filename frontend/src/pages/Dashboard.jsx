@@ -28,6 +28,24 @@ const Dashboard = () => {
     loading: dataLoading
   } = useTouristData();
 
+  // Merge user's emergency contact from backend with mock contacts
+  const allContacts = useMemo(() => {
+    const userEmergencyContact = user?.emergencyContact;
+    if (userEmergencyContact && userEmergencyContact.trim()) {
+      const userContact = {
+        id: 'user-emergency',
+        name: 'Personal Emergency Contact',
+        description: 'Your registered emergency contact',
+        phone: userEmergencyContact,
+        type: 'family',
+        priority: 'critical'
+      };
+      // Add user contact at the beginning of the list
+      return [userContact, ...(contacts || [])];
+    }
+    return contacts || [];
+  }, [user?.emergencyContact, contacts]);
+
   const [currentLocation, setCurrentLocation] = useState(null);
   const [safetyStatus, setSafetyStatus] = useState('safe');
   const [lastActivity, setLastActivity] = useState(new Date());
@@ -279,26 +297,6 @@ const Dashboard = () => {
             </motion.button>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-            <p className="font-semibold text-slate-700">Safety posture</p>
-            <p className={`mt-1 ${safetyStatus === 'safe' ? 'text-emerald-600' : 'text-amber-600'}`}>
-              {safetyStatus === 'safe' ? '✅ All clear' : '⚠️ Elevated risk near geo-fence'}
-            </p>
-          </div>
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-            <p className="font-semibold text-slate-700">Last activity</p>
-            <p className="mt-1">{timeSinceActivity} min ago</p>
-          </div>
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-            <p className="font-semibold text-slate-700">Current location</p>
-            <p className="mt-1 text-xs">
-              {currentLocation
-                ? `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
-                : 'Location pending...'}
-            </p>
-          </div>
-        </div>
       </motion.header>
       
       {/* Current Status and Location Card (JSX unchanged) */}
@@ -413,7 +411,7 @@ const Dashboard = () => {
               exit={{ scale: 0.9, opacity: 0 }}
               className="max-w-xl w-full"
             >
-              <EmergencyContacts contacts={contacts} />
+              <EmergencyContacts contacts={allContacts} />
               <button
                 onClick={() => setShowContacts(false)}
                 className="mt-4 w-full bg-slate-900 text-white py-2 rounded-lg"

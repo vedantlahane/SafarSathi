@@ -2,7 +2,6 @@ package com.safarsathi.backendapi.services.Impl;
 
 import com.safarsathi.backendapi.services.TouristService;
 import com.safarsathi.backendapi.services.BlockchainService;
-import com.safarsathi.backendapi.services.AlertService;
 import com.safarsathi.backendapi.services.AnomalyService;
 
 import com.safarsathi.backendapi.models.Tourist;
@@ -22,9 +21,6 @@ public class TouristServiceImpl implements TouristService {
 
     @Autowired
     private BlockchainService blockchainService; 
-    
-    @Autowired 
-    private AlertService alertService; 
     
     @Autowired
     private AnomalyService anomalyService;
@@ -122,5 +118,14 @@ public class TouristServiceImpl implements TouristService {
 
         // Success: Email found and password matches
         return tourist;
+    }
+
+    // ----------------------------------------------------
+    // 🆕 GET TOURIST BY ID
+    // ----------------------------------------------------
+    @Override
+    public Tourist getTouristById(UUID touristId) {
+        Optional<Tourist> touristOptional = touristRepository.findById(touristId);
+        return touristOptional.orElse(null);
     }
 }
