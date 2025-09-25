@@ -10,6 +10,7 @@ import com.safarsathi.backendapi.util.HashingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional; 
 import java.util.UUID;
 
@@ -127,5 +128,10 @@ public class TouristServiceImpl implements TouristService {
     public Tourist getTouristById(UUID touristId) {
         Optional<Tourist> touristOptional = touristRepository.findById(touristId);
         return touristOptional.orElse(null);
+    }
+
+    @Override
+    public List<Tourist> getAllTourists() {
+        return touristRepository.findAll();
     }
 }

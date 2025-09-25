@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl, LayerGroup } from 'react-leaflet';
 import L from 'leaflet';
 import { motion } from 'framer-motion';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { mockTourists, mockAlerts } from '../../mock/adminData';
+import { mockAlerts } from '../../mock/adminData';
+import apiService from '../../services/apiService';
 
 const { BaseLayer, Overlay } = LayersControl;
 
@@ -22,12 +23,112 @@ const sosIcon = new L.Icon({
 });
 
 const AdminMapView = () => {
-  const [selectedTourist, setSelectedTourist] = useState(null);
+  const [tourists, setTourists] = useState([]);
+  const [alerts, setAlerts] = useState(mockAlerts);
+  const [selectedTouristId, setSelectedTouristId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const mapCenter = useMemo(() => ({
-    lat: 28.6139,
-    lng: 77.209
-  }), []);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        const [touristResponse, alertsResponse] = await Promise.allSettled([
+          apiService.getAdminTourists(),
+          apiService.getAdminAlerts()
+        ]);
+
+        if (!isMounted) return;
+
+        if (touristResponse.status === 'fulfilled') {
+          setTourists(Array.isArray(touristResponse.value) ? touristResponse.value : []);
+          setError(null);
+        } else {
+          console.error('Failed to load tourists:', touristResponse.reason);
+          setError(touristResponse.reason?.message || 'Unable to load tourist positions.');
+        }
+
+        if (alertsResponse.status === 'fulfilled') {
+          const liveAlerts = Array.isArray(alertsResponse.value) ? alertsResponse.value : [];
+          setAlerts(liveAlerts.length ? liveAlerts : mockAlerts);
+        } else {
+          console.error('Failed to load alerts:', alertsResponse.reason);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    const intervalId = setInterval(loadData, 15000); // Refresh every 15 seconds
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const activeAlertsByTourist = useMemo(() => {
+    return alerts.reduce((set, alert) => {
+      if (alert && alert.status !== 'RESOLVED' && alert.touristId) {
+        set.add(alert.touristId);
+      }
+      return set;
+    }, new Set());
+  }, [alerts]);
+
+  const touristsWithLocations = useMemo(() => (
+    tourists.filter((tourist) =>
+      typeof tourist?.currentLat === 'number' && typeof tourist?.currentLng === 'number'
+    )
+  ), [tourists]);
+
+  const selectedTourist = useMemo(() => (
+    touristsWithLocations.find((tourist) => tourist.id === selectedTouristId) || null
+  ), [touristsWithLocations, selectedTouristId]);
+
+  const mapCenter = useMemo(() => {
+    if (touristsWithLocations.length > 0) {
+      return {
+        lat: touristsWithLocations[0].currentLat,
+        lng: touristsWithLocations[0].currentLng
+      };
+    }
+    return {
+      lat: 28.6139,
+      lng: 77.209
+    };
+  }, [touristsWithLocations]);
+
+  const getStatusLabel = (tourist) => {
+    if (!tourist?.lastSeen) {
+      return 'UNKNOWN';
+    }
+
+    const lastSeenTime = new Date(tourist.lastSeen).getTime();
+    if (Number.isNaN(lastSeenTime)) {
+      return 'UNKNOWN';
+    }
+
+    const minutesSince = (Date.now() - lastSeenTime) / 60000;
+    if (minutesSince <= 5) return 'ACTIVE';
+    if (minutesSince <= 30) return 'STALE';
+    return 'OFFLINE';
+  };
+
+  const formatLastSeen = (tourist) => {
+    if (!tourist?.lastSeen) {
+      return 'Last ping: N/A';
+    }
+    try {
+      return `Last ping: ${new Date(tourist.lastSeen).toLocaleString()}`;
+    } catch (e) {
+      return 'Last ping: N/A';
+    }
+  };
 
   return (
     <AdminLayout title="Live Mission Map" subtitle="View all tourists, SOS alerts, and zone heatmaps in real time.">
@@ -41,21 +142,23 @@ const AdminMapView = () => {
             <LayersControl position="topright">
               <Overlay checked name="Tourist Locations">
                 <LayerGroup>
-                  {mockTourists.map(tourist => (
+                  {touristsWithLocations.map(tourist => (
                     <Marker
                       key={tourist.id}
-                      position={[tourist.location.lat, tourist.location.lng]}
-                      icon={tourist.status === 'sos' ? sosIcon : touristIcon}
+                      position={[tourist.currentLat, tourist.currentLng]}
+                      icon={activeAlertsByTourist.has(tourist.id) ? sosIcon : touristIcon}
                       eventHandlers={{
-                        click: () => setSelectedTourist(tourist)
+                        click: () => setSelectedTouristId(tourist.id)
                       }}
                     >
                       <Popup>
                         <div className="space-y-1">
                           <p className="font-semibold">{tourist.name}</p>
-                          <p className="text-sm">Status: {tourist.status.toUpperCase()}</p>
-                          <p className="text-sm">Battery: {tourist.battery}%</p>
-                          <p className="text-xs text-slate-500">Last seen {tourist.lastKnownArea}</p>
+                          <p className="text-sm">Status: {getStatusLabel(tourist)}</p>
+                          <p className="text-xs text-slate-500">{formatLastSeen(tourist)}</p>
+                          {tourist.nationality && (
+                            <p className="text-xs text-slate-500">Nationality: {tourist.nationality}</p>
+                          )}
                         </div>
                       </Popup>
                     </Marker>
@@ -65,12 +168,12 @@ const AdminMapView = () => {
 
               <Overlay checked name="SOS Radius">
                 <LayerGroup>
-                  {mockAlerts
-                    .filter(alert => alert.priority === 'critical')
+                  {alerts
+                    .filter(alert => alert && typeof alert.lat === 'number' && typeof alert.lng === 'number')
                     .map(alert => (
                       <Circle
                         key={alert.id}
-                        center={[alert.location.lat, alert.location.lng]}
+                        center={[alert.lat, alert.lng]}
                         radius={500}
                         pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15 }}
                       />
@@ -92,13 +195,24 @@ const AdminMapView = () => {
             {selectedTourist ? (
               <div className="space-y-2 text-sm text-slate-200">
                 <p className="text-base font-semibold text-white">{selectedTourist.name}</p>
-                <p>Status: <span className="font-semibold uppercase">{selectedTourist.status}</span></p>
-                <p>Battery: {selectedTourist.battery}%</p>
-                <p>Last ping area: {selectedTourist.lastKnownArea}</p>
-                <p>Coordinates: {selectedTourist.location.lat.toFixed(4)}, {selectedTourist.location.lng.toFixed(4)}</p>
+                <p>Status: <span className="font-semibold uppercase">{getStatusLabel(selectedTourist)}</span></p>
+                <p>{formatLastSeen(selectedTourist)}</p>
+                {selectedTourist.phone && <p>Contact: {selectedTourist.phone}</p>}
+                {selectedTourist.emergencyContact && <p>Emergency: {selectedTourist.emergencyContact}</p>}
+                <p>
+                  Coordinates: {selectedTourist.currentLat.toFixed(4)}, {selectedTourist.currentLng.toFixed(4)}
+                </p>
               </div>
             ) : (
-              <p className="text-sm text-slate-400">Select a marker to view details about the tourist and respond faster.</p>
+              <div className="space-y-2 text-sm text-slate-400">
+                {isLoading ? (
+                  <p>Loading live positions…</p>
+                ) : error ? (
+                  <p>{error}</p>
+                ) : (
+                  <p>Select a marker to view details about the tourist and respond faster.</p>
+                )}
+              </div>
             )}
           </motion.div>
         </div>

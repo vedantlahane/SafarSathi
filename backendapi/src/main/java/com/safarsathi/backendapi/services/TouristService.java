@@ -3,6 +3,7 @@
 package com.safarsathi.backendapi.services;
 
 import com.safarsathi.backendapi.models.Tourist;
+import java.util.List;
 import java.util.UUID;
 
 public interface TouristService {
@@ -52,5 +53,12 @@ public interface TouristService {
      * @return The found Tourist object or null if not found.
      */
     Tourist getTouristById(UUID touristId);
+
+    /**
+     * Returns all tourists currently registered in the system.
+     * Used by the admin dashboard to render live positioning data.
+     * @return Immutable list of tourists.
+     */
+    List<Tourist> getAllTourists();
 
 }
