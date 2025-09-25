@@ -2,14 +2,17 @@ package com.safarsathi.backendapi.controllers;
 
 import com.safarsathi.backendapi.models.Tourist;
 import com.safarsathi.backendapi.models.Alert;
+import com.safarsathi.backendapi.models.PoliceDepartment;
 import com.safarsathi.backendapi.services.BlockchainService;
 import com.safarsathi.backendapi.services.TouristService;
 import com.safarsathi.backendapi.services.AlertService;
+import com.safarsathi.backendapi.services.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -23,6 +26,58 @@ public class AdminController {
     
     @Autowired
     private AlertService alertService;
+    
+    @Autowired
+    private AdminService adminService;
+
+    // POST /api/admin/login
+    // Admin login endpoint for police departments
+    @PostMapping("/login")
+    public ResponseEntity<?> adminLogin(@RequestBody Map<String, String> loginData) {
+        String email = loginData.get("email");
+        String password = loginData.get("password");
+
+        if (email == null || password == null) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Email and password are required");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        try {
+            PoliceDepartment admin = adminService.validateAdminLogin(email, password);
+            
+            if (admin == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Invalid credentials");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+
+            String token = adminService.generateAdminToken(admin);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Login successful");
+            response.put("token", token);
+            response.put("admin", Map.of(
+                "id", admin.getId().toString(),
+                "name", admin.getName(),
+                "email", admin.getEmail(),
+                "departmentCode", admin.getDepartmentCode(),
+                "city", admin.getCity(),
+                "district", admin.getDistrict(),
+                "state", admin.getState()
+            ));
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Login failed: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
 
     // GET /api/admin/id/verify?hash=...
     // Endpoint for verifying the Digital Tourist ID via QR code scan.

@@ -19,7 +19,7 @@ const AdminLogin = () => {
     event.preventDefault();
     setIsLoading(true);
     try {
-      login(credentials);
+      await login(credentials);
       toast.success('Control room access granted');
       navigate('/admin/dashboard');
     } catch (error) {
@@ -40,7 +40,7 @@ const AdminLogin = () => {
         <div className="text-center mb-8">
           <p className="text-sm uppercase tracking-widest text-teal-300">Authority Access Portal</p>
           <h1 className="text-3xl font-bold text-white mt-2">⚡ SafarSathi Command</h1>
-          <p className="text-slate-300 mt-2 text-sm">Use the demo passcodes <span className="font-semibold text-teal-200">SECURE-911</span> or <span className="font-semibold text-teal-200">DEMO-ADMIN</span> to explore.</p>
+          <p className="text-slate-300 mt-2 text-sm">Login with your police department credentials</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -57,15 +57,15 @@ const AdminLogin = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-200 mb-2">Secure Passcode</label>
+            <label className="block text-sm font-semibold text-slate-200 mb-2">Password</label>
             <input
               type="password"
               name="passcode"
               value={credentials.passcode}
               onChange={handleChange}
               required
-              placeholder="Enter demo passcode"
-              className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-500 tracking-[0.3em]"
+              placeholder="Enter your password"
+              className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-500"
             />
           </div>
 
@@ -81,7 +81,7 @@ const AdminLogin = () => {
         </form>
 
         <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-slate-300">
-          <p>💡 Tip: This portal runs on mock data. Actions such as acknowledging alerts update the UI state locally so you can demonstrate workflows without a backend.</p>
+          <p>💡 Secure Access: This portal connects to the SafarSathi backend system with real database authentication.</p>
         </div>
       </motion.div>
     </div>

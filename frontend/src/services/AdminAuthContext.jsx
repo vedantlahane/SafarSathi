@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import apiService from './apiService';
 
 const AdminAuthContext = createContext();
 
@@ -24,32 +25,44 @@ export const AdminAuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Accepts any credentials that match the demo codes and writes the session to storage.
+   * Authenticates admin using the backend API and writes the session to storage.
    */
-  const login = useCallback(({ email, passcode }) => {
+  const login = useCallback(async ({ email, passcode }) => {
     const normalizedEmail = email?.trim().toLowerCase();
-    const normalizedPasscode = passcode?.trim();
+    const normalizedPassword = passcode?.trim();
 
-    if (!normalizedEmail || !normalizedPasscode) {
+    if (!normalizedEmail || !normalizedPassword) {
       throw new Error('Missing credentials');
     }
 
-    const isAllowed = normalizedPasscode === 'SECURE-911' || normalizedPasscode === 'DEMO-ADMIN';
-    if (!isAllowed) {
-      throw new Error('Invalid passcode');
+    try {
+      const response = await apiService.adminLogin(normalizedEmail, normalizedPassword);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Login failed');
+      }
+
+      const adminProfile = {
+        id: response.admin.id,
+        name: response.admin.name,
+        email: response.admin.email,
+        role: 'authority',
+        departmentCode: response.admin.departmentCode,
+        city: response.admin.city,
+        district: response.admin.district,
+        state: response.admin.state,
+        token: response.token,
+        lastLogin: new Date().toISOString(),
+        clearanceLevel: 'authenticated'
+      };
+
+      setAdmin(adminProfile);
+      localStorage.setItem('safarsathi_admin', JSON.stringify(adminProfile));
+      return adminProfile;
+    } catch (error) {
+      console.error('Admin login error:', error);
+      throw new Error(error.message || 'Login failed');
     }
-
-    const adminProfile = {
-      name: 'Control Room Operator',
-      email: normalizedEmail,
-      role: 'authority',
-      lastLogin: new Date().toISOString(),
-      clearanceLevel: normalizedPasscode === 'SECURE-911' ? 'critical' : 'demo'
-    };
-
-    setAdmin(adminProfile);
-    localStorage.setItem('safarsathi_admin', JSON.stringify(adminProfile));
-    return adminProfile;
   }, []);
 
   /**
