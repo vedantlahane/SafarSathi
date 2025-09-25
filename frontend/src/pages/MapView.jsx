@@ -173,9 +173,33 @@ const MapView = () => {
     setMapCenter(userLocation);
   }, [userLocation]);
 
-  useEffect(() => {
-    getCurrentLocation();
-  }, [getCurrentLocation]);
+  // Smart proximity alerts with throttling
+  /**
+   * Emits throttled warnings when the user enters a high-risk zone and logs it to the console.
+   */
+  const checkProximityAlerts = useCallback(
+    debounce((lat, lng) => {
+      unsafeZones.forEach(zone => {
+        const distance = calculateDistance(lat, lng, zone.position[0], zone.position[1]);
+        
+        if (distance < zone.radius && zone.riskLevel === 'high') {
+          toast.warning(`⚠️ High risk area: ${zone.name}`, {
+            toastId: `zone-${zone.id}` // Prevent duplicate toasts
+          });
+          
+          // Log to blockchain
+          const log = {
+            userId: user?.blockchainID,
+            event: 'high_risk_zone_entry',
+            zone: zone.name,
+            timestamp: new Date().toISOString()
+          };
+          console.log('Blockchain Log:', log);
+        }
+      });
+    }, 2000),
+    [unsafeZones, user]
+  );
 
   /**
    * Fetches the latest device position and recalculates contextual safety data.
@@ -290,33 +314,7 @@ const MapView = () => {
     }
   }, [userLocation, isSharing]);
 
-  // Smart proximity alerts with throttling
-  /**
-   * Emits throttled warnings when the user enters a high-risk zone and logs it to the console.
-   */
-  const checkProximityAlerts = useCallback(
-    debounce((lat, lng) => {
-      unsafeZones.forEach(zone => {
-        const distance = calculateDistance(lat, lng, zone.position[0], zone.position[1]);
-        
-        if (distance < zone.radius && zone.riskLevel === 'high') {
-          toast.warning(`⚠️ High risk area: ${zone.name}`, {
-            toastId: `zone-${zone.id}` // Prevent duplicate toasts
-          });
-          
-          // Log to blockchain
-          const log = {
-            userId: user?.blockchainID,
-            event: 'high_risk_zone_entry',
-            zone: zone.name,
-            timestamp: new Date().toISOString()
-          };
-          console.log('Blockchain Log:', log);
-        }
-      });
-    }, 2000),
-    [unsafeZones, user]
-  );
+
   
   // Initialize location and incidents on mount
   useEffect(() => {

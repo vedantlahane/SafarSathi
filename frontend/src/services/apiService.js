@@ -120,6 +120,22 @@ const apiService = {
     }
   },
 
+  /**
+   * Authenticates an admin/police department via the Spring Boot backend.
+   * @param {string} email - The admin's email.
+   * @param {string} password - The admin's password.
+   * @returns {Promise<object>} The response data (token, admin details).
+   */
+  adminLogin: async (email, password) => {
+    try {
+      const response = await api.post('/admin/login', { email, password });
+      return response.data;
+    } catch (error) {
+      console.error("Admin Login Error:", error.response || error);
+      throw new Error(error.response?.data?.message || 'Admin login failed. Please check your credentials.');
+    }
+  },
+
 };
 
 export default apiService;

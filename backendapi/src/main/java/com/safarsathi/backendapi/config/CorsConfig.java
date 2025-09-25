@@ -13,9 +13,9 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                // Allows requests from the React development server (port 5173)
+                // Allows requests from the React development server (ports 5173-5175)
                 registry.addMapping("/api/**") // Apply to all API endpoints
-                        .allowedOrigins("http://localhost:5173") 
+                        .allowedOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175") 
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allow necessary HTTP methods
                         .allowedHeaders("*") // Allow all headers
                         .allowCredentials(true); // Important for cookies, session, and Authorization headers (JWT)
