@@ -3,18 +3,14 @@ package com.safarsathi.backendapi.models;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "tourists")
-@Data
-@Getter
-@Setter
+@Data // Includes @Getter, @Setter, @ToString, @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 public class Tourist {
@@ -23,24 +19,45 @@ public class Tourist {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
+    // --- Fields from Register.jsx (New/Updated) ---
+    @Column(nullable = false)
     private String name;
-    private String phone;
-    private String passportNumber; // KYC Placeholder
     
-    // The SHA256 Hash of the KYC data (Your Digital ID Proof)
+    @Column(unique = true, nullable = false) // 🚨 Added nullable=false for email since it's used for login
+    private String email; 
+    
+    @Column(nullable = false)
+    private String phone;
+    
+    // Mapped from frontend 'idNumber'
+    @Column(nullable = false, name = "passport_number") 
+    private String passportNumber; 
+    
+    private String dateOfBirth; 
+    
+    @Column(columnDefinition = "TEXT") 
+    private String address; 
+    
+    private String gender;
+    private String nationality;
+    
+    @Column(columnDefinition = "TEXT") 
+    private String emergencyContact; 
+    
+    // 🔑 ADDED FIELD FOR SECURITY AND LOGIN
+    @Column(nullable = false, name = "password_hash") 
+    private String passwordHash; 
+    
+    // --- Core Security/Tracking Fields (Unchanged) ---
+    
+    // The SHA256 Hash (Digital ID Proof)
     @Column(unique = true, nullable = false)
     private String idHash; 
+    
     private Instant idExpiry; 
     
-    // Current live location data (can be updated frequently)
+    // Current live location data 
     private Double currentLat;
     private Double currentLng;
     private Instant lastSeen;
-    
-    // Stored as JSON string or a dedicated table later (MVP uses String/JSON)
-    @Column(columnDefinition = "TEXT") 
-    private String emergencyContact; 
-
-    // Constructors, Getters, and Setters... 
-    // (Ensure you have a default constructor for JPA)
 }

@@ -11,4 +11,9 @@ public interface TouristRepository extends JpaRepository<Tourist, UUID> {
     
     // Custom finder method to verify the Digital ID hash
     Optional<Tourist> findByIdHash(String idHash);
+    
+    Optional<Tourist> findByEmail(String email);
+    Optional<Tourist> findByPhone(String phone); 
+
+
 }
