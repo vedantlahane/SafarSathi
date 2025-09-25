@@ -6,7 +6,10 @@ import { useAdminAuth } from '../../services/AdminAuthContext';
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard' },
   { to: '/admin/map', label: 'Live Map' },
-  { to: '/admin/alerts', label: 'Alerts' }
+  { to: '/admin/alerts', label: 'Alerts' },
+  { to: '/admin/digital-ids', label: 'Digital IDs' },
+  { to: '/admin/anomalies', label: 'Anomalies' },
+  { to: '/admin/heatmap', label: 'Heatmap' }
 ];
 
 const linkBaseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors duration-300';
