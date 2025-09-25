@@ -1,3 +1,21 @@
+# SafarSathi Frontend
+
+SafarSathi is a travel safety companion showcasing secure onboarding, live risk awareness,
+and SOS tooling. The React codebase now includes JSDoc-style documentation across the
+primary pages, components, utilities, and the authentication context to make onboarding
+new contributors easier.
+
+## Developer Notes
+
+- Page components (`Login`, `Register`, `Dashboard`, `MapView`) document their key event
+	handlers and effects, outlining validation, geolocation, and sharing workflows.
+- Shared services such as `AuthContext` and helpers in `src/utils/helpers.js` include
+	parameter/return annotations for quick reference.
+- Trigger `npm run build` to validate edits; the output warns about bundle size but still
+	succeeds.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
