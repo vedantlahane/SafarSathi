@@ -3,7 +3,56 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
-import apiService from '../services/apiService'; // 🔑 Import the API service
+import apiService from '../services/apiService';
+
+const LogoMark = ({ className = '', ...props }) => (
+  <svg
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M16 3.5l10 3.75v6.5c0 7.07-4.45 13.41-10 14.75-5.55-1.34-10-7.68-10-14.75v-6.5L16 3.5z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M16 10.5a4 4 0 014 4c0 2.9-1.64 5.82-4 7.75-2.36-1.93-4-4.85-4-7.75a4 4 0 014-4z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const ShieldIcon = ({ className = '', ...props }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M12 3l7 3v5c0 4.418-3.134 8.51-7 9-3.866-.49-7-4.582-7-9V6l7-3z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.75 11.25l2.25 2.25 4.5-4.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 
 const Login = () => {
   const navigate = useNavigate();
@@ -26,9 +75,9 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // ----------------------------------------------------
-      // 🔑 REAL API CALL: Connect to Spring Boot /api/auth/login
-      // ----------------------------------------------------
+  // ----------------------------------------------------
+  // REAL API CALL: Connect to Spring Boot /api/auth/login
+  // ----------------------------------------------------
       
       // 1. Call the API service with the collected credentials
       const apiResponse = await apiService.loginTourist(formData.email, formData.password); 
@@ -48,7 +97,7 @@ const Login = () => {
 
       // 4. Update Auth Context and Redirect
       login(userData);
-      toast.success('Login successful! Welcome back! 👋');
+  toast.success('Login successful. Welcome back.');
       navigate('/dashboard');
 
     } catch (error) {
@@ -61,7 +110,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-[100svh] flex items-center justify-center px-4 py-10 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Animated Background (JSX unchanged) */}
       <motion.div
         className="absolute inset-0 opacity-30"
@@ -79,7 +128,7 @@ const Login = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-2xl shadow-2xl w-full max-w-md text-center relative overflow-hidden"
+  className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 sm:p-8 lg:p-10 rounded-2xl shadow-2xl w-full max-w-lg text-center relative overflow-hidden"
       >
         {/* Top Border Accent */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
@@ -89,14 +138,24 @@ const Login = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="mb-8"
+          className="mb-8 space-y-4"
         >
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-teal-400 to-purple-400 bg-clip-text text-transparent">
-            🛡️ SafarSathi
-          </h1>
-          <p className="text-white/80 text-lg font-medium">
-            Your Digital Travel Safety Companion
-          </p>
+          <div className="flex justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10 text-teal-300">
+              <LogoMark className="h-8 w-8" />
+            </span>
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-teal-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent">
+              SafarSathi
+            </h1>
+            <p className="text-white/80 text-base sm:text-lg leading-relaxed">
+              SafarSathi keeps visiting tourists safe while giving district command centres live situational awareness to act fast.
+            </p>
+            <p className="text-white/60 text-sm sm:text-base">
+              Built in partnership with local authorities for on-ground escorts, control rooms, and verified travellers.
+            </p>
+          </div>
         </motion.div>
 
         <motion.form
@@ -104,14 +163,14 @@ const Login = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.6 }}
           onSubmit={handleSubmit}
-          className="text-left space-y-6"
+          className="text-left space-y-5 sm:space-y-6"
         >
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
-            <label className="block text-white/90 font-semibold mb-2">Email</label>
+            <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Email</label>
             <input
               type="email"
               name="email"
@@ -119,7 +178,7 @@ const Login = () => {
               onChange={handleInputChange}
               required
               placeholder="Enter your email"
-              className="w-full bg-white/10 border border-white/20 text-white p-3 rounded-lg backdrop-blur-md placeholder-white/50 focus:bg-white/15 focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
+              className="w-full bg-white/10 border border-white/20 text-white px-4 py-3 sm:px-5 rounded-lg backdrop-blur-md placeholder-white/50 focus:bg-white/15 focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
             />
           </motion.div>
 
@@ -128,7 +187,7 @@ const Login = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <label className="block text-white/90 font-semibold mb-2">Password</label>
+            <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Password</label>
             <input
               type="password"
               name="password"
@@ -136,7 +195,7 @@ const Login = () => {
               onChange={handleInputChange}
               required
               placeholder="Enter your password"
-              className="w-full bg-white/10 border border-white/20 text-white p-3 rounded-lg backdrop-blur-md placeholder-white/50 focus:bg-white/15 focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
+              className="w-full bg-white/10 border border-white/20 text-white px-4 py-3 sm:px-5 rounded-lg backdrop-blur-md placeholder-white/50 focus:bg-white/15 focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all duration-300"
             />
           </motion.div>
 
@@ -148,14 +207,14 @@ const Login = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-teal-600 hover:to-teal-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 mt-6 relative overflow-hidden group"
+            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold py-3 px-6 sm:py-3.5 rounded-lg shadow-lg hover:from-teal-600 hover:to-teal-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 mt-6 relative overflow-hidden group"
           >
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
               whileHover={{ translateX: "200%" }}
               transition={{ duration: 0.6 }}
             />
-            {isLoading ? '⏳ Logging in...' : '🔐 Login'}
+            {isLoading ? 'Logging in…' : 'Sign in'}
           </motion.button>
         </motion.form>
 
@@ -163,17 +222,17 @@ const Login = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-lg mt-6"
+          className="bg-white/5 border border-white/15 p-4 rounded-lg mt-6 text-sm sm:text-base text-white/80 flex items-start gap-3"
         >
-          <p className="text-purple-300 font-semibold text-sm">🚀 Hackathon Demo Mode</p>
-          <p className="text-purple-200 text-sm">Authentication is now connected to the Spring Boot API! Use a registered email and password to log in.</p>
+          <ShieldIcon className="h-6 w-6 flex-shrink-0 text-teal-300" />
+          <p>Authorised guides, police operators, and registered travellers sign in here to coordinate journeys, monitor field teams, and secure digital IDs. Need access? Reach out to your deployment administrator.</p>
         </motion.div>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9, duration: 0.6 }}
-          className="mt-6 text-white/70"
+          className="mt-6 text-white/70 text-sm sm:text-base"
         >
           New to SafarSathi?{' '}
           <motion.button
@@ -185,35 +244,6 @@ const Login = () => {
             Register here
           </motion.button>
         </motion.p>
-        
-        {/* Key Features (JSX unchanged) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.0, duration: 0.6 }}
-          className="bg-slate-50 p-5 rounded-lg mt-8 text-left"
-        >
-          <h3 className="text-slate-800 font-bold mb-4 text-center">🌟 Key Features</h3>
-          <ul className="space-y-2">
-            {[
-              '🆔 Blockchain Digital ID',
-              '🗺️ Real-time Safety Mapping',
-              '🚨 Emergency SOS Button',
-              '📍 Geo-fencing Alerts',
-              '🤖 AI Behavior Monitoring'
-            ].map((feature, index) => (
-              <motion.li
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.1 + index * 0.1, duration: 0.6 }}
-                className="text-slate-600 text-sm py-1 border-b border-slate-200 last:border-b-0"
-              >
-                {feature}
-              </motion.li>
-            ))}
-          </ul>
-        </motion.div>
       </motion.div>
     </div>
   );

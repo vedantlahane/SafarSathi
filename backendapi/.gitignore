@@ -31,3 +31,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Operating system junk
+.DS_Store
+Thumbs.db
+
+# Log files
+logs/
+*.log
+
+# Local environment configuration
+.env
+.env.*
+*.env
+*.local
+
+# Local environment configuration
+src/main/resources/application.properties
