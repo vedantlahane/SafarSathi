@@ -1,3 +1,9 @@
+/**
+ * @file App.jsx
+ * @description Configures the top-level routing, global providers, and toast notifications
+ * for the SafarSathi frontend experience.
+ */
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
@@ -14,11 +20,24 @@ import MapView from './pages/MapView';
 import { AuthProvider, useAuth } from './services/AuthContext';
 
 // Protected Route Component
+/**
+ * Guards private routes by checking the authentication state.
+ * Redirects guests to the login page when no user is present.
+ *
+ * @param {object} props
+ * @param {React.ReactNode} props.children - Component tree to render when authenticated.
+ */
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
 };
 
+/**
+ * Root application component wiring together the authentication provider,
+ * router configuration, and global toast container.
+ *
+ * @returns {JSX.Element}
+ */
 function App() {
   return (
     <AuthProvider>

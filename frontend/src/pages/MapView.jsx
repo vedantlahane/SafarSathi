@@ -45,6 +45,11 @@ const policeIcon = new L.Icon({
 });
 
 // Component to update map center
+/**
+ * Keeps the map viewport in sync with the provided center.
+ *
+ * @param {{ center: [number, number] }} props - Current location of the user.
+ */
 const MapUpdater = ({ center }) => {
   const map = useMap();
   
@@ -57,6 +62,10 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
+/**
+ * Interactive safety map rendering user position, AI-derived safety scoring,
+ * and contextual overlays such as unsafe zones, police stations, and incidents.
+ */
 const MapView = () => {
   const { user } = useAuth();
   const [userLocation, setUserLocation] = useState([28.6139, 77.2090]);
@@ -115,6 +124,13 @@ const MapView = () => {
   ];
 
   // AI-powered safety score calculation
+  /**
+   * Estimates a contextual safety score by blending proximity to unsafe zones,
+   * time-of-day penalties, and bonuses for nearby police stations.
+   *
+   * @param {number} lat - Latitude to evaluate.
+   * @param {number} lng - Longitude to evaluate.
+   */
   const calculateSafetyScore = useCallback((lat, lng) => {
     let score = 100;
     
@@ -149,6 +165,9 @@ const MapView = () => {
     getCurrentLocation();
   }, []);
 
+  /**
+   * Fetches the latest device position and recalculates contextual safety data.
+   */
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -168,6 +187,9 @@ const MapView = () => {
   };
 
   // Enhanced location tracking with battery optimization
+  /**
+   * Begins high-accuracy location tracking with sensible battery defaults and toast feedback.
+   */
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error('Geolocation not supported');
@@ -199,6 +221,9 @@ const MapView = () => {
     );
   }, [calculateSafetyScore]);
   
+  /**
+   * Stops the active geolocation watcher and informs the user.
+   */
   const stopTracking = useCallback(() => {
     if (trackingRef.current) {
       navigator.geolocation.clearWatch(trackingRef.current);
@@ -209,6 +234,9 @@ const MapView = () => {
   }, []);
 
   // Safe sharing function to prevent multiple simultaneous shares
+  /**
+   * Shares the current coordinates using Web Share API fallback strategies.
+   */
   const handleSafeShare = useCallback(async () => {
     if (isSharing) {
       toast.info('Share already in progress...');
@@ -251,6 +279,9 @@ const MapView = () => {
   }, [userLocation, isSharing]);
 
   // Smart proximity alerts with throttling
+  /**
+   * Emits throttled warnings when the user enters a high-risk zone and logs it to the console.
+   */
   const checkProximityAlerts = useCallback(
     debounce((lat, lng) => {
       unsafeZones.forEach(zone => {

@@ -6,6 +6,10 @@ import Tesseract from 'tesseract.js';
 import { useAuth } from '../services/AuthContext';
 import { motion } from 'framer-motion';
 
+/**
+ * Registration page supporting OCR-assisted onboarding and blockchain ID generation.
+ * Handles file uploads, extracts structured data, and persists mock user accounts.
+ */
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -21,6 +25,10 @@ const Register = () => {
   const [idImage, setIdImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  /**
+   * Updates the controlled form state for textual inputs.
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>} e - Input change event.
+   */
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
@@ -28,6 +36,10 @@ const Register = () => {
     });
   };
 
+  /**
+   * Stores the uploaded document image and triggers OCR processing.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - File input change event.
+   */
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -36,6 +48,10 @@ const Register = () => {
     }
   };
 
+  /**
+   * Runs the client-side OCR workflow and merges any extracted fields into the form data.
+   * @param {File} file - ID document image selected by the user.
+   */
   const processImageWithOCR = async (file) => {
     setIsProcessing(true);
     toast.info('Processing your ID document...');
@@ -66,6 +82,11 @@ const Register = () => {
     }
   };
 
+  /**
+   * Attempts to recognize common identity fields from the OCR output.
+   * @param {string} text - Full OCR text extracted from the ID document.
+   * @returns {object} Key-value pairs containing recognized attributes.
+   */
   const extractDataFromOCR = (text) => {
     const extracted = {};
     
@@ -87,12 +108,21 @@ const Register = () => {
     return extracted;
   };
 
+  /**
+   * Generates a deterministic blockchain identifier for the demo account.
+   * @param {object} userData - Current registration form values.
+   * @returns {string} Pseudo blockchain ID for the user.
+   */
   const generateBlockchainID = (userData) => {
     // Simple hash simulation for demo
     const data = `${userData.name}-${userData.idNumber}-${Date.now()}`;
     return btoa(data).substring(0, 16).toUpperCase();
   };
 
+  /**
+   * Validates the form, creates the mock user record, and transitions to the dashboard.
+   * @param {React.FormEvent<HTMLFormElement>} e - Form submission event.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     
