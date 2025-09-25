@@ -1,4 +1,3 @@
-
 //pages/Dashboard.jsx - Enhanced with real-time stats and better UX
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +11,26 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import EmergencyContacts from '../components/EmergencyContacts';
 import ItineraryTimeline from '../components/ItineraryTimeline';
 import IoTDevicesPanel from '../components/IoTDevicesPanel';
+
+const ICONS = Object.freeze({
+  appMark: 'https://cdn-icons-png.flaticon.com/512/7116/7116261.png',
+  blockchain: 'https://cdn-icons-png.flaticon.com/512/6715/6715231.png',
+  statusSafe: 'https://cdn-icons-png.flaticon.com/512/8832/8832411.png',
+  statusWarning: 'https://cdn-icons-png.flaticon.com/512/595/595067.png',
+  statusDanger: 'https://cdn-icons-png.flaticon.com/512/564/564619.png',
+  statSafetyScore: 'https://cdn-icons-png.flaticon.com/512/942/942748.png',
+  statSafePlaces: 'https://cdn-icons-png.flaticon.com/512/992/992700.png',
+  statAlertsSent: 'https://cdn-icons-png.flaticon.com/512/758/758732.png',
+  statActiveTime: 'https://cdn-icons-png.flaticon.com/512/2088/2088617.png',
+  actionMap: 'https://cdn-icons-png.flaticon.com/512/535/535137.png',
+  actionSafety: 'https://cdn-icons-png.flaticon.com/512/6218/6218886.png',
+  actionID: 'https://cdn-icons-png.flaticon.com/512/942/942722.png',
+  actionShare: 'https://cdn-icons-png.flaticon.com/512/84/84380.png',
+  actionContacts: 'https://cdn-icons-png.flaticon.com/512/552/552721.png',
+  actionSOS: 'https://cdn-icons-png.flaticon.com/512/3134/3134898.png',
+  itinerary: 'https://cdn-icons-png.flaticon.com/512/2830/2830308.png',
+  tips: 'https://cdn-icons-png.flaticon.com/512/1827/1827370.png'
+});
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -109,12 +128,12 @@ const Dashboard = () => {
 
     if (activeZone && safetyStatus === 'safe') {
       setSafetyStatus('warning');
-      toast.warning(`⚠️ ${activeZone.name}: ${activeZone.reason}`);
+      toast.warning(`${activeZone.name}: ${activeZone.reason}`);
     } else if (!activeZone && safetyStatus === 'warning') {
       setSafetyStatus('safe');
-      toast.success('✅ You are now in a safe zone');
+      toast.success(t('dashboard.safeZoneMessage', 'You are now in a safe zone'));
     }
-  }, [zoneList, safetyStatus]);
+  }, [zoneList, safetyStatus, t]);
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -180,14 +199,12 @@ const Dashboard = () => {
           text: `Safety score ${stats.safetyScore}/100. ${locationText}`,
           url: window.location.origin
         });
-        toast.success('📤 Safety status shared successfully!');
+        toast.success('Safety status shared successfully!');
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(`Safety score ${stats.safetyScore}/100 • ${locationText}`);
-        toast.success('📋 Safety status copied to clipboard!');
+        toast.success('Safety status copied to clipboard!');
       } else {
-
         toast.info(`Status: ${stats.safetyScore}/100 • ${locationText}`);
-
       }
     } catch (error) {
       if (error.name === 'AbortError') {
@@ -206,28 +223,78 @@ const Dashboard = () => {
   const handleQuickSOS = useCallback(() => {
     const anchor = document.getElementById('sos-anchor');
     if (anchor) {
-      anchor.scrollIntoView({ behavior: 'smooth' });
+      anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     toast.info('Hold the SOS button for 3 seconds to dispatch an alert.');
   }, []);
 
-  const statCards = useMemo(() => ([
-    { icon: '🛡️', title: t('dashboard.safetyScore'), value: `${stats.safetyScore}/100`, color: 'from-blue-500 to-blue-600' },
-    { icon: '✅', title: t('dashboard.safePlaces'), value: stats.safePlaces, color: 'from-green-500 to-green-600' },
-    { icon: '⚠️', title: t('dashboard.alertsSent'), value: stats.alertsSent, color: 'from-yellow-500 to-orange-500' },
-    { icon: '⏱️', title: t('dashboard.activeTime'), value: `${stats.activeTime} min`, color: 'from-purple-500 to-purple-600' }
-  ]), [stats, t]);
+  const statCards = useMemo(
+    () => [
+      {
+        iconSrc: ICONS.statSafetyScore,
+        iconAlt: 'Safety score icon',
+        title: t('dashboard.safetyScore'),
+        value: `${stats.safetyScore}/100`,
+        color: 'from-blue-500 to-blue-600'
+      },
+      {
+        iconSrc: ICONS.statSafePlaces,
+        iconAlt: 'Safe places icon',
+        title: t('dashboard.safePlaces'),
+        value: stats.safePlaces,
+        color: 'from-green-500 to-green-600'
+      },
+      {
+        iconSrc: ICONS.statAlertsSent,
+        iconAlt: 'Alerts icon',
+        title: t('dashboard.alertsSent'),
+        value: stats.alertsSent,
+        color: 'from-yellow-500 to-orange-500'
+      },
+      {
+        iconSrc: ICONS.statActiveTime,
+        iconAlt: 'Active time icon',
+        title: t('dashboard.activeTime'),
+        value: `${stats.activeTime} min`,
+        color: 'from-purple-500 to-purple-600'
+      }
+    ],
+    [stats, t]
+  );
 
-  const quickActions = useMemo(() => ([
-    { icon: '🗺️', text: 'Safety Map', onClick: () => navigate('/map'), color: 'from-teal-500 to-blue-500' },
-    { icon: '🛡️', text: 'Safety Center', onClick: () => navigate('/safety'), color: 'from-indigo-500 to-purple-500' },
-    { icon: '🆔', text: 'Digital ID', onClick: () => navigate('/id'), color: 'from-slate-500 to-slate-600' },
-    { icon: '📤', text: t('common.shareLocation'), onClick: handleSafeShare, disabled: isSharing, color: 'from-emerald-500 to-teal-500' },
-    { icon: '📞', text: t('common.emergencyContacts'), onClick: () => setShowContacts(true), color: 'from-orange-500 to-red-500' },
-    { icon: '🆘', text: 'Quick SOS', onClick: handleQuickSOS, color: 'from-red-500 to-rose-500' }
-  ]), [navigate, handleSafeShare, handleQuickSOS, isSharing, t]);
+  const quickActions = useMemo(
+    () => [
+      { iconSrc: ICONS.actionMap, iconAlt: 'Safety map icon', text: 'Safety Map', onClick: () => navigate('/map'), color: 'from-teal-500 to-blue-500' },
+      { iconSrc: ICONS.actionSafety, iconAlt: 'Safety center icon', text: 'Safety Center', onClick: () => navigate('/safety'), color: 'from-indigo-500 to-purple-500' },
+      { iconSrc: ICONS.actionSOS, iconAlt: 'Quick SOS icon', text: 'Quick SOS', onClick: handleQuickSOS, color: 'from-red-500 to-rose-500' },
+      { iconSrc: ICONS.actionContacts, iconAlt: 'Emergency contacts icon', text: t('common.emergencyContacts'), onClick: () => setShowContacts(true), color: 'from-orange-500 to-red-500' },
+      { iconSrc: ICONS.actionShare, iconAlt: 'Share status icon', text: t('common.shareLocation'), onClick: handleSafeShare, disabled: isSharing, color: 'from-emerald-500 to-teal-500' },
+      { iconSrc: ICONS.actionID, iconAlt: 'Digital ID icon', text: 'Digital ID', onClick: () => navigate('/id'), color: 'from-slate-500 to-slate-600' }
+    ],
+    [navigate, handleSafeShare, handleQuickSOS, isSharing, t]
+  );
 
   const timeSinceActivity = getTimeSinceActivity();
+
+  // Helper for safety status color and text
+  const statusColor =
+    safetyStatus === 'warning'
+      ? 'bg-orange-500'
+      : safetyStatus === 'danger'
+      ? 'bg-red-500'
+      : 'bg-green-500';
+  const statusText =
+    safetyStatus === 'warning'
+      ? 'Warning Zone'
+      : safetyStatus === 'danger'
+      ? 'SOS Active'
+      : 'All Clear';
+
+  const statusIcon = useMemo(() => {
+    if (safetyStatus === 'warning') return ICONS.statusWarning;
+    if (safetyStatus === 'danger') return ICONS.statusDanger;
+    return ICONS.statusSafe;
+  }, [safetyStatus]);
 
   if (dataLoading || !profile) {
     return (
@@ -239,25 +306,19 @@ const Dashboard = () => {
     );
   }
 
-  // Helper for safety status color and text
-  const statusColor = safetyStatus === 'warning' ? 'bg-orange-500' : 
-                      safetyStatus === 'danger' ? 'bg-red-500' : 'bg-green-500';
-  const statusText = safetyStatus === 'warning' ? 'Warning Zone' : 
-                      safetyStatus === 'danger' ? 'SOS Active' : 'All Clear';
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         duration: 0.6,
-        staggerChildren: 0.1
+        staggerChildren: 0.08
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 24 },
     visible: { opacity: 1, y: 0 }
   };
 
@@ -266,121 +327,161 @@ const Dashboard = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 p-6"
+      className="relative min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 p-4 sm:p-6 pb-40 lg:pb-16"
     >
-      <motion.header variants={itemVariants} className="bg-white/80 backdrop-blur-lg rounded-3xl p-6 mb-8 shadow-lg border border-white/20">
+      <motion.header variants={itemVariants} className="bg-white/85 backdrop-blur-lg rounded-3xl p-6 mb-6 sm:mb-8 shadow-lg border border-white/30">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <motion.h1
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent"
-            >
-              🛡️ {t('common.appName')}
-            </motion.h1>
-            <p className="text-slate-600 mt-2">{t('dashboard.greeting', { name: profile?.name || user?.name || 'Traveller' })}</p>
+          <div className="flex items-center gap-3">
+            <motion.img
+              src={ICONS.appMark}
+              alt="SafarSathi icon"
+              loading="lazy"
+              className="w-12 h-12 md:w-14 md:h-14 drop-shadow-lg"
+              initial={{ rotate: -10, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            />
+            <div>
+              <motion.h1
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent"
+              >
+                {t('common.appName')}
+              </motion.h1>
+              <p className="text-slate-600 mt-2 text-sm sm:text-base">
+                {t('dashboard.greeting', { name: profile?.name || user?.name || 'Traveller' })}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <LanguageSwitcher compact />
-            <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-sm font-semibold">
-              🔗 {profile?.blockchainID ? `${profile.blockchainID.slice(0, 10)}...` : 'ID Pending'}
+            <span className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm">
+              <img src={ICONS.blockchain} alt="Blockchain ID icon" loading="lazy" className="w-4 h-4" />
+              {profile?.blockchainID ? `${profile.blockchainID.slice(0, 10)}...` : 'ID Pending'}
             </span>
-
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={logout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+              className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors duration-200"
             >
               {t('common.logout')}
             </motion.button>
           </div>
         </div>
       </motion.header>
-      
-      {/* Current Status and Location Card (JSX unchanged) */}
-      <motion.div variants={itemVariants} className={`flex items-center justify-between ${statusColor} text-white p-6 rounded-2xl shadow-xl mb-8 transition-colors duration-500`}>
-          <div>
-              <p className="text-sm font-medium opacity-80 mb-1">Your Current Safety Status</p>
-              <h2 className="text-3xl font-bold">{statusText}</h2>
-              <p className="text-sm mt-3">
-                  {currentLocation 
-                      ? `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`
-                      : 'Acquiring GPS Signal...'
-                  }
-              </p>
-              <p className="text-xs opacity-70 mt-1">
-                Last activity: {getTimeSinceActivity()} min ago
-              </p>
-          </div>
-          <div className="text-5xl">
-              {safetyStatus === 'safe' ? '💚' : safetyStatus === 'warning' ? '🧡' : '🛑'}
-          </div>
-      </motion.div>
 
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <motion.section
+        variants={itemVariants}
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 ${statusColor} text-white p-6 rounded-2xl shadow-xl mb-8 transition-colors duration-500`}
+      >
+        <div className="space-y-3">
+          <p className="text-sm font-medium opacity-80">Your Current Safety Status</p>
+          <div className="flex items-center gap-3">
+            <img
+              src={statusIcon}
+              alt={`${statusText} icon`}
+              loading="lazy"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 p-2"
+            />
+            <h2 className="text-3xl font-bold tracking-tight">{statusText}</h2>
+          </div>
+          <div className="text-xs sm:text-sm space-y-1 opacity-90">
+            <p>
+              {currentLocation
+                ? `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`
+                : 'Acquiring GPS Signal...'}
+            </p>
+            <p>Last activity: {timeSinceActivity} min ago</p>
+          </div>
+        </div>
+        <motion.div
+          className="sm:w-44 w-full sm:text-right"
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <p className="uppercase text-xs font-semibold tracking-widest opacity-80">Live Guidance</p>
+          <p className="text-sm opacity-90">
+            We will notify you whenever you enter or exit a sensitive zone. Keep your device handy for instant SOS.
+          </p>
+        </motion.div>
+      </motion.section>
+
+      <motion.section variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            whileHover={{ y: -5, scale: 1.02 }}
-            className="bg-white/85 backdrop-blur-lg rounded-xl p-6 shadow-lg border border-white/20"
+            transition={{ delay: 0.25 + index * 0.08 }}
+            whileHover={{ y: -4, scale: 1.02 }}
+            className="bg-white/85 backdrop-blur-lg rounded-xl p-5 shadow-lg border border-white/30"
           >
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-4">
               <motion.div
-                initial={{ scale: 0 }}
+                initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.5 + index * 0.1, type: 'spring' }}
-                className={`text-3xl bg-gradient-to-r ${stat.color} p-3 rounded-xl text-white shadow-lg`}
+                transition={{ delay: 0.4 + index * 0.06, type: 'spring', stiffness: 220 }}
+                className={`bg-gradient-to-r ${stat.color} p-3 rounded-xl shadow-lg`}
               >
-                {stat.icon}
+                <img src={stat.iconSrc} alt={stat.iconAlt} loading="lazy" className="w-10 h-10" />
               </motion.div>
               <div>
-                <h3 className="text-slate-600 font-medium">{stat.title}</h3>
+                <h3 className="text-slate-600 font-medium text-sm sm:text-base">{stat.title}</h3>
                 <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
               </div>
             </div>
           </motion.div>
         ))}
-      </motion.div>
+      </motion.section>
 
-      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+      <motion.section
+        variants={itemVariants}
+        className="hidden lg:grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-10"
+      >
         {quickActions.map((action, index) => (
-
           <motion.button
             key={action.text}
-            initial={{ opacity: 0, scale: 0.85 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.6 + index * 0.05 }}
-            whileHover={{ scale: 1.05, y: -5 }}
-            whileTap={{ scale: 0.95 }}
+            transition={{ delay: 0.4 + index * 0.05 }}
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.97 }}
             onClick={action.onClick}
             disabled={action.disabled}
-            className={`bg-gradient-to-r ${action.color} text-white p-4 rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center space-y-2 transition-all duration-200`}
+            className={`bg-gradient-to-r ${action.color} text-white p-4 rounded-xl shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center space-y-3 transition-all duration-200`}
           >
-            <span className="text-2xl">{action.icon}</span>
+            <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="w-10 h-10 drop-shadow" />
             <span className="text-sm font-semibold text-center leading-tight">{action.text}</span>
           </motion.button>
         ))}
-      </motion.div>
-      <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+      </motion.section>
+
+      <motion.section variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         <div className="xl:col-span-2 space-y-6">
-          <div className="bg-white/85 border border-slate-200 rounded-3xl p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">🗓️ Upcoming itinerary</h2>
-            <p className="text-sm text-slate-500 mb-4">Next stop: {itinerary?.[1]?.title || 'All clear'} • {itinerary?.[1]?.city}</p>
+          <div className="bg-white/85 border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <img src={ICONS.itinerary} alt="Itinerary icon" loading="lazy" className="w-6 h-6" />
+              <h2 className="text-lg font-semibold text-slate-800">Upcoming itinerary</h2>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Next stop: {itinerary?.[1]?.title || 'All clear'} • {itinerary?.[1]?.city || 'TBD'}
+            </p>
             <button
               onClick={() => setShowItinerary(true)}
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-900 text-white hover:bg-black"
-
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-900 text-white hover:bg-black transition-colors duration-200"
             >
               View full itinerary
             </button>
           </div>
-          <div className="bg-white/85 border border-slate-200 rounded-3xl p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4">💡 Safety tips</h2>
+          <div className="bg-white/85 border border-slate-200 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <img src={ICONS.tips} alt="Tips icon" loading="lazy" className="w-6 h-6" />
+              <h2 className="text-lg font-semibold text-slate-800">Safety tips</h2>
+            </div>
             <ul className="space-y-3 text-sm text-slate-600">
               <li>• Enable IoT wearable tracking before entering red zones.</li>
               <li>• Tap Safety Center to acknowledge AI anomalies.</li>
@@ -389,13 +490,54 @@ const Dashboard = () => {
           </div>
         </div>
         <IoTDevicesPanel devices={iotDevices} />
-      </motion.div>
-      <motion.div variants={itemVariants} className="flex justify-center" id="sos-anchor">
-        <div className="bg-white/85 backdrop-blur-lg rounded-3xl p-6 shadow-lg border border-white/20">
-          <SOSButton currentLocation={currentLocation} user={profile} />
+      </motion.section>
 
+      <motion.section
+        variants={itemVariants}
+        className="hidden lg:flex justify-center"
+        id="sos-anchor"
+      >
+        <div className="bg-white/85 backdrop-blur-lg rounded-3xl p-6 shadow-lg border border-white/30">
+          <SOSButton currentLocation={currentLocation} user={profile} />
+        </div>
+      </motion.section>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3 }}
+        className="lg:hidden fixed bottom-28 right-4 z-50"
+        id="sos-anchor"
+      >
+        <div className="bg-white/95 backdrop-blur-xl border border-white/80 rounded-full p-2.5 shadow-2xl">
+          <div className="max-w-[11.5rem]">
+            <SOSButton currentLocation={currentLocation} user={profile} />
+          </div>
         </div>
       </motion.div>
+
+      <motion.nav
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="lg:hidden fixed bottom-4 left-4 right-4 z-40"
+      >
+        <div className="bg-white/95 backdrop-blur-lg border border-white/80 shadow-xl rounded-2xl px-4 py-3 flex gap-3 overflow-x-auto">
+          {quickActions.map((action, index) => (
+            <motion.button
+              key={`mobile-${action.text}`}
+              whileTap={{ scale: 0.96 }}
+              onClick={action.onClick}
+              disabled={action.disabled}
+              className={`flex-shrink-0 min-w-[120px] bg-gradient-to-r ${action.color} text-white px-3 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold disabled:opacity-60`}
+              style={{ transitionDelay: `${index * 50}ms` }}
+            >
+              <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="w-7 h-7" />
+              <span className="text-left leading-tight">{action.text}</span>
+            </motion.button>
+          ))}
+        </div>
+      </motion.nav>
 
       <AnimatePresence>
         {showContacts && (
