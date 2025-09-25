@@ -6,6 +6,18 @@ import { motion } from 'framer-motion';
 import OCRService from '../services/ocrService';
 import apiService from '../services/apiService';
 
+const FIELD_LABELS = {
+  name: 'Full Name',
+  email: 'Email',
+  phone: 'Phone',
+  idNumber: 'ID Number',
+  dateOfBirth: 'Date of Birth',
+  address: 'Address',
+  emergencyContact: 'Emergency Contact',
+  gender: 'Gender',
+  nationality: 'Nationality'
+};
+
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -23,165 +35,135 @@ const Register = () => {
   });
   const [idImage, setIdImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [documentDetails, setDocumentDetails] = useState({ type: null, fields: [] });
+  const [processingProgress, setProcessingProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setIdImage(file);
-      processImageWithOCR(file);
+  const validateExtractedData = (data = {}) => {
+    if (!data || typeof data !== 'object') {
+      const fallback = { type: null, fields: [] };
+      setDocumentDetails(fallback);
+      return fallback;
     }
-  };
 
-  const handleDeleteImage = () => {
-    setIdImage(null);
-    // Reset the file input
-    const fileInput = document.querySelector('input[type="file"]');
-    if (fileInput) {
-      fileInput.value = '';
+    const { documentType = null, ...rawFields } = data;
+    const allowedKeys = ['name', 'phone', 'idNumber', 'dateOfBirth', 'address', 'gender', 'nationality'];
+
+    const cleanedEntries = Object.entries(rawFields)
+      .filter(([key, value]) => allowedKeys.includes(key) && value)
+      .map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+      .filter(([, value]) => value);
+
+    if (cleanedEntries.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        ...Object.fromEntries(cleanedEntries)
+      }));
     }
-    toast.info('📄 Document removed. You can upload a new one.');
+
+    const details = {
+      type: documentType,
+      fields: cleanedEntries.map(([key, value]) => ({ key, value }))
+    };
+
+    setDocumentDetails(details);
+    return details;
   };
 
-  const processImageWithOCR = async (file) => {
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIdImage(file);
+    setProcessingProgress(0);
     setIsProcessing(true);
-    toast.info('🔍 Analyzing your ID document...');
+    setDocumentDetails({ type: null, fields: [] });
+    toast.info('Processing ID document...');
 
     try {
       const extractedData = await OCRService.processDocument(file, (progress) => {
-        toast.info(`🤖 AI Processing... ${progress}%`);
+        if (typeof progress === 'number') {
+          setProcessingProgress(Math.round(progress * 100));
+        }
       });
 
-      const validatedData = validateExtractedData(extractedData);
-      
-      if (Object.keys(validatedData).length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          ...validatedData
-        }));
-
-        const extractedFields = Object.keys(validatedData).join(', ');
-        toast.success(`✅ Successfully extracted: ${extractedFields}`);
-        
-        if (extractedData.documentType) {
-          const docTypeMsg = extractedData.documentType === 'aadhaar' ? 'Aadhaar Card' : 
-                             extractedData.documentType === 'passport' ? 'Passport' : 'ID Document';
-          setTimeout(() => {
-            let message = `📄 ${docTypeMsg} detected! Please verify the auto-filled information.`;
-            if (extractedData.documentType === 'aadhaar') {
-              message += ' 🇮🇳 Nationality set to Indian.';
-            }
-            toast.info(message, { autoClose: 5000 });
-          }, 1000);
-        }
+      const details = validateExtractedData(extractedData);
+      if (details.fields.length > 0) {
+        toast.success('Document details extracted! Please review the auto-filled fields.');
       } else {
-        toast.warning('⚠️ Could not extract information automatically. Please fill the form manually.');
+        toast.warn('Document processed, but we could not detect key details. Please fill the form manually.');
       }
     } catch (error) {
-      console.error('OCR Error:', error);
-      toast.error('❌ Unable to extract information from document. Please fill the form manually.');
+      console.error('Document processing failed:', error);
+      setIdImage(null);
+      toast.error('Unable to analyze the document. Please try another image or enter details manually.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // --- Helper Functions (omitted for brevity) ---
-
-  const validateExtractedData = (data) => {
-    const validated = {};
-    if (data.name && data.name.length >= 2 && data.name.length <= 50 && /^[A-Za-z\s]+$/.test(data.name)) {
-      validated.name = data.name;
-    }
-    if (data.idNumber) {
-      const cleanId = data.idNumber.replace(/\s/g, '');
-      if (/^\d{12}$/.test(cleanId) || /^[A-Z]\d{7}$/.test(cleanId) || /^[A-Z0-9]{8}$/.test(cleanId)) {
-        validated.idNumber = cleanId;
-      }
-    }
-    if (data.dateOfBirth && /^\d{4}-\d{2}-\d{2}$/.test(data.dateOfBirth)) {
-      const date = new Date(data.dateOfBirth);
-      const now = new Date();
-      if (date < now && date.getFullYear() > 1900) {
-        validated.dateOfBirth = data.dateOfBirth;
-      }
-    }
-    if (data.address && data.address.length >= 10 && data.address.length <= 200) {
-      validated.address = data.address;
-    }
-    if (data.phone) {
-      const cleanPhone = data.phone.replace(/[^\d]/g, '');
-      if (/^\d{10}$/.test(cleanPhone) || /^91\d{10}$/.test(cleanPhone)) {
-        validated.phone = cleanPhone.length === 12 ? cleanPhone.substring(2) : cleanPhone;
-      }
-    }
-    if (data.gender && (data.gender === 'Male' || data.gender === 'Female')) {
-      validated.gender = data.gender;
-    }
-    if (data.nationality && data.nationality.length > 0) {
-      validated.nationality = data.nationality;
-    }
-    return validated;
+  const handleDeleteImage = () => {
+    setIdImage(null);
+    setDocumentDetails({ type: null, fields: [] });
+    setProcessingProgress(0);
   };
-  
-  // --- End of Helper Functions ---
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Add password to required field check
-    if (!formData.name || !formData.email || !formData.phone || !formData.idNumber || !formData.emergencyContact || !formData.password) {
-      toast.error('Please fill in all required fields, including setting a password.');
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (isProcessing) {
+      toast.warn('Please wait for the document analysis to complete.');
+      return;
+    }
+
+    const requiredFields = ['name', 'email', 'phone', 'idNumber', 'emergencyContact', 'password'];
+    const missingFields = requiredFields.filter((field) => {
+      const value = formData[field];
+      return !value || (typeof value === 'string' && !value.trim());
+    });
+
+    if (missingFields.length > 0) {
+      const readable = missingFields.map((field) => FIELD_LABELS[field] || field);
+      toast.error(`Please complete: ${readable.join(', ')}`);
       return;
     }
 
     setIsSubmitting(true);
     toast.info('Submitting registration...');
-    
+
     try {
-        // Prepare the payload for the Spring Boot API
-        const payload = {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            passportNumber: formData.idNumber, 
-            dateOfBirth: formData.dateOfBirth, 
-            address: formData.address,
-            emergencyContact: formData.emergencyContact,
-            gender: formData.gender,
-            nationality: formData.nationality,
-            passwordHash: formData.password // 🔑 ADDED: Sending the raw password (mapped to passwordHash in Java Model)
-        };
+      const payload = {
+        ...formData,
+        phone: formData.phone.trim(),
+        emergencyContact: formData.emergencyContact.trim(),
+      };
 
-        const apiResponse = await apiService.registerTourist(payload);
-        
-        console.log("Registration API Response:", apiResponse);
+      const response = await apiService.registerTourist(payload);
+      const { token, touristId, qr_content, ...rest } = response || {};
 
-        const { token, touristId, qr_content } = apiResponse;
-        
-        const userDataForSession = {
-            ...payload,
-            id: touristId,
-            token: token,
-            qrContent: qr_content
-        };
+      const userProfile = {
+        ...rest,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        id: touristId ?? rest?.id,
+        token: token ?? rest?.token,
+        qrContent: qr_content ?? rest?.qrContent,
+      };
 
-        login(userDataForSession);
-        
-        toast.success('Registration successful! Digital ID Issued! 🚀');
-        navigate('/dashboard');
-
+      login(userProfile);
+      toast.success('Registration successful! Welcome to SafarSathi.');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.message || 'Registration failed. Please check your data and ensure the backend is running.');
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -247,6 +229,11 @@ const Register = () => {
                         className="w-5 h-5 border-2 border-teal-400 border-t-transparent rounded-full inline-block mr-2"
                       />
                       <span className="text-teal-400 font-medium">AI Processing...</span>
+                      {processingProgress > 0 && (
+                        <p className="text-teal-200 text-xs text-center mt-1">
+                          {processingProgress}% complete
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -300,6 +287,11 @@ const Register = () => {
                 <p className="text-teal-300/70 text-xs mt-1">
                   This may take a few seconds
                 </p>
+                {processingProgress > 0 && (
+                  <p className="text-teal-200/80 text-xs mt-1">
+                    Progress: {processingProgress}%
+                  </p>
+                )}
               </motion.div>
             )}
 
@@ -317,6 +309,25 @@ const Register = () => {
                 <li>• Make sure all text is readable</li>
               </ul>
             </motion.div>
+
+            {documentDetails.fields.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-3"
+              >
+                <p className="text-teal-200 text-sm font-semibold mb-2">
+                  ✅ Auto-filled details {documentDetails.type ? `(${documentDetails.type.toUpperCase()})` : ''}
+                </p>
+                <ul className="space-y-1 text-xs text-teal-100/90">
+                  {documentDetails.fields.map(({ key, value }) => (
+                    <li key={key}>
+                      <span className="font-semibold">{FIELD_LABELS[key] || key}:</span> {value}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Personal Information Grid */}
