@@ -36,13 +36,31 @@ const dangerIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const policeIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+const policeIcon = L.divIcon({
+  className: '',
+  html: `
+    <div style="
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #059669, #047857 70%);
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 14px rgba(5, 150, 105, 0.35);
+    ">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L15 8H21L16 12L18 18L12 15L6 18L8 12L3 8H9L12 2Z" fill="#fff" stroke="#047857" stroke-width="1"/>
+        <circle cx="12" cy="10" r="2" fill="#047857"/>
+        <rect x="10" y="14" width="4" height="6" rx="1" fill="#fff" stroke="#047857" stroke-width="0.8"/>
+        <rect x="11" y="16" width="2" height="2" fill="#047857"/>
+      </svg>
+    </div>
+  `,
+  iconSize: [38, 38],
+  iconAnchor: [19, 34],
+  popupAnchor: [0, -30]
 });
 
 // Component to update map center
