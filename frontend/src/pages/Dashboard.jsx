@@ -264,7 +264,6 @@ const Dashboard = () => {
 
   const quickActions = useMemo(
     () => [
-      { iconSrc: ICONS.actionMap, iconAlt: 'Safety map icon', text: 'Safety Map', onClick: () => navigate('/map'), color: 'from-teal-500 to-blue-500' },
       { iconSrc: ICONS.actionSafety, iconAlt: 'Safety center icon', text: 'Safety Center', onClick: () => navigate('/safety'), color: 'from-indigo-500 to-purple-500' },
       { iconSrc: ICONS.actionSOS, iconAlt: 'Quick SOS icon', text: 'Quick SOS', onClick: handleQuickSOS, color: 'from-red-500 to-rose-500' },
       { iconSrc: ICONS.actionContacts, iconAlt: 'Emergency contacts icon', text: t('common.emergencyContacts'), onClick: () => setShowContacts(true), color: 'from-orange-500 to-red-500' },
@@ -373,74 +372,192 @@ const Dashboard = () => {
         </div>
       </motion.header>
 
-      <motion.section
-        variants={itemVariants}
-        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 ${statusColor} text-white p-6 rounded-2xl shadow-xl mb-8 transition-colors duration-500`}
-      >
-        <div className="space-y-3">
-          <p className="text-sm font-medium opacity-80">Your Current Safety Status</p>
-          <div className="flex items-center gap-3">
-            <img
-              src={statusIcon}
-              alt={`${statusText} icon`}
-              loading="lazy"
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 p-2"
-            />
-            <h2 className="text-3xl font-bold tracking-tight">{statusText}</h2>
-          </div>
-          <div className="text-xs sm:text-sm space-y-1 opacity-90">
-            <p>
-              {currentLocation
-                ? `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`
-                : 'Acquiring GPS Signal...'}
-            </p>
-            <p>Last activity: {timeSinceActivity} min ago</p>
-          </div>
-        </div>
+      {/* Main Dashboard Layout - Left Half: Mini Map, Right Half: Safety Snapshot */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        
+        {/* Left Half - Mini Map Preview */}
         <motion.div
-          className="sm:w-44 w-full sm:text-right"
-          initial={{ opacity: 0, x: 24 }}
+          initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white/85 backdrop-blur-lg rounded-3xl p-4 shadow-lg border border-white/20"
         >
-          <p className="uppercase text-xs font-semibold tracking-widest opacity-80">Live Guidance</p>
-          <p className="text-sm opacity-90">
-            We will notify you whenever you enter or exit a sensitive zone. Keep your device handy for instant SOS.
-          </p>
-        </motion.div>
-      </motion.section>
-
-      <motion.section variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        {statCards.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 + index * 0.08 }}
-            whileHover={{ y: -4, scale: 1.02 }}
-            className="bg-white/85 backdrop-blur-lg rounded-xl p-5 shadow-lg border border-white/30"
-          >
-            <div className="flex items-center gap-4">
+          <div className="relative">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+              🗺️ Live Safety Map
               <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.4 + index * 0.06, type: 'spring', stiffness: 220 }}
-                className={`bg-gradient-to-r ${stat.color} p-3 rounded-xl shadow-lg`}
-              >
-                <img src={stat.iconSrc} alt={stat.iconAlt} loading="lazy" className="w-10 h-10" />
-              </motion.div>
-              <div>
-                <h3 className="text-slate-600 font-medium text-sm sm:text-base">{stat.title}</h3>
-                <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="ml-2 w-2 h-2 bg-green-500 rounded-full"
+              />
+            </h2>
+            
+            {/* Mini Map Container */}
+            <div className="relative h-96 bg-slate-100 rounded-2xl overflow-hidden border-2 border-slate-200">
+              {/* Simulated Map Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-100">
+                {/* Grid pattern for map feel */}
+                <div className="absolute inset-0 opacity-20" 
+                     style={{ 
+                       backgroundImage: 'linear-gradient(rgba(0,0,0,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.1) 1px, transparent 1px)',
+                       backgroundSize: '20px 20px'
+                     }}>
+                </div>
+                
+                {/* Current Location - Blinking Marker */}
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.3, 1],
+                    opacity: [1, 0.7, 1]
+                  }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                >
+                  <div className="relative">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+                      You are here
+                    </div>
+                  </div>
+                </motion.div>
+                
+                {/* Unsafe Zone 1 */}
+                <div className="absolute top-1/4 right-1/4 w-16 h-16 bg-red-500/30 rounded-full border-2 border-red-500/50">
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-600 text-xl">
+                    ⚠️
+                  </div>
+                </div>
+                
+                {/* Unsafe Zone 2 */}
+                <div className="absolute bottom-1/3 left-1/4 w-20 h-20 bg-orange-500/30 rounded-full border-2 border-orange-500/50">
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-orange-600 text-xl">
+                    🚧
+                  </div>
+                </div>
+                
+                {/* Safe Zones */}
+                <div className="absolute top-1/6 left-1/6 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-green-600">🏛️</div>
+                </div>
+                <div className="absolute bottom-1/4 right-1/6 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-green-600">🚔</div>
+                </div>
+              </div>
+              
+              {/* Map Controls Overlay */}
+              <div className="absolute top-4 right-4 bg-white rounded-lg shadow-md p-2">
+                <div className="text-xs text-slate-600 font-medium">Live Updates</div>
+              </div>
+              
+              {/* Location Info Overlay */}
+              <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md">
+                <div className="text-xs text-slate-600">
+                  {currentLocation 
+                    ? `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
+                    : 'Getting location...'
+                  }
+                </div>
               </div>
             </div>
-          </motion.div>
-        ))}
-      </motion.section>
+            
+            {/* Open Full Map Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/map')}
+              className="absolute bottom-6 right-6 bg-gradient-to-r from-teal-500 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-lg flex items-center space-x-2 hover:shadow-xl transition-all duration-200"
+            >
+              <span>🗺️</span>
+              <span>Open Full Safety Map</span>
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Right Half - Safety Snapshot */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-6"
+        >
+          {/* Current Status Card */}
+          <div className={`${statusColor} text-white p-6 rounded-2xl shadow-xl transition-colors duration-500`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium opacity-80 mb-1">Your Current Safety Status</p>
+                <h2 className="text-3xl font-bold">All Clear</h2>
+                <p className="text-sm mt-3">
+                  Lat: 28.6561, Lng: 77.2408
+                </p>
+                <p className="text-xs opacity-70 mt-1">
+                  Last activity: 0 min ago
+                </p>
+              </div>
+              <div className="text-5xl">
+                💚
+              </div>
+            </div>
+          </div>
+
+          {/* SOS Button and Stats Layout */}
+          <div className="bg-white/85 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20" id="sos-anchor">
+            <div className="flex items-center gap-6">
+              {/* Left Side - SOS Button */}
+              <div className="flex-shrink-0">
+                <SOSButton currentLocation={currentLocation} user={profile} />
+              </div>
+              
+              {/* Right Side - Vertical Stats */}
+              <div className="flex-1 space-y-4">
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  className="flex items-center justify-between bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg shadow-md"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-xl">🛡️</div>
+                    <div>
+                      <div className="text-sm opacity-80">Safety Score</div>
+                      <div className="text-xl font-bold">{stats.safetyScore}/100</div>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  className="flex items-center justify-between bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-3 rounded-lg shadow-md"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-xl">⚠️</div>
+                    <div>
+                      <div className="text-sm opacity-80">Alerts Sent</div>
+                      <div className="text-xl font-bold">{stats.alertsSent}</div>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  className="flex items-center justify-between bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg shadow-md"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-xl">⏱️</div>
+                    <div>
+                      <div className="text-sm opacity-80">Active Time</div>
+                      <div className="text-xl font-bold">{stats.activeTime}m</div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
 
       <motion.section
         variants={itemVariants}
-        className="hidden lg:grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-10"
+        className="hidden lg:grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-10"
       >
         {quickActions.map((action, index) => (
           <motion.button
@@ -492,15 +609,7 @@ const Dashboard = () => {
         <IoTDevicesPanel devices={iotDevices} />
       </motion.section>
 
-      <motion.section
-        variants={itemVariants}
-        className="hidden lg:flex justify-center"
-        id="sos-anchor"
-      >
-        <div className="bg-white/85 backdrop-blur-lg rounded-3xl p-6 shadow-lg border border-white/30">
-          <SOSButton currentLocation={currentLocation} user={profile} />
-        </div>
-      </motion.section>
+
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
