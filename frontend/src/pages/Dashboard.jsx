@@ -1,15 +1,12 @@
-//pages/Dashboard.jsx - Enhanced with real-time stats and better UX
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
-import SOSButton from '../components/SOSButton';
 import { motion } from 'framer-motion';
+import apiService from '../services/apiService';
+import SOSConfirmationModal from '../components/SOSConfirmationModal'; // 🔑 NEW IMPORT
+import { AnimatePresence } from 'framer-motion'; // 🔑 NEW IMPORT
 
-/**
- * Presents the traveller dashboard with real-time safety metrics,
- * location awareness, and quick access to emergency actions.
- */
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -19,40 +16,67 @@ const Dashboard = () => {
     activeTime: 0,
     safetyScore: 85
   });
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null); 
+  const locationIntervalRef = useRef(null);
+  
   const [safetyStatus, setSafetyStatus] = useState('safe');
   const [lastActivity, setLastActivity] = useState(new Date());
   const [isSharing, setIsSharing] = useState(false);
   
-  // Calculate stats and initialize location
-  useEffect(() => {
-    // Get current location
-    getCurrentLocation();
-    
-    // Update activity timestamp
-    const activityInterval = setInterval(() => {
-      setLastActivity(new Date());
-    }, 30000); // Update every 30 seconds
-    
-    const statsInterval = setInterval(() => {
-      setStats(prev => ({
-        ...prev,
-        activeTime: prev.activeTime + 1,
-        safePlaces: Math.floor(Math.random() * 10) + 5,
-        alertsSent: Math.floor(Math.random() * 3)
-      }));
-    }, 60000);
-    
-    return () => {
-      clearInterval(activityInterval);
-      clearInterval(statsInterval);
-    };
-  }, []);
+  // 🔑 NEW STATE: For SOS Confirmation Modal
+  const [isSosConfirming, setIsSosConfirming] = useState(false); 
+  
+  const userName = user?.name || user?.email?.split('@')[0] || 'Traveller';
+  const touristId = user?.id;
+  const token = user?.token;
+
+// ----------------------------------------------------------------------
+// 🔑 CORE LOGIC: LOCATION TRACKING AND SOS
+// ----------------------------------------------------------------------
 
   /**
-   * Retrieves the device location (subject to permissions) and evaluates the surrounding zone.
+   * Starts continuous background location tracking and pings the backend.
    */
-  const getCurrentLocation = () => {
+  const trackLiveLocation = useCallback(() => {
+    // Check for necessary data
+    if (!touristId || !token) return;
+    if (locationIntervalRef.current) return; 
+
+    const intervalTime = 15000; 
+
+    const sendLocationPing = (position) => {
+        const { latitude: lat, longitude: lng, accuracy } = position.coords;
+
+        // 1. Update local state
+        setCurrentLocation({ lat, lng });
+        checkSafetyZone(lat, lng);
+        setLastActivity(new Date());
+
+        // 2. Send to Spring Boot Backend
+        const locationData = { lat, lng, accuracy: Math.round(accuracy) };
+        apiService.locationPing(token, touristId, locationData);
+        // console.log(`Pinging location: ${lat}, ${lng}`); // Keep quiet for demo
+    };
+
+    if (navigator.geolocation) {
+        locationIntervalRef.current = setInterval(() => {
+            navigator.geolocation.getCurrentPosition(
+                sendLocationPing,
+                (error) => console.error('Geolocation Tracking Error:', error.message),
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        }, intervalTime);
+
+        toast.info('📍 Live location sharing started.', { autoClose: 3000 });
+    } else {
+        toast.error('Geolocation is not supported by your browser.');
+    }
+  }, [touristId, token]); // Dependencies for useCallback
+
+  /**
+   * Retrieves the device location (used for initial load and if location is null).
+   */
+  const getCurrentLocation = useCallback(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -68,20 +92,100 @@ const Dashboard = () => {
         }
       );
     }
+  }, []);
+
+  /**
+   * 🔑 SOS FLOW STEP 1: Triggers the confirmation modal.
+   */
+  const startSOSConfirmation = () => {
+    if (!touristId || !token) {
+        toast.error("Please log in again to use the SOS feature.");
+        return;
+    }
+    if (!currentLocation) {
+        toast.error('Cannot send SOS: Acquiring GPS signal. Please wait.');
+        getCurrentLocation(); 
+        return;
+    }
+    
+    // Show the modal
+    setIsSosConfirming(true);
+    toast.warning('⚠️ SOS initiated. You have 5 seconds to cancel.', { autoClose: 5000 });
+  };
+  
+  /**
+   * 🔑 SOS FLOW STEP 2: Sends the alert after confirmation/timer expiry.
+   */
+  const confirmAndSendSOS = async () => {
+    // This function is called by the modal after the timer hits zero or confirmation
+    setIsSosConfirming(false); // Close the modal first
+    
+    const sosData = {
+        lat: currentLocation.lat,
+        lng: currentLocation.lng,
+        accuracy: 10 // Mock accuracy
+    };
+    
+    toast.info('🚀 Sending final alert to authorities...');
+    
+    try {
+        const response = await apiService.panicSOS(token, touristId, sosData);
+
+        if (response.status) {
+            toast.success('🆘 SOS Alert CONFIRMED! Police and contacts notified.');
+            setSafetyStatus('danger'); 
+        }
+    } catch (error) {
+        toast.error(error.message || 'SOS failed due to server error or network.');
+    }
   };
 
   /**
-   * Determines if the user is currently inside one of the mocked unsafe regions
-   * and raises contextual toasts when the status changes.
-   *
-   * @param {number} lat - Current latitude.
-   * @param {number} lng - Current longitude.
+   * 🔑 SOS FLOW STEP 3: Cancels the alert sequence.
    */
+  const cancelSOS = () => {
+      setIsSosConfirming(false);
+      setSafetyStatus('safe'); // Reset status visually
+      toast.info('✅ SOS Alert cancelled.');
+  };
+
+  // ----------------------------------------------------------------------
+  // 🔑 EFFECTS AND CLEANUP
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    // 1. Start initial location and continuous tracking
+    getCurrentLocation();
+    trackLiveLocation();
+    
+    // 2. Mock stats interval
+    const statsInterval = setInterval(() => {
+      setStats(prev => ({
+        ...prev,
+        activeTime: prev.activeTime + 1,
+        safePlaces: Math.floor(Math.random() * 10) + 5,
+        alertsSent: Math.floor(Math.random() * 3)
+      }));
+    }, 60000);
+    
+    // 3. Cleanup: Stop tracking and intervals
+    return () => {
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current);
+      }
+      clearInterval(statsInterval);
+      if (isSosConfirming) {
+          setIsSosConfirming(false); // Clear modal if unmounting
+      }
+    };
+  }, [getCurrentLocation, trackLiveLocation, isSosConfirming]); // Added isSosConfirming for cleanup
+
+  // ... (checkSafetyZone, calculateDistance, getTimeSinceActivity, handleSafeShare remain unchanged)
+  // These helper functions are omitted here for brevity but are assumed to be in your final code.
   const checkSafetyZone = (lat, lng) => {
-    // Mock unsafe zones for demo
+    // ... (logic remains unchanged)
     const unsafeZones = [
-      { lat: 28.6139, lng: 77.2090, radius: 1000 }, // Delhi area
-      { lat: 19.0760, lng: 72.8777, radius: 800 }   // Mumbai area
+      { lat: 28.6139, lng: 77.2090, radius: 1000 }, 
+      { lat: 19.0760, lng: 72.8777, radius: 800 }  
     ];
 
     const isInUnsafeZone = unsafeZones.some(zone => {
@@ -97,16 +201,7 @@ const Dashboard = () => {
       toast.success('✅ You are now in a safe zone');
     }
   };
-
-  /**
-   * Haversine distance between two coordinate pairs in meters.
-   *
-   * @param {number} lat1
-   * @param {number} lng1
-   * @param {number} lat2
-   * @param {number} lng2
-   * @returns {number} Distance in meters.
-   */
+  
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI/180;
@@ -115,28 +210,21 @@ const Dashboard = () => {
     const Δλ = (lng2-lng1) * Math.PI/180;
 
     const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
     return R * c;
   };
-
-  /**
-   * Convenience helper tracking idle time for future UX prompts.
-   * @returns {number} Minutes since the last recorded activity.
-   */
+  
   const getTimeSinceActivity = () => {
     const diff = new Date() - lastActivity;
     const minutes = Math.floor(diff / 60000);
     return minutes;
   };
 
-  // Safe sharing function to prevent multiple simultaneous shares
-  /**
-   * Shares or copies the current safety status using the Web Share API with fallbacks.
-   */
   const handleSafeShare = async () => {
+    // ... (logic remains unchanged)
     if (isSharing) {
       toast.info('Share already in progress...');
       return;
@@ -153,7 +241,6 @@ const Dashboard = () => {
         });
         toast.success('📤 Safety status shared successfully!');
       } else {
-        // Fallback for browsers that don't support native sharing
         const statusText = `SafarSathi Safety Check-in: I'm safe! Current safety score: ${stats.safetyScore}/100 🛡️ - ${window.location.origin}`;
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(statusText);
@@ -164,7 +251,6 @@ const Dashboard = () => {
       }
     } catch (error) {
       if (error.name === 'AbortError') {
-        // User cancelled the share
         toast.info('Share cancelled');
       } else if (error.name === 'InvalidStateError') {
         toast.warning('Please wait for previous share to complete');
@@ -176,6 +262,12 @@ const Dashboard = () => {
       setIsSharing(false);
     }
   };
+
+  // Helper for safety status color and text
+  const statusColor = safetyStatus === 'warning' ? 'bg-orange-500' : 
+                      safetyStatus === 'danger' ? 'bg-red-500' : 'bg-green-500';
+  const statusText = safetyStatus === 'warning' ? 'Warning Zone' : 
+                      safetyStatus === 'danger' ? 'SOS Active' : 'All Clear';
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -200,7 +292,18 @@ const Dashboard = () => {
       animate="visible"
       className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 p-6"
     >
-      {/* Header */}
+      
+      <AnimatePresence>
+        {isSosConfirming && (
+          <SOSConfirmationModal 
+            onConfirm={confirmAndSendSOS} 
+            onCancel={cancelSOS} 
+            touristId={touristId}
+          />
+        )}
+      </AnimatePresence>
+      
+      {/* Header (JSX unchanged except for using userName) */}
       <motion.header variants={itemVariants} className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 mb-8 shadow-lg border border-white/20">
         <div className="flex items-center justify-between">
           <motion.h1
@@ -218,7 +321,7 @@ const Dashboard = () => {
               transition={{ delay: 0.4, type: "spring" }}
               className="text-slate-700 font-semibold"
             >
-              {user?.name}
+              Welcome, {userName} 
             </motion.span>
             <motion.span
               initial={{ scale: 0 }}
@@ -226,7 +329,7 @@ const Dashboard = () => {
               transition={{ delay: 0.5, type: "spring" }}
               className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium"
             >
-              🔗 {user?.blockchainID?.slice(0, 8)}...
+              🔗 ID: {user?.qrContent?.split('=')[1]?.slice(0, 12) || 'N/A'}...
             </motion.span>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -239,8 +342,29 @@ const Dashboard = () => {
           </div>
         </div>
       </motion.header>
+      
+      {/* Current Status and Location Card (JSX unchanged) */}
+      <motion.div variants={itemVariants} className={`flex items-center justify-between ${statusColor} text-white p-6 rounded-2xl shadow-xl mb-8 transition-colors duration-500`}>
+          <div>
+              <p className="text-sm font-medium opacity-80 mb-1">Your Current Safety Status</p>
+              <h2 className="text-3xl font-bold">{statusText}</h2>
+              <p className="text-sm mt-3">
+                  {currentLocation 
+                      ? `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`
+                      : 'Acquiring GPS Signal...'
+                  }
+              </p>
+              <p className="text-xs opacity-70 mt-1">
+                Last activity: {getTimeSinceActivity()} min ago
+              </p>
+          </div>
+          <div className="text-5xl">
+              {safetyStatus === 'safe' ? '💚' : safetyStatus === 'warning' ? '🧡' : '🛑'}
+          </div>
+      </motion.div>
 
-      {/* Quick Stats */}
+
+      {/* Quick Stats (JSX unchanged) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
           { icon: "🛡️", title: "Safety Score", value: `${stats.safetyScore}/100`, color: "from-blue-500 to-blue-600" },
@@ -274,11 +398,11 @@ const Dashboard = () => {
         ))}
       </motion.div>
       
-      {/* Quick Actions */}
+      {/* Quick Actions (Updated SOS button to call startSOSConfirmation) */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
           { icon: "🗺️", text: "Safety Map", onClick: () => navigate('/map'), color: "from-teal-500 to-blue-500" },
-          { icon: "🆘", text: "Quick SOS", onClick: () => {}, color: "from-red-500 to-pink-500" },
+          { icon: "🆘", text: "Quick SOS", onClick: startSOSConfirmation, color: "from-red-500 to-pink-500" }, // 🔑 UPDATED HANDLER
           { icon: "📤", text: "Share Location", onClick: handleSafeShare, disabled: isSharing, color: "from-purple-500 to-indigo-500" },
           { icon: "📞", text: "Emergency Contacts", onClick: () => {}, color: "from-orange-500 to-red-500" }
         ].map((action, index) => (
@@ -299,7 +423,7 @@ const Dashboard = () => {
         ))}
       </motion.div>
       
-      {/* Safety Tips */}
+      {/* Safety Tips (JSX unchanged) */}
       <motion.div variants={itemVariants} className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 mb-8 shadow-lg border border-white/20">
         <motion.h2
           initial={{ opacity: 0, x: -20 }}
@@ -329,13 +453,22 @@ const Dashboard = () => {
         </div>
       </motion.div>
       
-      {/* Emergency Section */}
+      {/* Emergency Section (Updated button to call startSOSConfirmation) */}
       <motion.div
         variants={itemVariants}
         className="flex justify-center"
       >
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20">
-          <SOSButton currentLocation={null} user={user} />
+          <motion.button
+            whileHover={{ scale: 1.05, rotate: 2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={startSOSConfirmation} // 🔑 UPDATED HANDLER
+            className="w-40 h-40 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-2xl flex flex-col items-center justify-center transition-all duration-300 transform"
+          >
+            <span className="text-5xl font-extrabold">🚨</span>
+            <span className="text-xl font-bold mt-1">PANIC SOS</span>
+            <span className="text-xs mt-1 opacity-80">Sends alert in 5 seconds</span>
+          </motion.button>
         </div>
       </motion.div>
     </motion.div>
