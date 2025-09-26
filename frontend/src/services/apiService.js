@@ -1,18 +1,10 @@
 import axios from 'axios';
 
-// Set the base URL for your Spring Boot backend
-// IMPORTANT: Update this URL to match your backend's running port/address
-const viteEnv = typeof import.meta !== 'undefined' ? import.meta.env : undefined;
-const legacyEnv = typeof process !== 'undefined' ? process.env : undefined;
-const backendTarget =
-  viteEnv?.VITE_BACKEND_TARGET ??
-  legacyEnv?.REACT_APP_BACKEND_TARGET ??
-  '';
+// Get the backend port from the .env file.
+// Defaults to 8080 if the environment variable is not set.
+const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080';
 
-const API_BASE_URL =
-  backendTarget === 'friend'
-    ? 'http://localhost:8080/api'
-    : 'http://localhost:8081/api';
+const API_BASE_URL = `http://localhost:${BACKEND_PORT}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -31,14 +23,13 @@ const apiService = {
     try {
       // The endpoint is /api/auth/register
       const response = await api.post('/auth/register', registrationData);
-      return response.data; 
+      return response.data;
     } catch (error) {
       console.error("API Registration Error:", error.response || error);
       throw new Error(error.response?.data?.message || 'Registration failed due to a network or server error.');
     }
   },
 
-  // 🔑 FIX: ADD THE MISSING loginTourist FUNCTION HERE
   /**
     * Authenticates a tourist via the Spring Boot backend using email/password.
     * @param {string} email - The tourist's email.
@@ -49,7 +40,7 @@ const apiService = {
     try {
       // Calls POST http://localhost:8080/api/auth/login
       const response = await api.post('/auth/login', { email, password });
-      return response.data; 
+      return response.data;
     } catch (error) {
       console.error("API Login Error:", error.response || error);
       // Ensure the error message here is useful
@@ -96,12 +87,12 @@ const apiService = {
   },
 
   /**
-   * Triggers the high-priority Panic (SOS) alert.
-   * @param {string} token - JWT token from the user session.
-   * @param {string} touristId - The ID of the currently logged-in user.
-   * @param {object} locationData - { lat, lng, accuracy }
-   * @returns {Promise<object>} Status response from the backend.
-   */
+    * Triggers the high-priority Panic (SOS) alert.
+    * @param {string} token - JWT token from the user session.
+    * @param {string} touristId - The ID of the currently logged-in user.
+    * @param {object} locationData - { lat, lng, accuracy }
+    * @returns {Promise<object>} Status response from the backend.
+    */
   panicSOS: async (token, touristId, locationData) => {
     try {
       const response = await api.post(`/action/sos/${touristId}`, locationData, {
@@ -137,9 +128,9 @@ const apiService = {
   },
 
   /**
-   * Retrieves the full list of tourists for the admin mission map.
-   * @returns {Promise<object[]>} Array of tourists with last known coordinates.
-   */
+    * Retrieves the full list of tourists for the admin mission map.
+    * @returns {Promise<object[]>} Array of tourists with last known coordinates.
+    */
   getAdminTourists: async () => {
     try {
       const response = await api.get('/admin/tourists');
@@ -151,9 +142,9 @@ const apiService = {
   },
 
   /**
-   * Retrieves the current set of active alerts for the admin dashboard.
-   * @returns {Promise<object[]>} Array of alert objects.
-   */
+    * Retrieves the current set of active alerts for the admin dashboard.
+    * @returns {Promise<object[]>} Array of alert objects.
+    */
   getAdminAlerts: async () => {
     try {
       const response = await api.get('/admin/alerts');
@@ -165,9 +156,9 @@ const apiService = {
   },
 
   /**
-   * Aggregated admin dashboard state (stats, alerts, tourists, response units).
-   * @returns {Promise<object>}
-   */
+    * Aggregated admin dashboard state (stats, alerts, tourists, response units).
+    * @returns {Promise<object>}
+    */
   getAdminDashboardState: async () => {
     try {
       const response = await api.get('/admin/dashboard/state');
@@ -179,9 +170,9 @@ const apiService = {
   },
 
   /**
-   * Retrieves active risk zones for tourist clients.
-   * @returns {Promise<object[]>}
-   */
+    * Retrieves active risk zones for tourist clients.
+    * @returns {Promise<object[]>}
+    */
   getActiveRiskZones: async () => {
     try {
       const response = await api.get('/risk-zones/active');
@@ -193,9 +184,9 @@ const apiService = {
   },
 
   /**
-   * Retrieves all configured risk zones for administrative management.
-   * @returns {Promise<object[]>}
-   */
+    * Retrieves all configured risk zones for administrative management.
+    * @returns {Promise<object[]>}
+    */
   getRiskZones: async () => {
     try {
       const response = await api.get('/admin/risk-zones');
@@ -207,11 +198,11 @@ const apiService = {
   },
 
   /**
-   * Returns consolidated tourist dashboard state including alerts, risk zones, blockchain logs.
-   * @param {string} touristId
-   * @param {string} token
-   * @returns {Promise<object>}
-   */
+    * Returns consolidated tourist dashboard state including alerts, risk zones, blockchain logs.
+    * @param {string} touristId
+    * @param {string} token
+    * @returns {Promise<object>}
+    */
   getTouristDashboardState: async (touristId, token) => {
     try {
       const response = await api.get(`/tourist/${touristId}/dashboard`, {
@@ -227,10 +218,10 @@ const apiService = {
   },
 
   /**
-   * Creates a new risk zone geo-fence.
-   * @param {object} payload - Risk zone attributes.
-   * @returns {Promise<object>}
-   */
+    * Creates a new risk zone geo-fence.
+    * @param {object} payload - Risk zone attributes.
+    * @returns {Promise<object>}
+    */
   createRiskZone: async (payload) => {
     try {
       const response = await api.post('/admin/risk-zones', payload);
@@ -242,11 +233,11 @@ const apiService = {
   },
 
   /**
-   * Updates an existing risk zone definition.
-   * @param {number} zoneId - Identifier of the risk zone.
-   * @param {object} payload - Updated risk zone data.
-   * @returns {Promise<object>}
-   */
+    * Updates an existing risk zone definition.
+    * @param {number} zoneId - Identifier of the risk zone.
+    * @param {object} payload - Updated risk zone data.
+    * @returns {Promise<object>}
+    */
   updateRiskZone: async (zoneId, payload) => {
     try {
       const response = await api.put(`/admin/risk-zones/${zoneId}`, payload);
@@ -258,11 +249,11 @@ const apiService = {
   },
 
   /**
-   * Toggles a risk zone active status.
-   * @param {number} zoneId - Identifier of the risk zone.
-   * @param {boolean} active - Desired active flag.
-   * @returns {Promise<object>}
-   */
+    * Toggles a risk zone active status.
+    * @param {number} zoneId - Identifier of the risk zone.
+    * @param {boolean} active - Desired active flag.
+    * @returns {Promise<object>}
+    */
   updateRiskZoneStatus: async (zoneId, active) => {
     try {
       const response = await api.patch(`/admin/risk-zones/${zoneId}/status`, null, {
@@ -276,10 +267,10 @@ const apiService = {
   },
 
   /**
-   * Removes a risk zone entry.
-   * @param {number} zoneId - Identifier of the risk zone.
-   * @returns {Promise<void>}
-   */
+    * Removes a risk zone entry.
+    * @param {number} zoneId - Identifier of the risk zone.
+    * @returns {Promise<void>}
+    */
   deleteRiskZone: async (zoneId) => {
     try {
       await api.delete(`/admin/risk-zones/${zoneId}`);
