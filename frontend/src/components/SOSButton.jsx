@@ -1,8 +1,34 @@
 //components/SOSButton.jsx - Enhanced for better readability and tourist accessibility
 import { useState, useRef, useCallback } from 'react';
-import { toast } from 'react-toastify';
-import { getBatteryLevel, getNetworkInfo } from '../utils/helpers';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
+
+// Local utility functions to replace the missing import.
+// These are included directly in the file to avoid external dependencies.
+const getBatteryLevel = async () => {
+  if ('getBattery' in navigator) {
+    try {
+      const battery = await navigator.getBattery();
+      return `${Math.round(battery.level * 100)}%`;
+    } catch (e) {
+      console.error('Failed to get battery info:', e);
+      return 'N/A';
+    }
+  }
+  return 'N/A';
+};
+
+const getNetworkInfo = () => {
+  if ('connection' in navigator) {
+    const connection = navigator.connection;
+    return {
+      effectiveType: connection.effectiveType || 'N/A',
+      rtt: connection.rtt || 'N/A',
+      downlink: connection.downlink || 'N/A',
+    };
+  }
+  return { effectiveType: 'N/A', rtt: 'N/A', downlink: 'N/A' };
+};
 
 const ICONS = Object.freeze({
   countdown: 'https://cdn-icons-png.flaticon.com/512/1828/1828665.png',
@@ -16,7 +42,7 @@ const ICONS = Object.freeze({
  * Enhanced hold-to-activate emergency button with improved typography and tourist-friendly design
  * Features offline support, visual feedback, and clear instructions for international users
  *
- * @param {{ currentLocation?: {lat: number, lng: number}, user?: object }} props
+ * @param {{ currentLocation?: {lat: number, lng: number, accuracy?: number}, user?: {id: string, name: string, blockchainID: string} }} props
  */
 const SOSButton = ({ currentLocation, user }) => {
   const [isActivated, setIsActivated] = useState(false);
@@ -25,6 +51,7 @@ const SOSButton = ({ currentLocation, user }) => {
   const [showInstructions, setShowInstructions] = useState(false);
   const holdTimer = useRef(null);
   const countdownTimer = useRef(null);
+  const API_BASE_URL = 'http://localhost:8080/api/action'; // **[Adjust this URL to your actual backend domain]**
 
   // Enhanced SOS with offline support and better UX
   /**
@@ -39,42 +66,76 @@ const SOSButton = ({ currentLocation, user }) => {
       navigator.vibrate([300, 150, 300, 150, 300, 150, 800]);
     }
 
-    const batteryLevel = await getBatteryLevel();
-    const networkInfo = getNetworkInfo();
+    // Extract touristId and prepare location data
+    const touristId = user?.id || user?.blockchainID; // Assuming 'id' or 'blockchainID' holds the UUID
+    
+    // IMPORTANT: Ensure currentLocation includes accuracy, as your backend DTO expects it.
+    const lat = currentLocation?.lat ?? 0.0;
+    const lng = currentLocation?.lng ?? 0.0;
+    const accuracy = currentLocation?.accuracy ?? 1000; // Default to 1000m if accuracy is missing
+    
 
-    const sosData = {
-      userId: user?.blockchainID,
+    // Data for local storage (optional metadata)
+    const sosMetadata = {
+      userId: touristId,
       userName: user?.name,
-      location: currentLocation || { lat: 0, lng: 0 },
+      location: { lat, lng, accuracy },
       timestamp: new Date().toISOString(),
       type: 'emergency',
       status: 'active',
       deviceInfo: {
-        battery: batteryLevel,
-        network: networkInfo.effectiveType,
+        battery: await getBatteryLevel(),
+        network: getNetworkInfo().effectiveType,
         platform: navigator.platform
       }
     };
+    
+    // Data for API payload (must match backend DTO: LocationPingRequest(Double lat, Double lng, Integer accuracy))
+    const apiPayload = {
+      lat: lat,
+      lng: lng,
+      accuracy: accuracy
+    };
+    
+    // ------------------------------------------------------------------
+    // 🔴 DEBUG TOOL: Log the data being sent to the console
+    // ------------------------------------------------------------------
+    console.log('-------------------- SOS DEBUG START --------------------');
+    console.log('API Endpoint:', `${API_BASE_URL}/sos/${touristId}`);
+    console.log('API Payload (Sent to Backend):', apiPayload);
+    console.log('Tourist ID Used:', touristId);
+    console.log('SOS Data Sent Locally:', sosMetadata);
+    console.log('--------------------- SOS DEBUG END ---------------------');
+    // ------------------------------------------------------------------
+
 
     // Store SOS locally first (offline support)
     const existingSOS = JSON.parse(localStorage.getItem('pending_sos') || '[]');
-    existingSOS.push(sosData);
+    existingSOS.push(sosMetadata);
     localStorage.setItem('pending_sos', JSON.stringify(existingSOS));
 
     try {
-      if (navigator.onLine) {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+      if (navigator.onLine && touristId) {
+        // ------------------------------------------------------------------
+        // 🚀 ACTUAL API CALL TO BACKEND
+        // ------------------------------------------------------------------
+        const response = await fetch(`${API_BASE_URL}/sos/${touristId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // NOTE: In a real app, you'd add Authorization: `Bearer ${jwtToken}` here
+          },
+          body: JSON.stringify(apiPayload)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown server error' }));
+            throw new Error(`SOS API Failed: ${response.status} - ${errorData.message}`);
+        }
+        
+        toast.success('SOS alert sent to authorities!');
+        toast.info('Location shared with emergency services');
 
-        // Enhanced success messages for tourists
-        toast.success('🚨 EMERGENCY ALERT SENT! Authorities have been notified.', {
-          duration: 6000,
-          style: { fontSize: '16px', fontWeight: 'bold' }
-        });
-        toast.info('📍 Your exact location has been shared with emergency services.', {
-          duration: 5000,
-          style: { fontSize: '15px' }
-        });
 
         // Simulate police response with more details
         setTimeout(() => {
@@ -86,6 +147,8 @@ const SOSButton = ({ currentLocation, user }) => {
             navigator.vibrate([200, 100, 200]);
           }
         }, 3000);
+      } else if (!touristId) {
+          toast.error('User ID is missing. Cannot send SOS.');
       } else {
         toast.warning('📶 OFFLINE MODE: Your emergency alert is saved and will be sent automatically when connection is restored.', {
           duration: 8000,
@@ -94,10 +157,7 @@ const SOSButton = ({ currentLocation, user }) => {
       }
     } catch (error) {
       console.error('Failed to dispatch SOS', error);
-      toast.error('⚠️ Network error: Emergency alert saved locally and will retry automatically.', {
-        duration: 6000,
-        style: { fontSize: '15px', fontWeight: '500' }
-      });
+      toast.error(`Error sending SOS: ${error.message}. Saved locally.`);
     }
 
     // Auto-deactivate after 60 seconds with notification
@@ -108,8 +168,7 @@ const SOSButton = ({ currentLocation, user }) => {
         style: { fontSize: '15px' }
       });
     }, 60000);
-  }, [currentLocation, user]);
-
+  }, [currentLocation, user, API_BASE_URL]); 
   /**
    * Enhanced countdown with clearer messaging
    */
@@ -139,6 +198,7 @@ const SOSButton = ({ currentLocation, user }) => {
       }
     }, 1000);
   }, [activateSOS]);
+
 
   /**
    * Enhanced hold-to-activate with better visual feedback
@@ -171,6 +231,7 @@ const SOSButton = ({ currentLocation, user }) => {
       }
     }, 30);
   }, [isActivated, startCountdown]);
+
 
   /**
    * Enhanced release handling with feedback
