@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { formatTime } from '../../mock/adminData';
+import { formatTime } from '../../utils/time';
 
 const priorityColor = {
   critical: 'border-red-500/60 bg-red-500/10 text-red-200',
@@ -17,27 +17,35 @@ const AlertsPanel = ({ alerts = [], onSelectAlert }) => {
       </div>
 
       <div className="divide-y divide-white/10">
-        {alerts.map(alert => (
-          <motion.button
-            key={alert.id}
-            whileHover={{ backgroundColor: 'rgba(148, 163, 184, 0.08)' }}
-            onClick={() => onSelectAlert?.(alert)}
-            className="w-full text-left px-6 py-4 flex flex-col gap-2 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-white flex items-center gap-2">
-                <span className={`px-2 py-1 rounded-full text-xs border ${priorityColor[alert.priority]}`}>{alert.priority.toUpperCase()}</span>
-                <span>{alert.description}</span>
-              </p>
-              <p className="text-xs text-slate-400">{formatTime(alert.timestamp)}</p>
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs text-slate-300">
-              <span>👤 {alert.touristName}</span>
-              <span>🆔 {alert.id}</span>
-              <span>{alert.assignedUnit ? `🚓 Assigned: ${alert.assignedUnit}` : '🕒 Unassigned'}</span>
-            </div>
-          </motion.button>
-        ))}
+        {alerts.map(alert => {
+          const priorityKey = alert.priority?.toLowerCase?.() || 'info';
+          const badgeClass = priorityColor[priorityKey] || priorityColor.info;
+          const description = alert.description || alert.message || alert.alertType || 'Alert triggered';
+          const touristName = alert.touristName || 'Unknown tourist';
+          const assignedUnitLabel = alert.assignedUnit ? `🚓 Assigned: ${alert.assignedUnit}` : '🕒 Awaiting assignment';
+
+          return (
+            <motion.button
+              key={alert.id}
+              whileHover={{ backgroundColor: 'rgba(148, 163, 184, 0.08)' }}
+              onClick={() => onSelectAlert?.(alert)}
+              className="w-full text-left px-6 py-4 flex flex-col gap-2 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-white flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded-full text-xs border ${badgeClass}`}>{(alert.priority || 'info').toUpperCase()}</span>
+                  <span>{description}</span>
+                </p>
+                <p className="text-xs text-slate-400">{formatTime(alert.timestamp)}</p>
+              </div>
+              <div className="flex flex-wrap gap-3 text-xs text-slate-300">
+                <span>👤 {touristName}</span>
+                <span>🆔 {alert.id}</span>
+                <span>{assignedUnitLabel}</span>
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );

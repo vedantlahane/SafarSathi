@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl, LayerGro
 import L from 'leaflet';
 import { motion } from 'framer-motion';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { mockAlerts } from '../../mock/adminData';
 import apiService from '../../services/apiService';
 
 const { BaseLayer, Overlay } = LayersControl;
@@ -24,7 +23,7 @@ const sosIcon = new L.Icon({
 
 const AdminMapView = () => {
   const [tourists, setTourists] = useState([]);
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const [alerts, setAlerts] = useState([]);
   const [selectedTouristId, setSelectedTouristId] = useState(null);
   const [riskZones, setRiskZones] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,27 +34,21 @@ const AdminMapView = () => {
 
     const loadData = async () => {
       try {
-        const [touristResponse, alertsResponse, zonesResponse] = await Promise.allSettled([
-          apiService.getAdminTourists(),
-          apiService.getAdminAlerts(),
+        const [dashboardResponse, zonesResponse] = await Promise.allSettled([
+          apiService.getAdminDashboardState(),
           apiService.getRiskZones()
         ]);
 
         if (!isMounted) return;
 
-        if (touristResponse.status === 'fulfilled') {
-          setTourists(Array.isArray(touristResponse.value) ? touristResponse.value : []);
+        if (dashboardResponse.status === 'fulfilled') {
+          const data = dashboardResponse.value || {};
+          setTourists(Array.isArray(data.tourists) ? data.tourists : []);
+          setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
           setError(null);
         } else {
-          console.error('Failed to load tourists:', touristResponse.reason);
-          setError(touristResponse.reason?.message || 'Unable to load tourist positions.');
-        }
-
-        if (alertsResponse.status === 'fulfilled') {
-          const liveAlerts = Array.isArray(alertsResponse.value) ? alertsResponse.value : [];
-          setAlerts(liveAlerts.length ? liveAlerts : mockAlerts);
-        } else {
-          console.error('Failed to load alerts:', alertsResponse.reason);
+          console.error('Failed to load dashboard state:', dashboardResponse.reason);
+          setError(dashboardResponse.reason?.message || 'Unable to load dashboard data.');
         }
 
         if (zonesResponse.status === 'fulfilled') {
@@ -82,7 +75,7 @@ const AdminMapView = () => {
 
   const activeAlertsByTourist = useMemo(() => {
     return alerts.reduce((set, alert) => {
-      if (alert && alert.status !== 'RESOLVED' && alert.touristId) {
+      if (alert && alert.touristId && (alert.status == null || alert.status.toUpperCase() !== 'RESOLVED')) {
         set.add(alert.touristId);
       }
       return set;

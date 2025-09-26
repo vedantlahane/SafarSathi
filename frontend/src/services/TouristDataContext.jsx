@@ -59,6 +59,30 @@ const normaliseBackendZones = (zones = []) =>
     }))
     .filter(zone => !Number.isNaN(zone.center.lat) && !Number.isNaN(zone.center.lng) && zone.radius > 0);
 
+const mapAlertsToAnomalies = (alerts = []) =>
+  alerts
+    .filter(Boolean)
+    .map(alert => ({
+      id: `alert-${alert.id ?? crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`,
+      type: (alert.alertType || 'alert').toLowerCase(),
+      timestamp: alert.timestamp || new Date().toISOString(),
+      severity: alert.priority === 'critical' ? 'high' : alert.priority === 'high' ? 'medium' : 'low',
+      details: alert.message || 'Alert triggered',
+      resolved: alert.status ? alert.status.toUpperCase() === 'RESOLVED' : false,
+      resolutionNotes: alert.status && alert.status.toUpperCase() === 'RESOLVED' ? 'Resolved by control room' : null
+    }));
+
+const mapBlockchainLogs = (logs = []) =>
+  logs
+    .filter(Boolean)
+    .map(log => ({
+      id: log.id ?? crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
+      action: (log.status || 'BLOCKCHAIN_EVENT').toUpperCase(),
+      actor: 'SafarSathi Ledger',
+      metadata: log.transactionId ? `tx: ${log.transactionId}` : 'Immutable record',
+      timestamp: log.timestamp || new Date().toISOString()
+    }));
+
 export const TouristDataProvider = ({ children }) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -117,6 +141,7 @@ export const TouristDataProvider = ({ children }) => {
       
       // Fetch real profile data from backend if user is authenticated
       let profileData = null;
+      let dashboardState = null;
       if (user && user.id && user.token) {
         try {
           profileData = await apiService.getTouristProfile(user.id, user.token);
@@ -147,24 +172,92 @@ export const TouristDataProvider = ({ children }) => {
             }
           };
         }
+
+        try {
+          dashboardState = await apiService.getTouristDashboardState(user.id, user.token);
+        } catch (dashboardError) {
+          console.warn('Failed to fetch dashboard snapshot, falling back to mock data:', dashboardError);
+        }
       }
 
-      const [itineraryData, contactData, anomalyData, iotData, logData, zoneData] = await Promise.all([
+      const [itineraryData, contactData, fallbackAnomalyData, iotData, fallbackBlockchainLogs] = await Promise.all([
         fetchItinerary(),
         fetchEmergencyContacts(),
         fetchAnomalies(),
         fetchIoTDevices(),
-        fetchBlockchainLogs(),
-        loadRiskZones()
+        fetchBlockchainLogs()
       ]);
 
-      setProfile(profileData);
+      const zonesData = dashboardState?.riskZones?.length
+        ? normaliseBackendZones(dashboardState.riskZones)
+        : await loadRiskZones();
+
+      const anomalyData = dashboardState?.alerts?.length
+        ? mapAlertsToAnomalies(dashboardState.alerts)
+        : fallbackAnomalyData;
+
+      const blockchainData = dashboardState?.blockchainLogs?.length
+        ? mapBlockchainLogs(dashboardState.blockchainLogs)
+        : fallbackBlockchainLogs;
+
+      const defaultPreferences = {
+        shareLiveLocation: true,
+        allowGeoFenceAlerts: true,
+        allowIoTTracking: false,
+        preferredLanguage: 'en'
+      };
+
+      const mergedProfile = (() => {
+        const base = profileData || (dashboardState?.profile ? {
+          id: dashboardState.profile.id,
+          name: dashboardState.profile.name,
+          email: dashboardState.profile.email,
+          phone: dashboardState.profile.phone,
+          passportNumber: dashboardState.profile.passportNumber,
+          dateOfBirth: dashboardState.profile.dateOfBirth,
+          address: dashboardState.profile.address,
+          gender: dashboardState.profile.gender,
+          nationality: dashboardState.profile.nationality,
+          emergencyContact: dashboardState.profile.emergencyContact,
+          safetyScore: dashboardState.profile.safetyScore,
+          idHash: dashboardState.profile.idHash
+        } : null) || (user ? {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          passportNumber: user.passportNumber,
+          dateOfBirth: user.dateOfBirth,
+          address: user.address,
+          gender: user.gender,
+          nationality: user.nationality,
+          emergencyContact: user.emergencyContact,
+          safetyScore: user.safetyScore,
+          idHash: user.qrContent ? user.qrContent.split('hash=')[1] : undefined
+        } : null);
+
+        if (!base) {
+          return null;
+        }
+
+        return {
+          ...base,
+          currentLat: dashboardState?.lastLocation?.lat ?? base.currentLat ?? user?.currentLat ?? null,
+          currentLng: dashboardState?.lastLocation?.lng ?? base.currentLng ?? user?.currentLng ?? null,
+          lastSeen: dashboardState?.lastLocation?.lastSeen ?? base.lastSeen ?? user?.lastSeen ?? new Date().toISOString(),
+          safetyScore: dashboardState?.safetyScore ?? base.safetyScore ?? 100,
+          status: dashboardState?.status ?? base.status ?? 'safe',
+          preferences: base.preferences || defaultPreferences
+        };
+      })();
+
+      setProfile(mergedProfile);
       setItinerary(itineraryData);
       setContacts(contactData);
       setAnomalies(anomalyData);
-      setZones(zoneData);
+      setZones(zonesData);
       setIotDevices(iotData);
-      setBlockchainLogs(logData);
+      setBlockchainLogs(blockchainData);
     } catch (err) {
       console.error('Failed to initialise tourist data', err);
       setError(err);
@@ -180,10 +273,27 @@ export const TouristDataProvider = ({ children }) => {
   }, [initialise, user]);
 
   const refreshAnomalies = useCallback(async () => {
-    const updated = await fetchAnomalies();
-    setAnomalies(updated);
-    return updated;
-  }, []);
+    if (user?.id && user?.token) {
+      try {
+        const dashboardState = await apiService.getTouristDashboardState(user.id, user.token);
+        const mappedAlerts = mapAlertsToAnomalies(dashboardState.alerts || []);
+        setAnomalies(mappedAlerts);
+        if (dashboardState.riskZones?.length) {
+          setZones(normaliseBackendZones(dashboardState.riskZones));
+        }
+        if (dashboardState.blockchainLogs?.length) {
+          setBlockchainLogs(mapBlockchainLogs(dashboardState.blockchainLogs));
+        }
+        return mappedAlerts;
+      } catch (error) {
+        console.warn('Dashboard refresh failed, using mock anomalies:', error);
+      }
+    }
+
+    const fallback = await fetchAnomalies();
+    setAnomalies(fallback);
+    return fallback;
+  }, [user?.id, user?.token]);
 
   const updatePreference = useCallback(async (partialPrefs) => {
     // TODO: Update preferences in backend when API is available
@@ -196,9 +306,10 @@ export const TouristDataProvider = ({ children }) => {
     const updated = await acknowledgeAnomaly(id);
     if (updated) {
       setAnomalies(prev => prev.map(anom => (anom.id === id ? updated : anom)));
+      await refreshAnomalies();
     }
     return updated;
-  }, []);
+  }, [refreshAnomalies]);
 
   const getDigitalIdPayload = useCallback(async () => {
     if (profile) {
@@ -237,6 +348,8 @@ export const TouristDataProvider = ({ children }) => {
     blockchainLogs,
     loading,
     error,
+    status: profile?.status || 'safe',
+    safetyScore: profile?.safetyScore ?? 100,
     refreshAnomalies,
     updatePreference,
     getDigitalIdPayload,
