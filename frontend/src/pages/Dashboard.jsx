@@ -124,6 +124,58 @@ const Dashboard = () => {
     };
   }, [itinerary, anomalies, zoneList, user?.loginTime, profile]);
 
+  const nextItineraryStop = useMemo(() => {
+    if (!Array.isArray(itinerary) || itinerary.length === 0) {
+      return null;
+    }
+    return itinerary.find(leg => leg.status !== 'completed') || itinerary[0];
+  }, [itinerary]);
+
+  const upcomingItinerary = useMemo(() => {
+    if (!Array.isArray(itinerary)) {
+      return [];
+    }
+    return itinerary.filter(leg => leg.status !== 'completed').slice(0, 3);
+  }, [itinerary]);
+
+  const recentAnomalies = useMemo(() => {
+    if (!Array.isArray(anomalies)) {
+      return [];
+    }
+    return anomalies.slice(0, 3);
+  }, [anomalies]);
+
+  const activeZones = useMemo(() => {
+    if (!Array.isArray(zoneList)) {
+      return [];
+    }
+    return zoneList.slice(0, 3);
+  }, [zoneList]);
+
+  const quickStats = useMemo(
+    () => [
+      {
+        id: 'score',
+        icon: '🛡️',
+        label: 'Safety Score',
+        value: `${stats.safetyScore}/100`
+      },
+      {
+        id: 'alerts',
+        icon: '🚨',
+        label: 'Alerts Today',
+        value: stats.alertsSent
+      },
+      {
+        id: 'uptime',
+        icon: '⏱️',
+        label: 'Active Minutes',
+        value: stats.activeTime
+      }
+    ],
+    [stats]
+  );
+
   /**
    * Haversine distance between two coordinate pairs in meters.
    */
@@ -270,6 +322,31 @@ const Dashboard = () => {
     const diff = new Date() - lastActivity;
     return Math.floor(diff / 60000);
   }, [lastActivity]);
+
+  const formatRelativeTime = useCallback((input) => {
+    const value = new Date(input).getTime();
+    if (Number.isNaN(value)) {
+      return 'Unknown time';
+    }
+
+    const diffMs = Date.now() - value;
+    const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+    if (diffMinutes < 1) {
+      return 'moments ago';
+    }
+    if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`;
+    }
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) {
+      return `${diffHours} hr ago`;
+    }
+
+    const diffDays = Math.floor(diffHours / 24);
+    return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+  }, []);
 
   const handleSafeShare = useCallback(async () => {
     if (isSharing) {
@@ -469,6 +546,8 @@ const Dashboard = () => {
   const totalTourSteps = tourSteps.length;
   const activeTourId = isTourOpen ? tourSteps[tourStepIndex]?.id : null;
   const highlightClass = 'ring-2 ring-teal-300/80 ring-offset-2 ring-offset-slate-950 shadow-lg shadow-teal-400/20';
+  const statsVisibilityClass = showStats ? 'grid' : 'hidden sm:grid';
+  const tipsVisibilityClass = showTips ? 'block' : 'hidden sm:block';
 
   const handleNextTourStep = useCallback(() => {
     setTourStepIndex((prev) => {
@@ -496,6 +575,21 @@ const Dashboard = () => {
     }
 
     return undefined;
+  }, [isTourOpen, tourStepIndex, tourSteps]);
+
+  useEffect(() => {
+    if (!isTourOpen) {
+      return;
+    }
+
+    const currentId = tourSteps[tourStepIndex]?.id;
+    if (currentId === 'map') {
+      setActiveSecondaryPanel('map');
+    } else if (currentId === 'itinerary') {
+      setActiveSecondaryPanel('timeline');
+    } else if (currentId === 'devices') {
+      setActiveSecondaryPanel('devices');
+    }
   }, [isTourOpen, tourStepIndex, tourSteps]);
 
   useEffect(() => {
@@ -703,291 +797,496 @@ const Dashboard = () => {
       </AnimatePresence>
 
       {/* MAIN CONTENT */}
-      <div className="mx-auto max-w-7xl">
-        
-        {/* TOP SECTION: Enhanced Status + SOS + Stats */}
-  <motion.div variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-5">
-          
-          {/* MAIN STATUS - Enhanced typography */}
-          <motion.div
-            initial={{ opacity: 0, x: -15 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            ref={statusRef}
-            className={`lg:col-span-2 ${statusColor} rounded-2xl border border-white/10 p-6 sm:p-7 lg:p-8 text-white shadow-xl transition-colors duration-500 ${
-              activeTourId === 'status' ? highlightClass : ''
-            }`}
-          >
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex-1 text-center sm:text-left">
-                <p className="text-xs font-bold uppercase tracking-widest text-white/80 mb-2 sm:text-sm">LIVE STATUS</p>
-                <h2 className="text-3xl font-black sm:text-4xl mb-4 tracking-tight">{statusText}</h2>
-                <div className="space-y-2">
-                  <p className="text-base sm:text-lg text-white/95 font-medium">📍 {locationLabel}</p>
-                  <p className="text-sm text-white/80 font-medium">Last activity {lastActivityLabel}</p>
+      <div className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-24">
+        <motion.section variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-5 lg:gap-6">
+          <div className="space-y-5 lg:col-span-3">
+            <motion.div
+              ref={statusRef}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className={`${statusColor} rounded-2xl border border-white/10 p-6 text-white shadow-xl transition-all duration-500 backdrop-blur sm:p-7 lg:p-8 ${
+                activeTourId === 'status' ? highlightClass : ''
+              }`}
+            >
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex-1 space-y-3 text-center lg:text-left">
+                  <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.35em] text-white/80 lg:justify-start">
+                    <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                    Live Status
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tight sm:text-4xl">{statusText}</h2>
+                  <p className="text-base font-semibold text-white/90 sm:text-lg">📍 {locationLabel}</p>
+                  <p className="text-sm font-medium text-white/70">Last activity {lastActivityLabel}</p>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-black/20 px-5 py-4 shadow-lg sm:px-6 sm:py-5">
+                  <img
+                    src={statusIcon}
+                    alt="Status icon"
+                    className="h-16 w-16 rounded-full bg-white/20 p-4 shadow-lg"
+                  />
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-white/80">Safety Score</p>
+                    <p className="text-3xl font-black">{stats.safetyScore}/100</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSafeShare}
+                    disabled={isSharing}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Share status
+                  </button>
                 </div>
               </div>
-              <div className="text-center sm:text-right">
-                <img
-                  src={statusIcon}
-                  alt="Status icon"
-                  className="mx-auto h-20 w-20 rounded-full bg-white/20 p-4 shadow-lg mb-3 sm:mx-0"
-                />
-                <div className="text-sm sm:text-base text-white/80 font-medium">
-                  Safety Score
+              <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-white/85 sm:grid-cols-4">
+                <div className="rounded-xl bg-black/20 px-3 py-2 text-center">
+                  <p className="font-semibold uppercase tracking-wide">Connectivity</p>
+                  <p className="mt-1 text-sm font-bold">{isOffline ? 'Offline' : 'Online'}</p>
                 </div>
-                <div className="text-2xl font-black text-white">{stats.safetyScore}/100</div>
+                <div className="rounded-xl bg-black/20 px-3 py-2 text-center">
+                  <p className="font-semibold uppercase tracking-wide">Contacts</p>
+                  <p className="mt-1 text-sm font-bold">{allContacts.length}</p>
+                </div>
+                <div className="rounded-xl bg-black/20 px-3 py-2 text-center">
+                  <p className="font-semibold uppercase tracking-wide">Alerts Today</p>
+                  <p className="mt-1 text-sm font-bold">{stats.alertsSent}</p>
+                </div>
+                <div className="rounded-xl bg-black/20 px-3 py-2 text-center">
+                  <p className="font-semibold uppercase tracking-wide">Trip Minutes</p>
+                  <p className="mt-1 text-sm font-bold">{stats.activeTime}</p>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* SOS BUTTON - Enhanced design */}
+            <motion.div
+              ref={quickActionsRef}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-lg backdrop-blur sm:p-6 ${
+                activeTourId === 'actions' ? highlightClass : ''
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-white sm:text-xl">Quick actions</h2>
+                  <p className="text-sm font-medium text-slate-300/90">Safety essentials within thumb reach</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowStats((prev) => !prev)}
+                    aria-pressed={showStats}
+                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 sm:hidden"
+                  >
+                    {showStats ? 'Hide quick stats' : 'Quick stats'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenPanel('timeline');
+                      setShowTips((prev) => !prev);
+                    }}
+                    aria-pressed={showTips}
+                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 sm:hidden"
+                  >
+                    {showTips ? 'Hide tips' : 'Safety tips'}
+                  </button>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible lg:grid-cols-3">
+                {quickActions.map((action, index) => (
+                  <motion.button
+                    key={action.id}
+                    type="button"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 + index * 0.05 }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    className={`group relative flex min-w-[11rem] flex-shrink-0 items-center gap-3 rounded-2xl bg-gradient-to-r p-4 text-left text-white shadow-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-0 sm:p-5 ${action.color}`}
+                    aria-label={`${action.text} — ${action.description}`}
+                  >
+                    <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="h-10 w-10 flex-shrink-0 drop-shadow" />
+                    <div className="flex-1">
+                      <p className="text-sm font-bold leading-tight sm:text-base">{action.text}</p>
+                      <p className="text-xs font-medium text-white/90 sm:text-sm">{action.description}</p>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className={`rounded-2xl border border-white/10 bg-slate-900/60 p-4 shadow-lg backdrop-blur sm:p-6 ${statsVisibilityClass} grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4`}
+            >
+              {quickStats.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white shadow-sm"
+                >
+                  <span className="text-2xl" aria-hidden>{item.icon}</span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">{item.label}</p>
+                    <p className="text-xl font-bold text-white/90">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
             ref={sosRef}
-            className={`order-first rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-600/20 to-rose-600/20 p-6 sm:p-7 shadow-xl backdrop-blur sm:order-none ${
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+            className={`flex h-full flex-col justify-between rounded-2xl border border-red-500/40 bg-gradient-to-br from-rose-600/20 via-red-600/10 to-rose-800/30 p-6 shadow-xl backdrop-blur sm:p-7 lg:col-span-2 ${
               activeTourId === 'sos' ? highlightClass : ''
             }`}
             id="main-sos-button"
           >
-            <div className="text-center mb-5 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-black text-white mb-2">EMERGENCY SOS</h3>
-              <p className="text-sm sm:text-base text-slate-300 font-semibold">Hold for 3 seconds</p>
+            <div className="space-y-5">
+              <div className="text-center">
+                <h3 className="text-lg font-black text-white sm:text-xl">Emergency SOS</h3>
+                <p className="text-sm font-semibold text-rose-100/90 sm:text-base">Hold for 3 seconds to dispatch</p>
+                {isOffline && (
+                  <p className="mt-2 text-xs font-medium text-amber-200">
+                    Offline mode: alerts sync once reconnected
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-center">
+                <SOSButton currentLocation={currentLocation} user={profile} />
+              </div>
+              <div className="rounded-2xl border border-white/20 bg-black/20 px-4 py-3 text-left text-xs font-medium text-white/80 shadow-inner">
+                <p className="text-sm font-semibold text-white">Emergency flow</p>
+                <ul className="mt-2 space-y-1">
+                  <li>• Control room alerted instantly with live coordinates</li>
+                  <li>• Emergency contacts receive SMS + app notification</li>
+                  <li>• Nearby patrol units get push updates</li>
+                </ul>
+              </div>
             </div>
-            
-            <div className="flex justify-center mb-6">
-              <SOSButton currentLocation={currentLocation} user={profile} />
-            </div>
-            
-            <div className="text-center">
-              <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
-                Instantly alerts control room & your emergency contacts
-              </p>
-            </div>
-          </motion.div>
-
-          {/* STATS - Enhanced typography */}
-          <motion.div
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="lg:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-1"
-          >
-            {[
-              { icon: '🏛️', label: 'Safe Places Visited', value: stats.safePlaces, color: 'from-green-500 to-emerald-600' },
-              { icon: '⚠️', label: 'Alerts Sent Today', value: stats.alertsSent, color: 'from-amber-500 to-orange-500' },
-              { icon: '⏱️', label: 'Active Session Time', value: `${stats.activeTime}m`, color: 'from-purple-500 to-indigo-500' }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className={`rounded-xl bg-gradient-to-r p-5 sm:p-6 text-white shadow-lg ${stat.color}`}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowContacts(true)}
+                className="flex-1 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl" aria-hidden>{stat.icon}</span>
-                    <div>
-                      <p className="text-sm uppercase tracking-wide text-white/80 font-bold">{stat.label}</p>
-                      <p className="text-2xl font-black">{stat.value}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                View emergency contacts
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/safety')}
+                className="flex-1 rounded-full bg-gradient-to-r from-rose-500 to-red-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:from-rose-400 hover:to-red-400"
+              >
+                Safety center
+              </button>
+            </div>
           </motion.div>
-        </motion.div>
+        </motion.section>
 
-        {/* MAP + QUICK ACTIONS SECTION - Enhanced spacing */}
-  <motion.div variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-4">
-          
-          {/* MAP - Enhanced header */}
+        <motion.section
+          ref={secondaryPanelRef}
+          variants={itemVariants}
+          className="space-y-6"
+        >
           <motion.div
-            ref={mapRef}
-            className={`lg:col-span-3 rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 shadow-lg backdrop-blur ${
-              activeTourId === 'map' ? highlightClass : ''
-            }`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-lg backdrop-blur sm:p-6"
           >
-            <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="flex items-center text-lg font-bold text-white sm:text-xl">
-                🗺️ Live Safety Map
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="ml-3 w-3 h-3 bg-green-500 rounded-full"
-                />
-              </h2>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white sm:text-xl">More safety tools</h2>
+                <p className="text-sm text-slate-300/90">Switch panels to dive into detailed insights</p>
+              </div>
+              <button
+                type="button"
                 onClick={() => navigate('/map')}
-                className="inline-flex items-center gap-2 self-start rounded-lg bg-gradient-to-r from-teal-500 to-blue-500 px-4 py-2.5 text-sm font-bold text-white transition-all sm:self-auto sm:px-5 sm:py-3 sm:text-base"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
               >
-                <span>🗺️</span> Open Full Map
-              </motion.button>
+                <span aria-hidden>↗</span> Full map view
+              </button>
             </div>
-            
-            {/* MAP CONTAINER */}
-            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-slate-950/70 aspect-[4/3] sm:aspect-[16/9]">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-                {/* Grid pattern */}
-                <div
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    backgroundImage: 'linear-gradient(rgba(226,232,240,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(226,232,240,0.12) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px'
-                  }}
-                />
-                
-                {/* Current Location */}
-                <motion.div
-                  initial={{ scale: 1, opacity: 0.7 }}
-                  animate={{ 
-                    scale: 1.2,
-                    opacity: 1
-                  }}
-                  transition={{ repeat: Infinity, repeatType: 'mirror', duration: 1.5 }}
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+              {secondaryPanels.map((panel) => (
+                <button
+                  key={panel.id}
+                  type="button"
+                  onClick={() => setActiveSecondaryPanel(panel.id)}
+                  aria-pressed={activeSecondaryPanel === panel.id}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition sm:text-base ${
+                    activeSecondaryPanel === panel.id
+                      ? 'border-teal-400/80 bg-teal-500/20 text-teal-100 shadow'
+                      : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/15'
+                  }`}
                 >
-                  <div className="relative">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center">
-                      <div className="w-3 h-3 bg-white rounded-full"></div>
-                    </div>
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 transform rounded bg-blue-500 px-3 py-1 text-sm font-bold text-white">
-                      Your Location
+                  <span aria-hidden>{panel.icon}</span>
+                  {panel.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-6 space-y-6">
+              {activeSecondaryPanel === 'map' && (
+                <motion.div
+                  key="panel-map"
+                  ref={mapRef}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl border border-white/10 bg-slate-950/70 p-4 sm:p-6 ${
+                    activeTourId === 'map' ? highlightClass : ''
+                  }`}
+                >
+                  <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="flex items-center text-lg font-semibold text-white sm:text-xl">
+                      🗺️ Live safety map
+                      <motion.span
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                        className="ml-2 inline-flex h-2.5 w-2.5 rounded-full bg-green-400"
+                      />
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/map')}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                    >
+                      Open full map
+                    </button>
+                  </div>
+                  <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 aspect-[4/3] sm:aspect-[16/9]">
+                    <div
+                      className="absolute inset-0 opacity-20"
+                      style={{
+                        backgroundImage: 'linear-gradient(rgba(226,232,240,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(226,232,240,0.12) 1px, transparent 1px)',
+                        backgroundSize: '20px 20px'
+                      }}
+                    />
+                    <motion.div
+                      initial={{ scale: 1, opacity: 0.7 }}
+                      animate={{ scale: 1.2, opacity: 1 }}
+                      transition={{ repeat: Infinity, repeatType: 'mirror', duration: 1.5 }}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    >
+                      <div className="relative">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full border-4 border-white bg-blue-500 shadow-lg">
+                          <div className="h-3 w-3 rounded-full bg-white" />
+                        </div>
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 rounded-full bg-blue-500 px-3 py-1 text-xs font-semibold text-white shadow">
+                          Your location
+                        </div>
+                      </div>
+                    </motion.div>
+                    <div className="absolute top-6 left-6 h-6 w-6 rounded-full border border-emerald-300 bg-emerald-500/60" />
+                    <div className="absolute bottom-10 right-12 h-8 w-8 rounded-full border border-red-400 bg-red-500/40" />
+                    <div className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-slate-900/80 px-3 py-1 text-sm font-mono text-slate-200">
+                      {currentLocation
+                        ? `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
+                        : 'Getting location…'}
                     </div>
                   </div>
                 </motion.div>
-                
-                {/* Unsafe Zones */}
-                <div className="absolute top-1/4 right-1/4 h-20 w-20 rounded-full border-2 border-red-500/60 bg-red-500/20 flex items-center justify-center">
-                  <div className="text-3xl text-red-200">⚠️</div>
-                </div>
-                
-                <div className="absolute bottom-1/3 left-1/4 h-24 w-24 rounded-full border-2 border-orange-400/60 bg-orange-400/20 flex items-center justify-center">
-                  <div className="text-3xl text-orange-100">🚧</div>
-                </div>
-                
-                {/* Safe Zones */}
-                <div className="absolute top-1/6 left-1/6 h-6 w-6 rounded-full border border-white/70 bg-green-500 flex items-center justify-center">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 transform text-base text-green-200">🏛️</div>
-                </div>
-                <div className="absolute bottom-1/4 right-1/6 h-6 w-6 rounded-full border border-white/70 bg-green-500 flex items-center justify-center">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 transform text-base text-green-200">🚔</div>
-                </div>
-              </div>
-              
-              {/* Location Info Overlay */}
-              <div className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-slate-900/80 px-4 py-2 text-base text-slate-200 font-mono">
-                {currentLocation
-                  ? `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
-                  : 'Getting location…'
-                }
-              </div>
-            </div>
-          </motion.div>
+              )}
 
-          {/* QUICK ACTIONS - Enhanced typography */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-            ref={quickActionsRef}
-            className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 shadow-lg backdrop-blur ${
-              activeTourId === 'actions' ? highlightClass : ''
-            }`}
-          >
-            <div className="mb-6">
-              <h2 className="text-lg font-bold text-white mb-2 sm:text-xl">Quick Actions</h2>
-              <p className="text-sm sm:text-base text-slate-300/90 font-medium">Essential safety tools</p>
-            </div>
-            
-            {/* VERTICAL ACTION GRID */}
-            <div className="space-y-3 sm:space-y-4">
-              {quickActions.map((action, index) => (
-                <motion.button
-                  key={action.id}
-                  type="button"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  whileHover={{ scale: 1.03, x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  className={`w-full flex items-center gap-3 rounded-xl bg-gradient-to-r p-4 text-white shadow-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${action.color}`}
-                  aria-label={`${action.text} — ${action.description}`}
+              {activeSecondaryPanel === 'insights' && (
+                <motion.div
+                  key="panel-insights"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-5"
                 >
-                  <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="h-10 w-10 drop-shadow flex-shrink-0" />
-                  <div className="text-left flex-1">
-                    <p className="text-sm font-bold leading-tight mb-1 sm:text-base">{action.text}</p>
-                    <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-medium">{action.description}</p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {quickStats.map((item) => (
+                      <div
+                        key={`insight-${item.id}`}
+                        className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white shadow"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{item.label}</p>
+                        <p className="mt-1 text-2xl font-bold">{item.value}</p>
+                      </div>
+                    ))}
                   </div>
-                </motion.button>
-              ))}
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-white">Recent anomalies</h3>
+                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
+                          {recentAnomalies.length}
+                        </span>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {recentAnomalies.length === 0 ? (
+                          <p className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+                            All clear. No anomalies detected today.
+                          </p>
+                        ) : (
+                          recentAnomalies.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200"
+                            >
+                              <div>
+                                <p className="font-semibold capitalize text-white">{item.type.replace('_', ' ')}</p>
+                                <p className="text-xs text-slate-400">{formatRelativeTime(item.timestamp)}</p>
+                              </div>
+                              <span
+                                className={`inline-flex min-w-[88px] items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                  item.severity === 'high'
+                                    ? 'bg-rose-500/20 text-rose-200'
+                                    : item.severity === 'medium'
+                                    ? 'bg-amber-500/20 text-amber-100'
+                                    : 'bg-sky-500/20 text-sky-100'
+                                }`}
+                              >
+                                {item.severity}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-white">Active geo-fence zones</h3>
+                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
+                          {activeZones.length}
+                        </span>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {activeZones.length === 0 ? (
+                          <p className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+                            No restricted zones nearby.
+                          </p>
+                        ) : (
+                          activeZones.map((zone) => (
+                            <div
+                              key={zone.id}
+                              className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200"
+                            >
+                              <p className="font-semibold text-white">{zone.name}</p>
+                              <p className="text-xs text-slate-400">{zone.reason}</p>
+                              <p className="mt-2 text-xs text-slate-400">
+                                Radius {Math.round(zone.radius)}m • {zone.center.lat.toFixed(2)}, {zone.center.lng.toFixed(2)}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeSecondaryPanel === 'timeline' && (
+                <motion.div
+                  key="panel-timeline"
+                  ref={itineraryRef}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`space-y-5 ${activeTourId === 'itinerary' ? highlightClass : ''}`}
+                >
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3">
+                        <img src={ICONS.itinerary} alt="Itinerary" loading="lazy" className="h-10 w-10" />
+                        <div>
+                          <h3 className="text-lg font-semibold text-white sm:text-xl">Journey timeline</h3>
+                          <p className="text-sm text-slate-300">
+                            Next stop: {nextItineraryStop?.title || 'All clear'} • {nextItineraryStop?.city || 'TBD'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowItinerary(true)}
+                        className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/20 px-4 py-2 text-sm font-semibold text-teal-100 transition hover:bg-teal-500/30"
+                      >
+                        View full itinerary ↗
+                      </button>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      {upcomingItinerary.length === 0 ? (
+                        <p className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
+                          You are all caught up with your travel plan.
+                        </p>
+                      ) : (
+                        upcomingItinerary.map((stop) => (
+                          <div
+                            key={stop.id}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-200"
+                          >
+                            <div>
+                              <p className="font-semibold text-white">{stop.title}</p>
+                              <p className="text-xs text-slate-400">{stop.city} • {stop.time}</p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                                stop.status === 'completed'
+                                  ? 'bg-emerald-500/20 text-emerald-200'
+                                  : 'bg-sky-500/20 text-sky-100'
+                              }`}
+                            >
+                              {stop.status}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  <div className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 ${tipsVisibilityClass} sm:block`}>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img src={ICONS.tips} alt="Safety tips" loading="lazy" className="h-8 w-8" />
+                        <h3 className="text-lg font-semibold text-white">AI travel tips</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowTips((prev) => !prev)}
+                        aria-pressed={showTips}
+                        className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/20 sm:hidden"
+                      >
+                        {showTips ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    <ul className="space-y-3 text-sm text-slate-200 sm:text-base">
+                      <li className="flex items-start gap-3">
+                        <span className="mt-1 text-base text-teal-300">•</span>
+                        <span>Enable IoT tracking when entering high-risk zones.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="mt-1 text-base text-teal-300">•</span>
+                        <span>Check the Safety Center for AI advisories each morning.</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="mt-1 text-base text-teal-300">•</span>
+                        <span>Keep emergency contacts pinned for single-tap escalation.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeSecondaryPanel === 'devices' && (
+                <motion.div
+                  key="panel-devices"
+                  ref={devicesRef}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`${activeTourId === 'devices' ? highlightClass : ''}`}
+                >
+                  <IoTDevicesPanel devices={iotDevices} />
+                </motion.div>
+              )}
             </div>
           </motion.div>
-        </motion.div>
-
-        {/* BOTTOM SECTION - Enhanced spacing */}
-  <motion.section variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-3">
-          
-          {/* LEFT: Itinerary & Tips - Enhanced typography */}
-          <div className="lg:col-span-2 space-y-6">
-            <div
-              ref={itineraryRef}
-              className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 ${
-                activeTourId === 'itinerary' ? highlightClass : ''
-              }`}
-            >
-              <div className="mb-4 flex items-center gap-4">
-                <img src={ICONS.itinerary} alt="Itinerary" loading="lazy" className="h-8 w-8" />
-                <h2 className="text-xl font-bold text-white">Upcoming Destinations</h2>
-              </div>
-        
-              <p className="mb-6 text-sm sm:text-base text-slate-300 leading-relaxed">
-                <span className="text-slate-200 font-semibold">Next stop:</span> {itinerary?.[1]?.title || 'All clear for now'} • {itinerary?.[1]?.city || 'Location TBD'}
-              </p>
-              <button
-                onClick={() => setShowItinerary(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/20 px-4 py-2.5 text-sm font-semibold text-teal-200 transition-colors hover:bg-teal-500/30 sm:px-5 sm:py-3 sm:text-base"
-              >
-                View Full Itinerary ↗
-              </button>
-            </div>
-            
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6">
-              <div className="mb-5 flex items-center gap-4">
-                <img src={ICONS.tips} alt="Tips" loading="lazy" className="h-7 w-7 sm:h-8 sm:w-8" />
-                <h2 className="text-lg font-bold text-white sm:text-xl">Safety Tips</h2>
-              </div>
-              <ul className="space-y-3 text-sm sm:text-base text-slate-300">
-                <li className="flex items-start gap-3 sm:gap-4">
-                  <span className="text-slate-500 mt-2 text-base sm:text-lg">•</span>
-                  <span className="font-medium leading-relaxed">Enable IoT device tracking when entering high-risk zones</span>
-                </li>
-                <li className="flex items-start gap-3 sm:gap-4">
-                  <span className="text-slate-500 mt-2 text-base sm:text-lg">•</span>
-                  <span className="font-medium leading-relaxed">Check Safety Center regularly for AI-powered alerts and guidance</span>
-                </li>
-                <li className="flex items-start gap-3 sm:gap-4">
-                  <span className="text-slate-500 mt-2 text-base sm:text-lg">•</span>
-                  <span className="font-medium leading-relaxed">Keep emergency contacts easily accessible through quick actions</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          {/* RIGHT: IoT Devices */}
-          <div
-            ref={devicesRef}
-            className={`${activeTourId === 'devices' ? highlightClass : ''}`}
-          >
-            <IoTDevicesPanel devices={iotDevices} />
-          </div>
         </motion.section>
       </div>
 
