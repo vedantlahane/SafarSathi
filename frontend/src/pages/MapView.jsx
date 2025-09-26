@@ -552,22 +552,22 @@ const MapView = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-slate-100 lg:flex-row">
+    <div className="relative flex min-h-[100svh] flex-col bg-slate-950 text-slate-100 lg:flex-row">
       {/* Enhanced Map Controls - Sidebar */}
       <motion.div
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="hidden w-full max-w-xs flex-col gap-6 border-slate-200 bg-white/90 p-6 shadow-xl backdrop-blur-lg lg:flex"
+        className="hidden w-full max-w-xs flex-col gap-6 border border-white/10 bg-slate-900/70 p-6 shadow-xl backdrop-blur lg:flex"
       >
         {/* Safety Score Card */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 p-6"
+          className="rounded-2xl border border-white/10 bg-slate-950/60 p-6 shadow"
         >
-          <h3 className="mb-4 text-lg font-bold text-slate-800">🛡️ Safety Score</h3>
+          <h3 className="mb-4 text-lg font-bold text-white">🛡️ Safety Score</h3>
           <div className="mb-4 flex items-center justify-center">
             <motion.div
               initial={{ scale: 0 }}
@@ -593,12 +593,12 @@ const MapView = () => {
             </motion.div>
           </div>
           <p
-            className={`text-center font-semibold ${
+            className={`text-center text-sm font-semibold ${
               safetyScore > 70
-                ? 'text-green-700'
+                ? 'text-emerald-200'
                 : safetyScore > 40
-                ? 'text-orange-700'
-                : 'text-red-700'
+                ? 'text-amber-200'
+                : 'text-rose-200'
             }`}
           >
             {safetyScore > 70 ? '✅ Safe Area' : safetyScore > 40 ? '⚠️ Stay Alert' : '🚨 High Risk'}
@@ -610,9 +610,9 @@ const MapView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="rounded-2xl border border-slate-200 bg-white/80 p-6"
+          className="rounded-2xl border border-white/10 bg-slate-950/60 p-6"
         >
-          <h3 className="mb-4 text-lg font-bold text-slate-800">📍 Location Services</h3>
+          <h3 className="mb-4 text-lg font-bold text-white">📍 Location Services</h3>
           <div className="space-y-3">
             <AnimatePresence mode="wait">
               {!isTracking ? (
@@ -661,9 +661,9 @@ const MapView = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="rounded-2xl border border-slate-200 bg-white/80 p-6"
+          className="rounded-2xl border border-white/10 bg-slate-950/60 p-6"
         >
-          <h4 className="mb-4 text-lg font-bold text-slate-800">📊 Area Statistics</h4>
+          <h4 className="mb-4 text-lg font-bold text-white">📊 Area Statistics</h4>
           <div className="space-y-3">
             {[
               { label: 'Recent Incidents', value: incidents.length },
@@ -675,10 +675,10 @@ const MapView = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
-                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-900/60 px-3 py-2"
               >
-                <span className="font-medium text-slate-600">{stat.label}:</span>
-                <span className="font-bold text-slate-800">{stat.value}</span>
+                <span className="font-medium text-slate-300">{stat.label}:</span>
+                <span className="font-semibold text-slate-100">{stat.value}</span>
               </motion.div>
             ))}
           </div>
@@ -686,7 +686,7 @@ const MapView = () => {
       </motion.div>
 
       {/* Map Container */}
-      <div className="relative w-full flex-1 min-h-screen lg:min-h-screen">
+  <div className="relative w-full flex-1 min-h-[70vh] lg:min-h-screen">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -697,7 +697,7 @@ const MapView = () => {
             center={mapCenter}
             zoom={13}
             style={{ height: '100%', width: '100%', minHeight: '100vh' }}
-            className="h-full w-full rounded-none border border-white/40 shadow-sm lg:rounded-lg"
+            className="h-full w-full rounded-none border border-white/15 shadow-sm lg:rounded-xl"
           >
             <MapUpdater center={userLocation} />
             
@@ -798,16 +798,16 @@ const MapView = () => {
           className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0"
         >
           <div
-            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-lg ${
+            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg backdrop-blur ${
               isTracking
-                ? 'border-green-400 bg-green-500/90 text-white'
-                : 'border-slate-400 bg-slate-500/90 text-white'
+                ? 'border-teal-300/50 bg-teal-500/25 text-teal-100'
+                : 'border-slate-300/40 bg-slate-800/80 text-slate-100'
             }`}
           >
             <motion.span
               animate={{ scale: isTracking ? [1, 1.2, 1] : 1 }}
               transition={{ duration: 2, repeat: isTracking ? Infinity : 0 }}
-              className={`h-2 w-2 rounded-full ${isTracking ? 'bg-white' : 'bg-gray-200'}`}
+              className={`h-2 w-2 rounded-full ${isTracking ? 'bg-teal-100' : 'bg-slate-300'}`}
             />
             <span>{isTracking ? 'Tracking active' : 'Tracking paused'}</span>
           </div>
@@ -821,7 +821,7 @@ const MapView = () => {
         disabled={isControlPanelOpen}
         whileHover={isControlPanelOpen ? {} : { scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
-        className="fixed bottom-4 left-1/2 z-[1100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-xl lg:hidden disabled:cursor-default disabled:opacity-80"
+        className="fixed bottom-4 left-1/2 z-[1100] flex -translate-x-1/2 items-center gap-3 rounded-full border border-teal-400/40 bg-teal-600/90 px-5 py-3 text-sm font-semibold text-white shadow-xl backdrop-blur lg:hidden disabled:cursor-default disabled:opacity-80"
       >
         Safety controls
         <span className="text-xs font-medium text-slate-300">
@@ -849,9 +849,9 @@ const MapView = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white p-6 shadow-2xl"
+              className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-white/10 bg-slate-950 p-6 text-slate-100 shadow-2xl"
             >
-              <div className="mx-auto h-1.5 w-14 rounded-full bg-slate-300" />
+              <div className="mx-auto h-1.5 w-14 rounded-full bg-slate-700" />
               <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
                 {controlTabs.map(tab => {
                   const isActive = tab.id === activePanel;
@@ -862,13 +862,13 @@ const MapView = () => {
                       onClick={() => setActivePanel(tab.id)}
                       className={`min-w-[120px] rounded-2xl border px-3 py-2 text-left text-xs transition-all duration-200 ${
                         isActive
-                          ? 'border-slate-900 bg-slate-900 text-white shadow-md'
-                          : 'border-slate-200 bg-slate-50 text-slate-700'
+                          ? 'border-teal-400/50 bg-teal-600/30 text-teal-100 shadow-md'
+                          : 'border-white/10 bg-slate-900/70 text-slate-300'
                       }`}
                     >
                       <p className="font-semibold">{tab.label}</p>
                       <p className="mt-1 text-[11px] text-slate-400">{tab.description}</p>
-                      <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-widest text-slate-300">
+                      <span className="mt-2 inline-block text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                         {tab.status}
                       </span>
                     </button>
@@ -881,7 +881,7 @@ const MapView = () => {
               <button
                 type="button"
                 onClick={() => setIsControlPanelOpen(false)}
-                className="mt-6 w-full rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600"
+                className="mt-6 w-full rounded-xl border border-white/10 py-3 text-sm font-semibold text-slate-200"
               >
                 Close panel
               </button>

@@ -349,14 +349,38 @@ const Dashboard = () => {
   );
 
   const timeSinceActivity = getTimeSinceActivity();
+  const lastActivityLabel = useMemo(() => {
+    if (timeSinceActivity === null || timeSinceActivity === undefined) {
+      return 'Syncing…';
+    }
+
+    if (timeSinceActivity <= 1) {
+      return 'moments ago';
+    }
+
+    if (timeSinceActivity < 60) {
+      return `${timeSinceActivity} min ago`;
+    }
+
+    const hours = Math.floor(timeSinceActivity / 60);
+    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+  }, [timeSinceActivity]);
+
+  const locationLabel = useMemo(() => {
+    if (!currentLocation) {
+      return 'Locating device…';
+    }
+
+    return `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+  }, [currentLocation]);
 
   // Helper for safety status color and text
   const statusColor =
     safetyStatus === 'warning'
-      ? 'bg-orange-500'
+      ? 'bg-gradient-to-br from-amber-500/90 to-orange-500'
       : safetyStatus === 'danger'
-      ? 'bg-red-500'
-      : 'bg-green-500';
+      ? 'bg-gradient-to-br from-rose-600/90 to-red-600'
+      : 'bg-gradient-to-br from-emerald-500/90 to-teal-500';
   const statusText =
     safetyStatus === 'warning'
       ? isOffline
@@ -405,16 +429,16 @@ const Dashboard = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 p-4 sm:p-6 pb-40 lg:pb-16"
+      className="relative min-h-[100svh] bg-slate-950 text-slate-100 px-4 pb-32 pt-6 sm:px-6 lg:pb-16"
     >
-      <motion.header variants={itemVariants} className="bg-white/85 backdrop-blur-lg rounded-3xl p-6 mb-6 sm:mb-8 shadow-lg border border-white/30">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+      <motion.header variants={itemVariants} className="mb-6 sm:mb-8 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-lg backdrop-blur">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
             <motion.img
               src={ICONS.appMark}
               alt="SafarSathi icon"
               loading="lazy"
-              className="w-12 h-12 md:w-14 md:h-14 drop-shadow-lg"
+              className="h-12 w-12 sm:h-14 sm:w-14 drop-shadow-xl"
               initial={{ rotate: -10, opacity: 0 }}
               animate={{ rotate: 0, opacity: 1 }}
               transition={{ duration: 0.4 }}
@@ -423,36 +447,59 @@ const Dashboard = () => {
               <motion.h1
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent"
+                transition={{ delay: 0.15 }}
+                className="text-2xl font-semibold text-white sm:text-3xl"
               >
                 {t('common.appName')}
               </motion.h1>
-              <p className="text-slate-600 mt-2 text-sm sm:text-base">
+              <p className="mt-1 text-sm text-slate-300 sm:text-base">
                 {t('dashboard.greeting', { name: profile?.name || user?.name || 'Traveller' })}
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
             {isOffline && (
-              <span className="flex items-center gap-2 bg-orange-500 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm">
-                <span className="block w-2 h-2 bg-white rounded-full animate-pulse" />
-                Offline Mode
+              <span className="flex items-center gap-1.5 rounded-full border border-orange-400/40 bg-orange-500/20 px-3 py-1 text-xs font-semibold text-orange-100 shadow-sm">
+                <span className="block h-2 w-2 rounded-full bg-orange-200 animate-pulse" />
+                Offline
               </span>
             )}
             <LanguageSwitcher compact />
-            <span className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm">
-              <img src={ICONS.blockchain} alt="Blockchain ID icon" loading="lazy" className="w-4 h-4" />
-              {profile?.blockchainID ? `${profile.blockchainID.slice(0, 10)}...` : 'ID Pending'}
+            <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/70 px-3 py-1 text-xs font-semibold text-slate-100 shadow-sm sm:text-sm">
+              <img src={ICONS.blockchain} alt="Blockchain ID icon" loading="lazy" className="h-4 w-4 opacity-90" />
+              {profile?.blockchainID ? `${profile.blockchainID.slice(0, 8)}…` : 'ID Pending'}
             </span>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={logout}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors duration-200"
+              className="rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500 sm:text-base"
             >
               {t('common.logout')}
             </motion.button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+            <img src={statusIcon} alt="Current safety state" className="h-12 w-12 rounded-full border border-white/20 bg-slate-950 p-2" />
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Status</p>
+              <p className="text-lg font-semibold text-white">{statusText}</p>
+              <p className="mt-1 text-xs text-slate-400">Last sensor ping {lastActivityLabel}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-sm text-slate-300">
+            <p className="font-semibold text-slate-100">Current location</p>
+            <p className="mt-1 text-sm text-slate-200">{locationLabel}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/map')}
+              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-teal-300 hover:text-teal-200"
+            >
+              View live map
+              <span aria-hidden>→</span>
+            </button>
           </div>
         </div>
       </motion.header>
@@ -465,10 +512,10 @@ const Dashboard = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white/85 backdrop-blur-lg rounded-3xl p-4 shadow-lg border border-white/20"
+          className="rounded-3xl border border-white/10 bg-slate-900/60 p-4 shadow-lg backdrop-blur"
         >
           <div className="relative">
-            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+            <h2 className="mb-4 flex items-center text-lg font-semibold text-white">
               🗺️ Live Safety Map
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
@@ -478,16 +525,17 @@ const Dashboard = () => {
             </h2>
             
             {/* Mini Map Container */}
-            <div className="relative h-96 bg-slate-100 rounded-2xl overflow-hidden border-2 border-slate-200">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 min-h-[240px] sm:min-h-[320px]">
               {/* Simulated Map Background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-green-50 to-blue-100">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
                 {/* Grid pattern for map feel */}
-                <div className="absolute inset-0 opacity-20" 
-                     style={{ 
-                       backgroundImage: 'linear-gradient(rgba(0,0,0,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.1) 1px, transparent 1px)',
-                       backgroundSize: '20px 20px'
-                     }}>
-                </div>
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage: 'linear-gradient(rgba(226,232,240,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(226,232,240,0.12) 1px, transparent 1px)',
+                    backgroundSize: '20px 20px'
+                  }}
+                />
                 
                 {/* Current Location - Blinking Marker */}
                 <motion.div
@@ -503,46 +551,46 @@ const Dashboard = () => {
                     <div className="w-6 h-6 bg-blue-500 rounded-full border-[3px] border-white shadow-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 transform rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white shadow">
                       You are here
                     </div>
                   </div>
                 </motion.div>
                 
                 {/* Unsafe Zone 1 */}
-                <div className="absolute top-1/4 right-1/4 w-16 h-16 bg-red-500/30 rounded-full border-2 border-red-500/50">
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-600 text-xl">
+                <div className="absolute top-1/4 right-1/4 h-16 w-16 rounded-full border-2 border-red-500/60 bg-red-500/20">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform text-xl text-red-200">
                     ⚠️
                   </div>
                 </div>
                 
                 {/* Unsafe Zone 2 */}
-                <div className="absolute bottom-1/3 left-1/4 w-20 h-20 bg-orange-500/30 rounded-full border-2 border-orange-500/50">
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-orange-600 text-xl">
+                <div className="absolute bottom-1/3 left-1/4 h-20 w-20 rounded-full border-2 border-orange-400/60 bg-orange-400/20">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform text-xl text-orange-100">
                     🚧
                   </div>
                 </div>
                 
                 {/* Safe Zones */}
-                <div className="absolute top-1/6 left-1/6 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-green-600">🏛️</div>
+                <div className="absolute top-1/6 left-1/6 h-4 w-4 rounded-full border-2 border-white/70 bg-green-500">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform text-xs text-green-200 drop-shadow">🏛️</div>
                 </div>
-                <div className="absolute bottom-1/4 right-1/6 w-4 h-4 bg-green-500 rounded-full border-2 border-white">
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-green-600">🚔</div>
+                <div className="absolute bottom-1/4 right-1/6 h-4 w-4 rounded-full border-2 border-white/70 bg-green-500">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform text-xs text-green-200 drop-shadow">🚔</div>
                 </div>
               </div>
               
               {/* Map Controls Overlay */}
-              <div className="absolute top-4 right-4 bg-white rounded-lg shadow-md p-2">
-                <div className="text-xs text-slate-600 font-medium">Live Updates</div>
+              <div className="absolute right-4 top-4 rounded-lg border border-white/10 bg-slate-900/80 px-3 py-1 shadow">
+                <div className="text-xs font-medium text-slate-200">Live updates</div>
               </div>
               
               {/* Location Info Overlay */}
-              <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md">
-                <div className="text-xs text-slate-600">
-                  {currentLocation 
+              <div className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-xs text-slate-200 shadow">
+                <div>
+                  {currentLocation
                     ? `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
-                    : 'Getting location...'
+                    : 'Getting location…'
                   }
                 </div>
               </div>
@@ -553,7 +601,7 @@ const Dashboard = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/map')}
-              className="absolute bottom-6 right-6 bg-gradient-to-r from-teal-500 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-lg flex items-center space-x-2 hover:shadow-xl transition-all duration-200"
+              className="absolute bottom-6 right-6 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl"
             >
               <span>🗺️</span>
               <span>Open Full Safety Map</span>
@@ -569,72 +617,62 @@ const Dashboard = () => {
           className="space-y-6"
         >
           {/* Current Status Card */}
-          <div className={`${statusColor} text-white p-6 rounded-2xl shadow-xl transition-colors duration-500`}>
-            <div className="flex items-center justify-between">
+          <div className={`${statusColor} rounded-3xl border border-white/10 p-6 text-white shadow-xl transition-colors duration-500`}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium opacity-80 mb-1">Your Current Safety Status</p>
-                <h2 className="text-3xl font-bold">All Clear</h2>
-                <p className="text-sm mt-3">
-                  Lat: 28.6561, Lng: 77.2408
-                </p>
-                <p className="text-xs opacity-70 mt-1">
-                  Last activity: 0 min ago
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/80">Live status</p>
+                <h2 className="mt-1 text-2xl font-semibold sm:text-3xl">{statusText}</h2>
+                <p className="mt-3 text-sm text-white/90">Lat/Lng: {locationLabel}</p>
+                <p className="text-xs text-white/80">Last activity {lastActivityLabel}</p>
               </div>
-              <div className="text-5xl">
-                💚
-              </div>
+              <img
+                src={statusIcon}
+                alt="Status icon"
+                className="h-16 w-16 self-start rounded-full bg-white/20 p-2 shadow-lg sm:self-center"
+              />
             </div>
           </div>
 
           {/* SOS Button and Stats Layout */}
-          <div className="bg-white/85 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20" id="sos-anchor">
-            <div className="flex items-center gap-6">
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg backdrop-blur" id="sos-anchor">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
               {/* Left Side - SOS Button */}
-              <div className="flex-shrink-0">
+              <div className="w-full max-w-[220px] sm:flex-shrink-0">
                 <SOSButton currentLocation={currentLocation} user={profile} />
               </div>
-              
+
               {/* Right Side - Vertical Stats */}
-              <div className="flex-1 space-y-4">
-                <motion.div
-                  whileHover={{ x: 5 }}
-                  className="flex items-center justify-between bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg shadow-md"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-xl">🛡️</div>
-                    <div>
-                      <div className="text-sm opacity-80">Safety Score</div>
-                      <div className="text-xl font-bold">{stats.safetyScore}/100</div>
+              <div className="flex-1 space-y-3">
+                {[{
+                  icon: '🛡️',
+                  label: 'Safety score',
+                  value: `${stats.safetyScore}/100`,
+                  tone: 'from-sky-500/90 to-indigo-500/80'
+                }, {
+                  icon: '⚠️',
+                  label: 'Alerts sent',
+                  value: stats.alertsSent,
+                  tone: 'from-amber-500/90 to-orange-500/80'
+                }, {
+                  icon: '⏱️',
+                  label: 'Active time',
+                  value: `${stats.activeTime}m`,
+                  tone: 'from-purple-500/90 to-fuchsia-500/80'
+                }].map((chip) => (
+                  <motion.div
+                    key={chip.label}
+                    whileHover={{ x: 4 }}
+                    className={`flex items-center justify-between rounded-2xl border border-white/10 bg-gradient-to-r px-4 py-3 text-white shadow ${chip.tone}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl" aria-hidden>{chip.icon}</span>
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-white/80">{chip.label}</p>
+                        <p className="text-lg font-semibold">{chip.value}</p>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-                
-                <motion.div
-                  whileHover={{ x: 5 }}
-                  className="flex items-center justify-between bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-3 rounded-lg shadow-md"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-xl">⚠️</div>
-                    <div>
-                      <div className="text-sm opacity-80">Alerts Sent</div>
-                      <div className="text-xl font-bold">{stats.alertsSent}</div>
-                    </div>
-                  </div>
-                </motion.div>
-                
-                <motion.div
-                  whileHover={{ x: 5 }}
-                  className="flex items-center justify-between bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg shadow-md"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-xl">⏱️</div>
-                    <div>
-                      <div className="text-sm opacity-80">Active Time</div>
-                      <div className="text-xl font-bold">{stats.activeTime}m</div>
-                    </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
@@ -663,32 +701,33 @@ const Dashboard = () => {
         ))}
       </motion.section>
 
-      <motion.section variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-        <div className="xl:col-span-2 space-y-6">
-          <div className="bg-white/85 border border-slate-200 rounded-3xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <img src={ICONS.itinerary} alt="Itinerary icon" loading="lazy" className="w-6 h-6" />
-              <h2 className="text-lg font-semibold text-slate-800">Upcoming itinerary</h2>
+      <motion.section variants={itemVariants} className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              <img src={ICONS.itinerary} alt="Itinerary icon" loading="lazy" className="h-6 w-6" />
+              <h2 className="text-lg font-semibold text-white">Upcoming itinerary</h2>
             </div>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="mb-4 text-sm text-slate-300">
               Next stop: {itinerary?.[1]?.title || 'All clear'} • {itinerary?.[1]?.city || 'TBD'}
             </p>
             <button
               onClick={() => setShowItinerary(true)}
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-900 text-white hover:bg-black transition-colors duration-200"
+              className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/20 px-4 py-2 text-sm font-semibold text-teal-200 transition-colors hover:bg-teal-500/30"
             >
               View full itinerary
+              <span aria-hidden>↗</span>
             </button>
           </div>
-          <div className="bg-white/85 border border-slate-200 rounded-3xl p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <img src={ICONS.tips} alt="Tips icon" loading="lazy" className="w-6 h-6" />
-              <h2 className="text-lg font-semibold text-slate-800">Safety tips</h2>
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              <img src={ICONS.tips} alt="Tips icon" loading="lazy" className="h-6 w-6" />
+              <h2 className="text-lg font-semibold text-white">Safety tips</h2>
             </div>
-            <ul className="space-y-3 text-sm text-slate-600">
-              <li>• Enable IoT wearable tracking before entering red zones.</li>
-              <li>• Tap Safety Center to acknowledge AI anomalies.</li>
-              <li>• Keep emergency contacts pinned via the quick action.</li>
+            <ul className="space-y-3 text-sm text-slate-300">
+              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Enable IoT wearable tracking before entering red zones.</span></li>
+              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Tap Safety Center to acknowledge AI anomalies.</span></li>
+              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Keep emergency contacts pinned via the quick action.</span></li>
             </ul>
           </div>
         </div>
@@ -715,16 +754,16 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
-        className="lg:hidden fixed bottom-4 left-4 right-4 z-40"
+        className="fixed bottom-4 left-4 right-4 z-40 pb-2 lg:hidden"
       >
-        <div className="bg-white/95 backdrop-blur-lg border border-white/80 shadow-xl rounded-2xl px-4 py-3 flex gap-3 overflow-x-auto">
+        <div className="flex gap-3 overflow-x-auto rounded-2xl border border-white/15 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur-lg snap-x">
           {quickActions.map((action, index) => (
             <motion.button
               key={`mobile-${action.text}`}
               whileTap={{ scale: 0.96 }}
               onClick={action.onClick}
               disabled={action.disabled}
-              className={`flex-shrink-0 min-w-[120px] bg-gradient-to-r ${action.color} text-white px-3 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold disabled:opacity-60`}
+              className={`flex min-w-[120px] snap-start items-center justify-center gap-2 rounded-xl bg-gradient-to-r px-3 py-3 text-sm font-semibold text-white disabled:opacity-60 ${action.color}`}
               style={{ transitionDelay: `${index * 50}ms` }}
             >
               <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="w-7 h-7" />

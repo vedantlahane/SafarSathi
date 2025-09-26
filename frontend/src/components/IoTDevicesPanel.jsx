@@ -10,44 +10,44 @@ const deviceIcons = {
 };
 
 const signalTone = {
-  excellent: 'text-emerald-600',
-  good: 'text-teal-600',
-  weak: 'text-amber-600',
-  lost: 'text-rose-600'
+  excellent: 'text-emerald-300',
+  good: 'text-teal-300',
+  weak: 'text-amber-300',
+  lost: 'text-rose-300'
 };
 
 const IoTDevicesPanel = ({ devices = [] }) => {
   if (!Array.isArray(devices) || devices.length === 0) {
     return (
-      <div className="bg-white/90 border border-slate-200 rounded-2xl p-4 text-center text-slate-500">
+      <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-center text-slate-300">
         No IoT wearables paired yet.
       </div>
     );
   }
 
   return (
-    <div className="bg-white/90 border border-slate-200 rounded-3xl p-6">
-      <h3 className="text-lg font-semibold text-slate-800 mb-4">🛰️ IoT Devices</h3>
+    <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-sm">
+      <h3 className="mb-4 text-lg font-semibold text-white">🛰️ IoT Devices</h3>
       <div className="space-y-4">
         {devices.map(device => (
-          <div key={device.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-200 rounded-2xl p-4 bg-white/70">
-            <div className="flex items-center space-x-3">
+          <div key={device.id} className="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4 md:grid-cols-3">
+            <div className="flex items-center gap-3">
               <span className="text-3xl" aria-hidden>{deviceIcons[device.type] || '🔌'}</span>
               <div>
-                <p className="font-semibold text-slate-800 capitalize">{device.type.replace('-', ' ')}</p>
-                <p className="text-xs text-slate-500">Last signal {dayjs(device.lastSignal).fromNow()}</p>
+                <p className="font-semibold text-slate-100 capitalize">{device.type.replace('-', ' ')}</p>
+                <p className="text-xs text-slate-400">Last signal {dayjs(device.lastSignal).fromNow()}</p>
               </div>
             </div>
-            <div className="space-y-1 text-sm text-slate-600">
-              <p>Battery: <span className="font-semibold">{device.battery}%</span></p>
-              {device.heartRate && <p>Heart rate: <span className="font-semibold">{device.heartRate} bpm</span></p>}
-              {device.temperature && <p>Temperature: <span className="font-semibold">{device.temperature}°C</span></p>}
+            <div className="space-y-1 text-sm text-slate-300">
+              <p>Battery: <span className="font-semibold text-slate-100">{device.battery}%</span></p>
+              {device.heartRate && <p>Heart rate: <span className="font-semibold text-slate-100">{device.heartRate} bpm</span></p>}
+              {device.temperature && <p>Temperature: <span className="font-semibold text-slate-100">{device.temperature}°C</span></p>}
             </div>
-            <div className="text-sm">
-              <p className={`font-semibold ${signalTone[device.signalStrength] || 'text-slate-600'} capitalize`}>
+            <div className="text-sm text-slate-300">
+              <p className={`font-semibold ${signalTone[device.signalStrength] || 'text-slate-200'} capitalize`}>
                 Signal: {device.signalStrength}
               </p>
-              <p className="text-xs text-slate-500">Device ID: {device.id}</p>
+              <p className="text-xs text-slate-400">Device ID: {device.id}</p>
             </div>
           </div>
         ))}

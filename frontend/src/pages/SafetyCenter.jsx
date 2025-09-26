@@ -27,25 +27,25 @@ const SafetyCenter = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-100 to-emerald-50 p-6"
+      className="min-h-[100svh] bg-slate-950 px-4 py-6 text-slate-100 sm:px-6"
     >
-      <div className="max-w-6xl mx-auto space-y-6">
-        <header className="bg-white/80 backdrop-blur border border-white/60 rounded-3xl p-6 shadow">
-          <div className="flex flex-wrap justify-between gap-4 items-center">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg backdrop-blur">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-slate-500">{t('common.appName')}</p>
-              <h1 className="text-3xl font-bold text-slate-800">{t('safetyCenter.title')}</h1>
-              <p className="text-sm text-slate-500 mt-2">Live monitoring enabled for {profile?.name}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('common.appName')}</p>
+              <h1 className="text-3xl font-semibold text-white sm:text-4xl">{t('safetyCenter.title')}</h1>
+              <p className="mt-2 text-sm text-slate-300">Live monitoring enabled for {profile?.name}</p>
             </div>
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl px-4 py-3 text-sm max-w-xs">
+            <div className="max-w-xs rounded-2xl border border-emerald-400/40 bg-emerald-600/20 px-4 py-3 text-sm text-emerald-100">
               <p className="font-semibold">24/7 Response Desk</p>
-              <p>Alerts are auto-escalated if idle {'>'} 15 min in red zones.</p>
+              <p className="mt-1 text-xs text-emerald-200/80">Alerts auto-escalate if idle {'>'} 15 min in red zones.</p>
             </div>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
             <AnomalyFeed anomalies={anomalies} onResolve={handleResolve} />
             <GeoFenceAlertList zones={zones} />
           </div>

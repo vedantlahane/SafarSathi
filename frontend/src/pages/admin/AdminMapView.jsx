@@ -150,9 +150,14 @@ const AdminMapView = () => {
 
   return (
     <AdminLayout title="Live Mission Map" subtitle="View all tourists, SOS alerts, and zone heatmaps in real time.">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div className="lg:col-span-2 overflow-hidden rounded-3xl border border-white/10 shadow-xl">
-          <MapContainer center={[mapCenter.lat, mapCenter.lng]} zoom={12} style={{ height: '70vh', width: '100%' }}>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <motion.div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/40 shadow-xl lg:col-span-2">
+          <MapContainer
+            center={[mapCenter.lat, mapCenter.lng]}
+            zoom={12}
+            style={{ height: '65vh', minHeight: '420px', width: '100%' }}
+            className="rounded-3xl"
+          >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
