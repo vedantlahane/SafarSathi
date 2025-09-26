@@ -1,4 +1,4 @@
-//pages/Dashboard.jsx - Optimized layout with proper spacing and prominent SOS
+//pages/Dashboard.jsx - Enhanced typography, spacing, and readability for tourists
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -377,9 +377,17 @@ const Dashboard = () => {
         ctaAction: () => navigate('/safety')
       },
       {
+        id: 'sos',
+        title: t('dashboard.tour.sosTitle', 'Emergency SOS Button'),
+        description: t('dashboard.tour.sosDescription', 'The main SOS button is prominently placed. Hold for 3 seconds to send emergency alert to control rooms and your contacts.'),
+        ref: sosRef,
+        ctaLabel: t('dashboard.tour.sosAction', 'Practice SOS'),
+        ctaAction: handleQuickSOS
+      },
+      {
         id: 'actions',
         title: t('dashboard.tour.actionsTitle', 'Quick actions'),
-        description: t('dashboard.tour.actionsDescription', 'Use these cards to share your status, raise SOS, or reach contacts instantly.'),
+        description: t('dashboard.tour.actionsDescription', 'Essential safety tools positioned beside the map for quick access.'),
         ref: quickActionsRef
       },
       {
@@ -389,14 +397,6 @@ const Dashboard = () => {
         ref: itineraryRef,
         ctaLabel: t('dashboard.tour.itineraryAction', 'View full itinerary'),
         ctaAction: () => setShowItinerary(true)
-      },
-      {
-        id: 'sos',
-        title: t('dashboard.tour.sosTitle', 'Emergency SOS Button'),
-        description: t('dashboard.tour.sosDescription', 'The main SOS button is always visible. Hold for 3 seconds to send emergency alert to control rooms and your contacts.'),
-        ref: sosRef,
-        ctaLabel: t('dashboard.tour.sosAction', 'Practice SOS'),
-        ctaAction: handleQuickSOS
       },
       {
         id: 'devices',
@@ -537,8 +537,8 @@ const Dashboard = () => {
   if (dataLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="bg-white px-4 py-3 rounded-xl shadow-lg border border-slate-200">
-          Loading your safety dashboard...
+        <div className="bg-white px-6 py-4 rounded-xl shadow-lg border border-slate-200">
+          <div className="text-lg font-medium text-slate-700">Loading your safety dashboard...</div>
         </div>
       </div>
     );
@@ -565,18 +565,19 @@ const Dashboard = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative min-h-[100svh] bg-slate-950 text-slate-100 px-3 pb-6 pt-4 sm:px-6 lg:px-8"
+      className="relative min-h-[100svh] bg-slate-950 text-slate-100 px-3 pb-14 pt-5 sm:px-6 sm:pb-10 lg:px-8 font-inter"
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' }}
     >
-      {/* COMPACT HEADER */}
-      <motion.header variants={itemVariants} className="mb-6 mx-auto max-w-7xl">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-lg backdrop-blur">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
+      {/* ENHANCED HEADER - Better typography and spacing */}
+      <motion.header variants={itemVariants} className="mb-8 mx-auto max-w-7xl">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6 lg:p-7 shadow-lg backdrop-blur">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+            <div className="flex items-center gap-4">
               <motion.img
                 src={ICONS.appMark}
                 alt="SafarSathi icon"
                 loading="lazy"
-                className="h-10 w-10 sm:h-12 sm:w-12 drop-shadow-xl"
+                className="h-12 w-12 sm:h-14 sm:w-14 drop-shadow-xl"
                 initial={{ rotate: -10, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
                 transition={{ duration: 0.4 }}
@@ -586,20 +587,20 @@ const Dashboard = () => {
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.15 }}
-                  className="text-xl font-semibold text-white sm:text-2xl"
+                  className="text-2xl font-bold text-white sm:text-3xl tracking-tight"
                 >
-                  {t('common.appName')}
+                  SafarSathi
                 </motion.h1>
-                <p className="text-xs text-slate-300 sm:text-sm">
-                  {t('dashboard.greeting', { name: profile?.name || user?.name || 'Traveller' })}
+                <p className="text-base text-slate-300 sm:text-lg font-medium">
+                  Welcome, {profile?.name || user?.name || 'Traveller'}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3 sm:justify-end">
               {isOffline && (
-                <span className="flex items-center gap-1 rounded-full border border-orange-400/40 bg-orange-500/20 px-2 py-1 text-xs font-medium text-orange-100">
-                  <span className="block h-1.5 w-1.5 rounded-full bg-orange-200 animate-pulse" />
+                <span className="flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-500/20 px-3 py-2 text-sm font-semibold text-orange-100">
+                  <span className="block h-2 w-2 rounded-full bg-orange-200 animate-pulse" />
                   Offline
                 </span>
               )}
@@ -608,28 +609,28 @@ const Dashboard = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleStartTour}
-                className="rounded-full border border-teal-400/60 px-3 py-1.5 text-sm font-medium text-teal-100 transition-colors bg-teal-500/20 hover:bg-teal-500/30"
+                className="rounded-full border border-teal-400/60 px-4 py-2 text-sm font-semibold text-teal-100 transition-colors bg-teal-500/20 hover:bg-teal-500/30"
               >
-                {hasSeenTour ? 'Help' : 'Tour'}
+                {hasSeenTour ? 'Help' : 'Take Tour'}
               </motion.button>
-              <span className="flex items-center gap-1 rounded-full border border-white/20 bg-slate-900/70 px-2 py-1 text-xs font-medium text-slate-100">
-                <img src={ICONS.blockchain} alt="ID" loading="lazy" className="h-3 w-3 opacity-90" />
+              <span className="flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/70 px-3 py-2 text-sm font-medium text-slate-100">
+                <img src={ICONS.blockchain} alt="ID" loading="lazy" className="h-4 w-4 opacity-90" />
                 {profile?.blockchainID ? `${profile.blockchainID.slice(0, 6)}…` : 'ID Pending'}
               </span>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={logout}
-                className="rounded-full bg-red-500/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-500"
+                className="rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500"
               >
-                {t('common.logout')}
+                Logout
               </motion.button>
             </div>
           </div>
         </div>
       </motion.header>
 
-      {/* WELCOME TOUR */}
+      {/* ENHANCED WELCOME TOUR */}
       <AnimatePresence>
         {!hasSeenTour && !isTourOpen && (
           <motion.section
@@ -638,31 +639,31 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.3 }}
-            className="mb-6 mx-auto max-w-7xl"
+            className="mb-8 mx-auto max-w-7xl"
             aria-live="polite"
           >
-            <div className="rounded-2xl border border-teal-500/30 bg-teal-500/10 p-4 shadow-lg backdrop-blur">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="rounded-2xl border border-teal-500/30 bg-teal-500/10 p-6 shadow-lg backdrop-blur">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-base font-semibold text-teal-100">Welcome to your safety dashboard</h2>
-                  <p className="mt-1 text-sm text-teal-50/80 max-w-2xl">
-                    Take a 60-second tour to understand SOS, maps, and emergency features.
+                  <h2 className="text-xl font-bold text-teal-100 mb-2">Welcome to your safety dashboard</h2>
+                  <p className="text-base text-teal-50/90 max-w-2xl leading-relaxed">
+                    Take a quick 60-second tour to understand emergency features, live maps, and safety tools designed for your protection.
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={handleStartTour}
-                    className="inline-flex items-center gap-1 rounded-full bg-teal-400/80 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-teal-300"
+                    className="inline-flex items-center gap-2 rounded-full bg-teal-400/90 px-6 py-3 text-base font-bold text-slate-950 transition hover:bg-teal-300"
                   >
-                    🚀 Start tour
+                    🚀 Start Tour
                   </button>
                   <button
                     type="button"
                     onClick={handleSkipTour}
-                    className="inline-flex items-center gap-1 rounded-full border border-teal-200/40 bg-slate-900/70 px-4 py-2 text-sm font-semibold text-teal-100 transition hover:bg-slate-900/60"
+                    className="inline-flex items-center gap-2 rounded-full border border-teal-200/40 bg-slate-900/70 px-6 py-3 text-base font-semibold text-teal-100 transition hover:bg-slate-900/60"
                   >
-                    Skip
+                    Skip for now
                   </button>
                 </div>
               </div>
@@ -671,69 +672,97 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* MAIN CONTENT - Better layout with proper constraints */}
+      {/* MAIN CONTENT */}
       <div className="mx-auto max-w-7xl">
         
-        {/* TOP SECTION: Status Cards */}
-        <motion.div variants={itemVariants} className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-4">
+        {/* TOP SECTION: Enhanced Status + SOS + Stats */}
+  <motion.div variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-5">
           
-          {/* MAIN STATUS - Takes 2 columns on large screens */}
+          {/* MAIN STATUS - Enhanced typography */}
           <motion.div
             initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
             ref={statusRef}
-            className={`lg:col-span-2 ${statusColor} rounded-2xl border border-white/10 p-5 text-white shadow-xl transition-colors duration-500 ${
+            className={`lg:col-span-2 ${statusColor} rounded-2xl border border-white/10 p-6 sm:p-7 lg:p-8 text-white shadow-xl transition-colors duration-500 ${
               activeTourId === 'status' ? highlightClass : ''
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-white/80">Live Status</p>
-                <h2 className="mt-1 text-2xl font-bold sm:text-3xl">{statusText}</h2>
-                <div className="mt-3 space-y-1">
-                  <p className="text-sm text-white/90">📍 {locationLabel}</p>
-                  <p className="text-xs text-white/80">Last activity {lastActivityLabel}</p>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-xs font-bold uppercase tracking-widest text-white/80 mb-2 sm:text-sm">LIVE STATUS</p>
+                <h2 className="text-3xl font-black sm:text-4xl mb-4 tracking-tight">{statusText}</h2>
+                <div className="space-y-2">
+                  <p className="text-base sm:text-lg text-white/95 font-medium">📍 {locationLabel}</p>
+                  <p className="text-sm text-white/80 font-medium">Last activity {lastActivityLabel}</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-center sm:text-right">
                 <img
                   src={statusIcon}
                   alt="Status icon"
-                  className="h-16 w-16 rounded-full bg-white/20 p-3 shadow-lg mb-2"
+                  className="mx-auto h-20 w-20 rounded-full bg-white/20 p-4 shadow-lg mb-3 sm:mx-0"
                 />
-                <div className="text-sm text-white/80">
-                  Score: <span className="font-bold text-white text-lg">{stats.safetyScore}/100</span>
+                <div className="text-sm sm:text-base text-white/80 font-medium">
+                  Safety Score
                 </div>
+                <div className="text-2xl font-black text-white">{stats.safetyScore}/100</div>
               </div>
             </div>
           </motion.div>
 
-          {/* QUICK STATS - Compact vertical layout */}
+          {/* SOS BUTTON - Enhanced design */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            ref={sosRef}
+            className={`order-first rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-600/20 to-rose-600/20 p-6 sm:p-7 shadow-xl backdrop-blur sm:order-none ${
+              activeTourId === 'sos' ? highlightClass : ''
+            }`}
+            id="main-sos-button"
+          >
+            <div className="text-center mb-5 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-black text-white mb-2">EMERGENCY SOS</h3>
+              <p className="text-sm sm:text-base text-slate-300 font-semibold">Hold for 3 seconds</p>
+            </div>
+            
+            <div className="flex justify-center mb-6">
+              <SOSButton currentLocation={currentLocation} user={profile} />
+            </div>
+            
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
+                Instantly alerts control room & your emergency contacts
+              </p>
+            </div>
+          </motion.div>
+
+          {/* STATS - Enhanced typography */}
           <motion.div
             initial={{ opacity: 0, x: 15 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3"
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-1"
           >
             {[
-              { icon: '🏛️', label: 'Safe places', value: stats.safePlaces, color: 'from-green-500 to-emerald-600' },
-              { icon: '⚠️', label: 'Alerts sent', value: stats.alertsSent, color: 'from-amber-500 to-orange-500' },
-              { icon: '⏱️', label: 'Active time', value: `${stats.activeTime}m`, color: 'from-purple-500 to-indigo-500' }
+              { icon: '🏛️', label: 'Safe Places Visited', value: stats.safePlaces, color: 'from-green-500 to-emerald-600' },
+              { icon: '⚠️', label: 'Alerts Sent Today', value: stats.alertsSent, color: 'from-amber-500 to-orange-500' },
+              { icon: '⏱️', label: 'Active Session Time', value: `${stats.activeTime}m`, color: 'from-purple-500 to-indigo-500' }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + index * 0.1 }}
-                className={`rounded-xl bg-gradient-to-r p-4 text-white shadow-lg ${stat.color}`}
+                transition={{ delay: 0.5 + index * 0.1 }}
+                className={`rounded-xl bg-gradient-to-r p-5 sm:p-6 text-white shadow-lg ${stat.color}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl" aria-hidden>{stat.icon}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl" aria-hidden>{stat.icon}</span>
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-white/80">{stat.label}</p>
-                      <p className="text-xl font-bold">{stat.value}</p>
+                      <p className="text-sm uppercase tracking-wide text-white/80 font-bold">{stat.label}</p>
+                      <p className="text-2xl font-black">{stat.value}</p>
                     </div>
                   </div>
                 </div>
@@ -742,37 +771,37 @@ const Dashboard = () => {
           </motion.div>
         </motion.div>
 
-        {/* MIDDLE SECTION: Map and SOS */}
-        <motion.div variants={itemVariants} className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-4">
+        {/* MAP + QUICK ACTIONS SECTION - Enhanced spacing */}
+  <motion.div variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-4">
           
-          {/* MAP PREVIEW - Takes 3 columns */}
+          {/* MAP - Enhanced header */}
           <motion.div
             ref={mapRef}
-            className={`lg:col-span-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4 shadow-lg backdrop-blur ${
+            className={`lg:col-span-3 rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 shadow-lg backdrop-blur ${
               activeTourId === 'map' ? highlightClass : ''
             }`}
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="flex items-center text-lg font-semibold text-white">
+            <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="flex items-center text-lg font-bold text-white sm:text-xl">
                 🗺️ Live Safety Map
                 <motion.div
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ repeat: Infinity, duration: 2 }}
-                  className="ml-2 w-3 h-3 bg-green-500 rounded-full"
+                  className="ml-3 w-3 h-3 bg-green-500 rounded-full"
                 />
               </h2>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/map')}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-teal-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white transition-all"
+                className="inline-flex items-center gap-2 self-start rounded-lg bg-gradient-to-r from-teal-500 to-blue-500 px-4 py-2.5 text-sm font-bold text-white transition-all sm:self-auto sm:px-5 sm:py-3 sm:text-base"
               >
-                <span>🗺️</span> Open Map
+                <span>🗺️</span> Open Full Map
               </motion.button>
             </div>
             
-            {/* MAP CONTAINER - Better proportioned */}
-            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-slate-950/70 aspect-[16/9]">
+            {/* MAP CONTAINER */}
+            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-slate-950/70 aspect-[4/3] sm:aspect-[16/9]">
               <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
                 {/* Grid pattern */}
                 <div
@@ -794,35 +823,35 @@ const Dashboard = () => {
                   className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                 >
                   <div className="relative">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <div className="w-8 h-8 bg-blue-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
                     </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 transform rounded bg-blue-500 px-2 py-1 text-xs font-semibold text-white">
-                      You
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 transform rounded bg-blue-500 px-3 py-1 text-sm font-bold text-white">
+                      Your Location
                     </div>
                   </div>
                 </motion.div>
                 
                 {/* Unsafe Zones */}
-                <div className="absolute top-1/4 right-1/4 h-16 w-16 rounded-full border-2 border-red-500/60 bg-red-500/20 flex items-center justify-center">
-                  <div className="text-2xl text-red-200">⚠️</div>
+                <div className="absolute top-1/4 right-1/4 h-20 w-20 rounded-full border-2 border-red-500/60 bg-red-500/20 flex items-center justify-center">
+                  <div className="text-3xl text-red-200">⚠️</div>
                 </div>
                 
-                <div className="absolute bottom-1/3 left-1/4 h-20 w-20 rounded-full border-2 border-orange-400/60 bg-orange-400/20 flex items-center justify-center">
-                  <div className="text-2xl text-orange-100">🚧</div>
+                <div className="absolute bottom-1/3 left-1/4 h-24 w-24 rounded-full border-2 border-orange-400/60 bg-orange-400/20 flex items-center justify-center">
+                  <div className="text-3xl text-orange-100">🚧</div>
                 </div>
                 
                 {/* Safe Zones */}
-                <div className="absolute top-1/6 left-1/6 h-4 w-4 rounded-full border border-white/70 bg-green-500 flex items-center justify-center">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform text-sm text-green-200">🏛️</div>
+                <div className="absolute top-1/6 left-1/6 h-6 w-6 rounded-full border border-white/70 bg-green-500 flex items-center justify-center">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 transform text-base text-green-200">🏛️</div>
                 </div>
-                <div className="absolute bottom-1/4 right-1/6 h-4 w-4 rounded-full border border-white/70 bg-green-500 flex items-center justify-center">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform text-sm text-green-200">🚔</div>
+                <div className="absolute bottom-1/4 right-1/6 h-6 w-6 rounded-full border border-white/70 bg-green-500 flex items-center justify-center">
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 transform text-base text-green-200">🚔</div>
                 </div>
               </div>
               
               {/* Location Info Overlay */}
-              <div className="absolute bottom-3 left-3 rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-slate-200">
+              <div className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-slate-900/80 px-4 py-2 text-base text-slate-200 font-mono">
                 {currentLocation
                   ? `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
                   : 'Getting location…'
@@ -831,135 +860,108 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* MAIN SOS BUTTON - Takes 1 column, prominent */}
+          {/* QUICK ACTIONS - Enhanced typography */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            ref={sosRef}
-            className={`rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-600/20 to-rose-600/20 p-6 shadow-xl backdrop-blur ${
-              activeTourId === 'sos' ? highlightClass : ''
-            }`}
-            id="main-sos-button"
-          >
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-white mb-2">Emergency SOS</h3>
-              <p className="text-sm text-slate-300">Hold for 3 seconds</p>
-            </div>
-            
-            <div className="flex justify-center">
-              <SOSButton currentLocation={currentLocation} user={profile} />
-            </div>
-            
-            <div className="mt-4 text-center">
-              <p className="text-xs text-slate-400">
-                Alerts control room & emergency contacts
-              </p>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* QUICK ACTIONS - More compact */}
-        <motion.section variants={itemVariants} className="mb-6">
-          <div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
             ref={quickActionsRef}
-            className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-lg backdrop-blur ${
+            className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 shadow-lg backdrop-blur ${
               activeTourId === 'actions' ? highlightClass : ''
             }`}
           >
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-white">Quick Actions</h2>
-                <p className="text-sm text-slate-300/80">Essential tools for tourist safety</p>
-              </div>
+            <div className="mb-6">
+              <h2 className="text-lg font-bold text-white mb-2 sm:text-xl">Quick Actions</h2>
+              <p className="text-sm sm:text-base text-slate-300/90 font-medium">Essential safety tools</p>
             </div>
             
-            {/* OPTIMIZED ACTION GRID */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {/* VERTICAL ACTION GRID */}
+            <div className="space-y-3 sm:space-y-4">
               {quickActions.map((action, index) => (
                 <motion.button
                   key={action.id}
                   type="button"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.25 + index * 0.05 }}
-                  whileHover={{ scale: 1.03, y: -3 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                  whileHover={{ scale: 1.03, x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={action.onClick}
                   disabled={action.disabled}
-                  className={`flex flex-col items-center gap-3 rounded-xl bg-gradient-to-br p-4 text-white shadow-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${action.color}`}
+                  className={`w-full flex items-center gap-3 rounded-xl bg-gradient-to-r p-4 text-white shadow-md transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${action.color}`}
                   aria-label={`${action.text} — ${action.description}`}
                 >
-                  <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="h-10 w-10 drop-shadow" />
-                  <div className="text-center">
-                    <p className="text-sm font-semibold leading-tight">{action.text}</p>
-                    <p className="text-xs text-white/80 leading-snug">{action.description}</p>
+                  <img src={action.iconSrc} alt={action.iconAlt} loading="lazy" className="h-10 w-10 drop-shadow flex-shrink-0" />
+                  <div className="text-left flex-1">
+                    <p className="text-sm font-bold leading-tight mb-1 sm:text-base">{action.text}</p>
+                    <p className="text-xs sm:text-sm text-white/90 leading-relaxed font-medium">{action.description}</p>
                   </div>
                 </motion.button>
               ))}
             </div>
-          </div>
-        </motion.section>
+          </motion.div>
+        </motion.div>
 
-        {/* BOTTOM SECTION - Compact layout */}
-        <motion.section variants={itemVariants} className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-5">
+        {/* BOTTOM SECTION - Enhanced spacing */}
+  <motion.section variants={itemVariants} className="mb-8 grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-3">
           
-          {/* LEFT: Itinerary & Tips - Takes 3 columns */}
-          <div className="lg:col-span-3 space-y-4">
+          {/* LEFT: Itinerary & Tips - Enhanced typography */}
+          <div className="lg:col-span-2 space-y-6">
             <div
               ref={itineraryRef}
-              className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 ${
+              className={`rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6 ${
                 activeTourId === 'itinerary' ? highlightClass : ''
               }`}
             >
-              <div className="mb-3 flex items-center gap-3">
-                <img src={ICONS.itinerary} alt="Itinerary" loading="lazy" className="h-6 w-6" />
-                <h2 className="text-lg font-semibold text-white">Upcoming</h2>
+              <div className="mb-4 flex items-center gap-4">
+                <img src={ICONS.itinerary} alt="Itinerary" loading="lazy" className="h-8 w-8" />
+                <h2 className="text-xl font-bold text-white">Upcoming Destinations</h2>
               </div>
-              <p className="mb-4 text-sm text-slate-300">
-                Next: <span className="font-medium">{itinerary?.[1]?.title || 'All clear'}</span> • {itinerary?.[1]?.city || 'TBD'}
+        
+              <p className="mb-6 text-sm sm:text-base text-slate-300 leading-relaxed">
+                <span className="text-slate-200 font-semibold">Next stop:</span> {itinerary?.[1]?.title || 'All clear for now'} • {itinerary?.[1]?.city || 'Location TBD'}
               </p>
               <button
                 onClick={() => setShowItinerary(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/20 px-4 py-2 text-sm font-medium text-teal-200 transition-colors hover:bg-teal-500/30"
+                className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-500/20 px-4 py-2.5 text-sm font-semibold text-teal-200 transition-colors hover:bg-teal-500/30 sm:px-5 sm:py-3 sm:text-base"
               >
-                View itinerary ↗
+                View Full Itinerary ↗
               </button>
             </div>
             
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-              <div className="mb-4 flex items-center gap-3">
-                <img src={ICONS.tips} alt="Tips" loading="lazy" className="h-6 w-6" />
-                <h2 className="text-lg font-semibold text-white">Safety Tips</h2>
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-4">
+                <img src={ICONS.tips} alt="Tips" loading="lazy" className="h-7 w-7 sm:h-8 sm:w-8" />
+                <h2 className="text-lg font-bold text-white sm:text-xl">Safety Tips</h2>
               </div>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li className="flex items-start gap-3">
-                  <span className="text-slate-500 mt-1">•</span>
-                  <span>Enable IoT tracking in red zones</span>
+              <ul className="space-y-3 text-sm sm:text-base text-slate-300">
+                <li className="flex items-start gap-3 sm:gap-4">
+                  <span className="text-slate-500 mt-2 text-base sm:text-lg">•</span>
+                  <span className="font-medium leading-relaxed">Enable IoT device tracking when entering high-risk zones</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-slate-500 mt-1">•</span>
-                  <span>Check Safety Center for AI alerts</span>
+                <li className="flex items-start gap-3 sm:gap-4">
+                  <span className="text-slate-500 mt-2 text-base sm:text-lg">•</span>
+                  <span className="font-medium leading-relaxed">Check Safety Center regularly for AI-powered alerts and guidance</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-slate-500 mt-1">•</span>
-                  <span>Keep emergency contacts accessible</span>
+                <li className="flex items-start gap-3 sm:gap-4">
+                  <span className="text-slate-500 mt-2 text-base sm:text-lg">•</span>
+                  <span className="font-medium leading-relaxed">Keep emergency contacts easily accessible through quick actions</span>
                 </li>
               </ul>
             </div>
           </div>
           
-          {/* RIGHT: IoT Devices - Takes 2 columns */}
+          {/* RIGHT: IoT Devices */}
           <div
             ref={devicesRef}
-            className={`lg:col-span-2 ${activeTourId === 'devices' ? highlightClass : ''}`}
+            className={`${activeTourId === 'devices' ? highlightClass : ''}`}
           >
             <IoTDevicesPanel devices={iotDevices} />
           </div>
         </motion.section>
       </div>
 
-      {/* MODALS */}
+      {/* MODALS - Enhanced typography */}
       <AnimatePresence>
         {showContacts && (
           <motion.div
@@ -977,9 +979,9 @@ const Dashboard = () => {
               <EmergencyContacts contacts={allContacts} />
               <button
                 onClick={() => setShowContacts(false)}
-                className="mt-4 w-full bg-slate-900 text-white py-3 rounded-lg text-sm font-medium hover:bg-slate-800 transition"
+                className="mt-6 w-full bg-slate-900 text-white py-4 rounded-lg text-base font-semibold hover:bg-slate-800 transition"
               >
-                Close
+                Close Contacts
               </button>
             </motion.div>
           </motion.div>
@@ -1003,16 +1005,16 @@ const Dashboard = () => {
               <ItineraryTimeline itinerary={itinerary} />
               <button
                 onClick={() => setShowItinerary(false)}
-                className="mt-4 w-full bg-slate-900 text-white py-3 rounded-lg text-sm font-medium hover:bg-slate-800 transition"
+                className="mt-6 w-full bg-slate-900 text-white py-4 rounded-lg text-base font-semibold hover:bg-slate-800 transition"
               >
-                Close
+                Close Itinerary
               </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* TOUR MODAL */}
+      {/* ENHANCED TOUR MODAL */}
       <AnimatePresence>
         {isTourOpen && (
           <motion.div
@@ -1030,26 +1032,26 @@ const Dashboard = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.92, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900/95 p-6 text-white shadow-2xl"
+              className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-900/95 p-8 text-white shadow-2xl"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4 mb-6">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-teal-300">
-                    Step {tourStepIndex + 1} of {totalTourSteps}
+                  <p className="text-sm font-bold uppercase tracking-widest text-teal-300 mb-2">
+                    STEP {tourStepIndex + 1} OF {totalTourSteps}
                   </p>
-                  <h3 className="mt-1 text-xl font-semibold">
+                  <h3 className="text-2xl font-bold leading-tight">
                     {tourSteps[tourStepIndex]?.title}
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={handleFinishTour}
-                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-white/20"
+                  className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
                 >
-                  Finish
+                  Finish Tour
                 </button>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-slate-200">
+              <p className="text-base leading-relaxed text-slate-200 mb-6">
                 {tourSteps[tourStepIndex]?.description}
               </p>
               {tourSteps[tourStepIndex]?.ctaLabel && tourSteps[tourStepIndex]?.ctaAction && (
@@ -1058,45 +1060,45 @@ const Dashboard = () => {
                   onClick={() => {
                     tourSteps[tourStepIndex]?.ctaAction();
                   }}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-teal-400/90 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-teal-300"
+                  className="mb-6 inline-flex items-center gap-2 rounded-full bg-teal-400/90 px-6 py-3 text-base font-bold text-slate-950 transition hover:bg-teal-300"
                 >
                   {tourSteps[tourStepIndex]?.ctaLabel}
                   <span aria-hidden>↗</span>
                 </button>
               )}
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <button
                   type="button"
                   onClick={handleSkipTour}
-                  className="text-sm font-medium text-slate-200 underline-offset-4 transition hover:underline"
+                  className="text-base font-semibold text-slate-200 underline-offset-4 transition hover:underline"
                 >
-                  Skip tour
+                  Skip remaining steps
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={handlePrevTourStep}
                     disabled={tourStepIndex === 0}
-                    className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Back
+                    Previous
                   </button>
                   <button
                     type="button"
                     onClick={tourStepIndex + 1 >= totalTourSteps ? handleFinishTour : handleNextTourStep}
-                    className="rounded-full bg-teal-400/80 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-teal-300"
+                    className="rounded-full bg-teal-400/80 px-5 py-2 text-base font-bold text-slate-950 transition hover:bg-teal-300"
                   >
-                    {tourStepIndex + 1 >= totalTourSteps ? 'Done' : 'Next'}
+                    {tourStepIndex + 1 >= totalTourSteps ? 'Complete' : 'Continue'}
                   </button>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-1">
+              <div className="mt-6 flex flex-wrap gap-2">
                 {tourSteps.map((step, index) => (
                   <button
                     type="button"
                     key={step.id}
                     onClick={() => setTourStepIndex(index)}
-                    className={`h-2 w-8 rounded-full transition-all duration-200 ${
+                    className={`h-3 w-10 rounded-full transition-all duration-200 ${
                       index === tourStepIndex ? 'bg-teal-400' : 'bg-white/20 hover:bg-white/30'
                     }`}
                     aria-label={`Jump to tour step ${index + 1}: ${step.title}`}
