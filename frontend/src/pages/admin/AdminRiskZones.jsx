@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, Circle, CircleMarker, LayerGroup, useMapEvents } from 'react-leaflet';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import AdminLayout from '../../components/admin/AdminLayout';
@@ -14,10 +15,37 @@ const DEFAULT_FORM = {
   active: true,
 };
 
+const DEFAULT_CENTER = { lat: 26.1445, lng: 91.7362 };
+
 const riskLevelMeta = {
   LOW: { label: 'Low', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
   MEDIUM: { label: 'Medium', color: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
   HIGH: { label: 'High', color: 'bg-rose-500/20 text-rose-300 border-rose-500/40' },
+};
+
+const riskLevelStyles = {
+  LOW: { color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.12 },
+  MEDIUM: { color: '#f97316', fillColor: '#f97316', fillOpacity: 0.16 },
+  HIGH: { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.22 },
+};
+
+const parseCoordinate = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const MapClickHandler = ({ onSelect }) => {
+  useMapEvents({
+    click: (event) => {
+      if (onSelect) {
+        onSelect(event);
+      }
+    },
+  });
+  return null;
 };
 
 const formatCoordinate = (value) => {
@@ -32,6 +60,28 @@ const AdminRiskZones = () => {
   const [formState, setFormState] = useState(DEFAULT_FORM);
   const [editingZoneId, setEditingZoneId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const currentLat = useMemo(() => parseCoordinate(formState.centerLat), [formState.centerLat]);
+  const currentLng = useMemo(() => parseCoordinate(formState.centerLng), [formState.centerLng]);
+  const currentRadius = useMemo(() => {
+    const numeric = Number(formState.radiusMeters);
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+  }, [formState.radiusMeters]);
+
+  const mapCenter = useMemo(() => {
+    if (currentLat !== null && currentLng !== null) {
+      return { lat: currentLat, lng: currentLng };
+    }
+
+    const firstZoneWithCoords = zones.find((zone) => parseCoordinate(zone.centerLat) !== null && parseCoordinate(zone.centerLng) !== null);
+    if (firstZoneWithCoords) {
+      return {
+        lat: parseCoordinate(firstZoneWithCoords.centerLat) ?? DEFAULT_CENTER.lat,
+        lng: parseCoordinate(firstZoneWithCoords.centerLng) ?? DEFAULT_CENTER.lng,
+      };
+    }
+    return DEFAULT_CENTER;
+  }, [currentLat, currentLng, zones]);
 
   const loadZones = useCallback(async () => {
     setIsLoading(true);
@@ -57,6 +107,16 @@ const AdminRiskZones = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
+
+  const handleMapClick = useCallback(({ latlng }) => {
+    if (!latlng) return;
+    const { lat, lng } = latlng;
+    setFormState((prev) => ({
+      ...prev,
+      centerLat: lat.toFixed(6),
+      centerLng: lng.toFixed(6),
+    }));
+  }, []);
 
   const resetForm = useCallback(() => {
     setFormState(DEFAULT_FORM);
@@ -216,6 +276,69 @@ const AdminRiskZones = () => {
                   className="w-full rounded-lg bg-slate-900/60 border border-white/10 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"
                   required
                 />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-200" htmlFor="map-picker">
+                  Map picker
+                </label>
+                <p className="text-xs text-slate-400">
+                  Click the map to drop the geo-fence center.
+                </p>
+              </div>
+              <div id="map-picker" className="overflow-hidden rounded-2xl border border-white/10 h-64">
+                <MapContainer
+                  key={`${mapCenter.lat.toFixed(4)}-${mapCenter.lng.toFixed(4)}`}
+                  center={[mapCenter.lat, mapCenter.lng]}
+                  zoom={13}
+                  scrollWheelZoom
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapClickHandler onSelect={handleMapClick} />
+                  <LayerGroup>
+                    {zones
+                      .filter((zone) => zone?.id !== editingZoneId)
+                      .map((zone) => {
+                        const lat = parseCoordinate(zone.centerLat);
+                        const lng = parseCoordinate(zone.centerLng);
+                        const radius = Number(zone.radiusMeters);
+                        if (lat === null || lng === null || !Number.isFinite(radius)) {
+                          return null;
+                        }
+                        const style = riskLevelStyles[zone.riskLevel] ?? riskLevelStyles.MEDIUM;
+                        return (
+                          <Circle
+                            key={zone.id}
+                            center={[lat, lng]}
+                            radius={radius}
+                            pathOptions={style}
+                          />
+                        );
+                      })}
+                  </LayerGroup>
+                  {currentLat !== null && currentLng !== null && (
+                    <>
+                      <CircleMarker
+                        center={[currentLat, currentLng]}
+                        radius={7}
+                        pathOptions={{ color: '#14b8a6', fillColor: '#14b8a6', fillOpacity: 0.85 }}
+                      />
+                      {currentRadius && (
+                        <Circle
+                          center={[currentLat, currentLng]}
+                          radius={currentRadius}
+                          pathOptions={{ color: '#14b8a6', fillColor: '#14b8a6', fillOpacity: 0.1, dashArray: '6 6' }}
+                        />
+                      )}
+                    </>
+                  )}
+                </MapContainer>
               </div>
             </div>
 
