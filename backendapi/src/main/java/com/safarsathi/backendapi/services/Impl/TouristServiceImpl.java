@@ -8,7 +8,9 @@ import com.safarsathi.backendapi.models.Tourist;
 import com.safarsathi.backendapi.repo.TouristRepository;
 import com.safarsathi.backendapi.util.HashingUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional; 
@@ -71,8 +73,8 @@ public class TouristServiceImpl implements TouristService {
     // --- updateLocation method (Unchanged) ---
     @Override
     public Tourist updateLocation(UUID touristId, Double lat, Double lng, Integer accuracy) {
-        Tourist tourist = touristRepository.findById(touristId)
-                .orElseThrow(() -> new RuntimeException("Tourist not found."));
+    Tourist tourist = touristRepository.findById(touristId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tourist not found."));
 
         // 1. Update live location fields
         tourist.setCurrentLat(lat);
