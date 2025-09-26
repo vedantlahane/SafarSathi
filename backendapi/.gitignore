@@ -46,5 +46,6 @@ logs/
 *.env
 *.local
 
-# Local environment configuration
+# Application configuration (ignore local properties, keep template)
 src/main/resources/application.properties
+!src/main/resources/application-template.properties

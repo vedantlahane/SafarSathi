@@ -57,6 +57,22 @@ const apiService = {
     }
   },
 
+  /**
+   * Authenticates an admin / police department user.
+   * @param {string} email - Admin email ID.
+   * @param {string} password - Admin password / passcode.
+   * @returns {Promise<object>} Login payload with token and admin info.
+   */
+  adminLogin: async (email, password) => {
+    try {
+      const response = await api.post('/admin/login', { email, password });
+      return response.data;
+    } catch (error) {
+      console.error('Admin Login Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to authenticate admin user.');
+    }
+  },
+
     /**
    * Pings the user's current location to the backend.
    * @param {string} token - JWT token from the user session.
