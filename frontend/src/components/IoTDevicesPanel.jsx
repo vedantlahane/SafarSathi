@@ -19,18 +19,18 @@ const signalTone = {
 const IoTDevicesPanel = ({ devices = [] }) => {
   if (!Array.isArray(devices) || devices.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-center text-slate-300">
+      <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 text-center text-slate-300">
         No IoT wearables paired yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-sm">
-      <h3 className="mb-4 text-lg font-semibold text-white">🛰️ IoT Devices</h3>
-      <div className="space-y-4">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 shadow-sm">
+      <h3 className="mb-2.5 text-lg font-semibold text-white">🛰️ IoT Devices</h3>
+      <div className="space-y-2.5">
         {devices.map(device => (
-          <div key={device.id} className="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4 md:grid-cols-3">
+          <div key={device.id} className="grid grid-cols-1 gap-2.5 rounded-2xl border border-white/10 bg-slate-950/50 p-2.5 md:grid-cols-3">
             <div className="flex items-center gap-3">
               <span className="text-3xl" aria-hidden>{deviceIcons[device.type] || '🔌'}</span>
               <div>

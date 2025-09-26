@@ -1,0 +1,135 @@
+[
+  {
+    "id": 1,
+    "name": "LPU Front Gate Area",
+    "description": "This area experiences extremely high traffic density, especially during peak hours. The mix of fast-moving highway traffic and a large number of student pedestrians makes it prone to accidents. Caution is advised when crossing the road.",
+    "location": {
+      "latitude": 31.2554,
+      "longitude": 75.7048
+    },
+    "radius": 250,
+    "risk_level": "High"
+  },
+  {
+    "id": 2,
+    "name": "Law Gate Market",
+    "description": "A bustling market area that gets very crowded, particularly in the evenings. The high density of people can increase the risk of pickpocketing and petty theft. Be aware of your surroundings and belongings.",
+    "location": {
+      "latitude": 31.2580,
+      "longitude": 75.7015
+    },
+    "radius": 300,
+    "risk_level": "Medium"
+  },
+  {
+    "id": 3,
+    "name": "Phagwara Highway (NH44) at Night",
+    "description": "Sections of the highway near Phagwara can be poorly lit at night. The combination of high-speed vehicles and occasional unlit patches increases the risk for pedestrians and can be a site for opportunistic crime. Avoid walking alone late at night.",
+    "location": {
+      "latitude": 31.2411,
+      "longitude": 75.7350
+    },
+    "radius": 1500,
+    "risk_level": "High"
+  },
+  {
+    "id": 4,
+    "name": "Chaheru Railway Station Vicinity",
+    "description": "The areas surrounding the Chaheru railway crossing and station can be isolated and dimly lit after dark, posing a potential safety risk. It is advisable to arrange for transport and not linger in the area late at night.",
+    "location": {
+      "latitude": 31.2461,
+      "longitude": 75.7235
+    },
+    "radius": 400,
+    "risk_level": "Medium"
+  },
+  {
+    "id": 5,
+    "name": "Phagwara Railway Station Area",
+    "description": "As a busy transit hub, this area is often crowded, which can be conducive to theft and scams targeting travelers. Always keep a close eye on your luggage and personal items.",
+    "location": {
+      "latitude": 31.2223,
+      "longitude": 75.7678
+    },
+    "radius": 350,
+    "risk_level": "Medium"
+  },
+  {
+    "id": 6,
+    "name": "Jalandhar Bus Stand (Shaheed Bhagat Singh ISBT)",
+    "description": "A major transportation hub that is perpetually crowded. This environment is often targeted by pickpockets and luggage thieves. Be extra vigilant with your belongings, especially during boarding and deboarding.",
+    "location": {
+      "latitude": 31.3145,
+      "longitude": 75.5945
+    },
+    "radius": 500,
+    "risk_level": "High"
+  },
+  {
+    "id": 7,
+    "name": "Jyoti Chowk Area, Jalandhar",
+    "description": "A very busy and congested market area in the heart of Jalandhar. While great for shopping, the dense crowds can increase the likelihood of pickpocketing. It's best to avoid carrying large amounts of cash or valuables.",
+    "location": {
+      "latitude": 31.3260,
+      "longitude": 75.5762
+    },
+    "radius": 600,
+    "risk_level": "Medium"
+  },
+  {
+    "id": 8,
+    "name": "Rama Mandi Chowk, Jalandhar",
+    "description": "One of the busiest and most chaotic intersections in Jalandhar. High volume of traffic from multiple directions leads to frequent traffic jams and a high risk of accidents.",
+    "location": {
+      "latitude": 31.2885,
+      "longitude": 75.6135
+    },
+    "radius": 450,
+    "risk_level": "High"
+  },
+  {
+    "id": 9,
+    "name": "Kapurthala Road - Isolated Stretches at Night",
+    "description": "Certain sections of the road between Jalandhar and Kapurthala are not well-lit and have low traffic at night, increasing vulnerability. Avoid traveling alone on this route late in the evening.",
+    "location": {
+      "latitude": 31.3550,
+      "longitude": 75.4650
+    },
+    "radius": 2000,
+    "risk_level": "Medium"
+  },
+  {
+    "id": 10,
+    "name": "Model Town Market, Jalandhar",
+    "description": "An upscale market that is often crowded, especially on weekends. Incidents of snatching and theft from parked cars have been reported. Be cautious with valuables.",
+    "location": {
+      "latitude": 31.3090,
+      "longitude": 75.5645
+    },
+    "radius": 700,
+    "risk_level": "Medium"
+  },
+  {
+    "id": 11,
+    "name": "Nakodar Town Center",
+    "description": "The main market area in Nakodar can get extremely congested. The narrow lanes and high footfall create opportunities for pickpockets, particularly during festive seasons.",
+    "location": {
+      "latitude": 31.1274,
+      "longitude": 75.4746
+    },
+    "radius": 500,
+    "risk_level": "Low"
+  },
+  {
+    "id": 12,
+    "name": "Jalandhar Cantonment Railway Station Area",
+    "description": "Less busy than the main city station, but its surroundings can be deserted late at night. Exercise caution if arriving or departing on late-night trains.",
+    "location": {
+      "latitude": 31.2934,
+      "longitude": 75.6321
+    },
+    "radius": 400,
+    "risk_level": "Medium"
+  }
+]
+
