@@ -18,6 +18,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminMapView from './pages/admin/AdminMapView';
 import AdminAlerts from './pages/admin/AdminAlerts';
+import AdminRiskZones from './pages/admin/AdminRiskZones';
 
 // Services
 import { AuthProvider, useAuth } from './services/AuthContext';
@@ -121,6 +122,14 @@ function App() {
                 element={
                   <AdminProtectedRoute>
                     <AdminAlerts />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/risk-zones"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminRiskZones />
                   </AdminProtectedRoute>
                 }
               />

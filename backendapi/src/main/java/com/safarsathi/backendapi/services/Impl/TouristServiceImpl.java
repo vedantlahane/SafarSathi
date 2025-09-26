@@ -49,6 +49,7 @@ public class TouristServiceImpl implements TouristService {
         // 3. Set standard registration/tracking fields
         newTourist.setLastSeen(Instant.now());
         newTourist.setIdExpiry(Instant.now().plusSeconds(31536000)); // 1 year mock validity
+    newTourist.setSafetyScore(100.0);
         
         // Note: Fields like name, email, phone, gender, dob, nationality, etc.,
         // are set directly on the newTourist object by Spring's @RequestBody binding

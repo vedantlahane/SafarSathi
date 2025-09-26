@@ -30,9 +30,9 @@ public class SampleDataLoader implements CommandLineRunner {
         final String sql =
                 "INSERT INTO tourists (" +
                         "id, name, email, phone, passport_number, date_of_birth, address, gender, nationality, " +
-                        "emergency_contact, password_hash, id_hash, id_expiry, current_lat, current_lng, last_seen" +
+                        "emergency_contact, password_hash, id_hash, id_expiry, current_lat, current_lng, last_seen, safety_score" +
                         ") VALUES (" +
-                        "UNHEX(REPLACE(?, '-', '')), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
+                        "UNHEX(REPLACE(?, '-', '')), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
                         ") ON DUPLICATE KEY UPDATE " +
                         "name = VALUES(name), " +
                         "phone = VALUES(phone), " +
@@ -47,7 +47,8 @@ public class SampleDataLoader implements CommandLineRunner {
                         "id_expiry = VALUES(id_expiry), " +
                         "current_lat = VALUES(current_lat), " +
                         "current_lng = VALUES(current_lng), " +
-                        "last_seen = VALUES(last_seen)";
+                        "last_seen = VALUES(last_seen), " +
+                        "safety_score = VALUES(safety_score)";
 
         Instant now = Instant.now();
         jdbcTemplate.update(
@@ -67,7 +68,8 @@ public class SampleDataLoader implements CommandLineRunner {
                 Timestamp.from(now.plus(365, ChronoUnit.DAYS)),
                 26.2006,
                 92.9376,
-                Timestamp.from(now)
+                Timestamp.from(now),
+                87.0
         );
     }
 }

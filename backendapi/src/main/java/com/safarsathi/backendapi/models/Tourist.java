@@ -60,4 +60,14 @@ public class Tourist {
     private Double currentLat;
     private Double currentLng;
     private Instant lastSeen;
+
+    @Column(name = "safety_score", nullable = false)
+    private Double safetyScore = 100.0;
+
+    @PrePersist
+    public void ensureDefaults() {
+        if (safetyScore == null) {
+            safetyScore = 100.0;
+        }
+    }
 }
