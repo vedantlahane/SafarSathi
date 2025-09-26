@@ -72,6 +72,9 @@ const Dashboard = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showTips, setShowTips] = useState(false);
+  const [activeSecondaryPanel, setActiveSecondaryPanel] = useState('map');
   const [isOffline, setIsOffline] = useState(() => {
     if (typeof navigator === 'undefined') return false;
     return !navigator.onLine;
@@ -97,6 +100,7 @@ const Dashboard = () => {
   const itineraryRef = useRef(null);
   const sosRef = useRef(null);
   const devicesRef = useRef(null);
+  const secondaryPanelRef = useRef(null);
 
   const zoneList = useMemo(() => zones || [], [zones]);
 
@@ -315,8 +319,34 @@ const Dashboard = () => {
     toast.info('Hold the SOS button for 3 seconds to dispatch an alert.');
   }, []);
 
+  const secondaryPanels = useMemo(
+    () => [
+      { id: 'map', label: 'Map', icon: '📍' },
+      { id: 'insights', label: 'Insights', icon: '📊' },
+      { id: 'timeline', label: 'Plan', icon: '🧭' },
+      { id: 'devices', label: 'Devices', icon: '📡' }
+    ],
+    []
+  );
+
+  const handleOpenPanel = useCallback((panelId) => {
+    setActiveSecondaryPanel(panelId);
+    if (secondaryPanelRef.current) {
+      secondaryPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   const quickActions = useMemo(
     () => [
+      {
+        id: 'map-view',
+        iconSrc: ICONS.actionMap,
+        iconAlt: 'Live map icon',
+        text: 'Map',
+        description: 'Live safety map',
+        onClick: () => handleOpenPanel('map'),
+        color: 'from-blue-500 to-indigo-500'
+      },
       {
         id: 'safety-center',
         iconSrc: ICONS.actionSafety,
@@ -355,7 +385,7 @@ const Dashboard = () => {
         color: 'from-slate-500 to-slate-600'
       }
     ],
-    [navigate, handleSafeShare, isSharing, setShowContacts]
+    [navigate, handleSafeShare, isSharing, setShowContacts, handleOpenPanel]
   );
 
   const tourSteps = useMemo(
