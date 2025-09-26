@@ -22,27 +22,27 @@ const AdminLayout = ({ children, title, subtitle }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="backdrop-blur-lg bg-white/10 border-b border-white/10 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+    <div className="min-h-[100svh] bg-slate-950 text-white">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/85 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="uppercase text-xs tracking-widest text-teal-300/80">SafarSathi Command Center</p>
-            <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+            <p className="text-[11px] uppercase tracking-widest text-teal-300/80">SafarSathi Command Center</p>
+            <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold text-white sm:text-3xl">
               <span>🛰️ {title}</span>
             </h1>
-            {subtitle && <p className="text-slate-300 text-sm mt-1">{subtitle}</p>}
+            {subtitle && <p className="mt-1 text-sm text-slate-300">{subtitle}</p>}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
             <div className="text-right">
               <p className="text-sm font-semibold text-teal-300">{admin?.name || 'Operator'}</p>
-              <p className="text-xs text-slate-300">{admin?.email}</p>
+              <p className="text-xs text-slate-300 max-w-[12rem] truncate">{admin?.email}</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.96 }}
               onClick={handleLogout}
-              className="bg-red-500/90 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+              className="rounded-full bg-red-500/90 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500"
             >
               Logout
             </motion.button>
@@ -50,12 +50,12 @@ const AdminLayout = ({ children, title, subtitle }) => {
         </div>
 
         <nav className="border-t border-white/10">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex gap-3">
+          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3">
             {navItems.map(item => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) => `${linkBaseClasses} ${isActive ? 'bg-teal-500 text-slate-950' : 'text-slate-200 hover:bg-white/10'}`}
+                className={({ isActive }) => `${linkBaseClasses} flex-shrink-0 ${isActive ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-slate-200 hover:bg-white/10'}`}
               >
                 {item.label}
               </NavLink>
@@ -68,7 +68,7 @@ const AdminLayout = ({ children, title, subtitle }) => {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="max-w-7xl mx-auto px-6 py-8"
+        className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8"
       >
         {children}
       </motion.main>

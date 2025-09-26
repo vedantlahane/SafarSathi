@@ -34,8 +34,10 @@ const DigitalID = () => {
 
   if (loading || !profile || !digitalId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="bg-white px-6 py-4 rounded-2xl shadow-lg border border-slate-200">Loading digital ID...</div>
+      <div className="flex min-h-[100svh] items-center justify-center bg-slate-950 text-slate-100">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/70 px-6 py-4 shadow-lg backdrop-blur">
+          Loading digital ID…
+        </div>
       </div>
     );
   }
@@ -44,25 +46,25 @@ const DigitalID = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 p-6"
+      className="min-h-[100svh] bg-slate-950 px-4 py-6 text-slate-100 sm:px-6"
     >
-      <div className="max-w-6xl mx-auto space-y-6">
-        <header className="bg-white/80 backdrop-blur border border-white/60 rounded-3xl p-6 shadow">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg backdrop-blur">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-slate-500">{t('common.appName')}</p>
-              <h1 className="text-3xl font-bold text-slate-800">{t('digitalId.title')}</h1>
-              <p className="text-sm text-slate-500 mt-2">Logged in as {user?.email}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('common.appName')}</p>
+              <h1 className="text-3xl font-semibold text-white sm:text-4xl">{t('digitalId.title')}</h1>
+              <p className="mt-2 text-sm text-slate-300">Logged in as {user?.email}</p>
             </div>
-            <div className="bg-teal-50 border border-teal-200 text-teal-700 rounded-2xl px-4 py-3 text-sm max-w-xs">
+            <div className="max-w-xs rounded-2xl border border-teal-400/40 bg-teal-600/20 px-4 py-3 text-sm text-teal-100">
               <p className="font-semibold">Tamper-proof identity</p>
-              <p>Verified on blockchain ledger • {digitalId.blockchainID}</p>
+              <p className="mt-1 text-xs text-teal-200/80">Verified on blockchain ledger • {digitalId.blockchainID}</p>
             </div>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
             <DigitalIDCard profile={profile} digitalId={digitalId} />
             <ItineraryTimeline itinerary={itinerary} />
           </div>
@@ -72,14 +74,14 @@ const DigitalID = () => {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <BlockchainLogList logs={blockchainLogs} />
-          <div className="bg-white/90 border border-slate-200 rounded-3xl p-6">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">🛡️ Data Privacy</h3>
-            <ul className="space-y-3 text-sm text-slate-600">
-              <li>• End-to-end encrypted storage of KYC records.</li>
-              <li>• Blockchain hash ensures tamper-proof incident trail.</li>
-              <li>• Visitor can revoke access anytime from Safety Center.</li>
+          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6">
+            <h3 className="mb-4 text-lg font-semibold text-white">🛡️ Data Privacy</h3>
+            <ul className="space-y-3 text-sm text-slate-300">
+              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>End-to-end encrypted storage of KYC records.</span></li>
+              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Blockchain hash ensures tamper-proof incident trail.</span></li>
+              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Visitor can revoke access anytime from Safety Center.</span></li>
             </ul>
           </div>
         </section>
