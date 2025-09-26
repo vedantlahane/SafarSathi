@@ -26,6 +26,7 @@ const AdminMapView = () => {
   const [tourists, setTourists] = useState([]);
   const [alerts, setAlerts] = useState(mockAlerts);
   const [selectedTouristId, setSelectedTouristId] = useState(null);
+  const [riskZones, setRiskZones] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,9 +35,10 @@ const AdminMapView = () => {
 
     const loadData = async () => {
       try {
-        const [touristResponse, alertsResponse] = await Promise.allSettled([
+        const [touristResponse, alertsResponse, zonesResponse] = await Promise.allSettled([
           apiService.getAdminTourists(),
-          apiService.getAdminAlerts()
+          apiService.getAdminAlerts(),
+          apiService.getRiskZones()
         ]);
 
         if (!isMounted) return;
@@ -54,6 +56,13 @@ const AdminMapView = () => {
           setAlerts(liveAlerts.length ? liveAlerts : mockAlerts);
         } else {
           console.error('Failed to load alerts:', alertsResponse.reason);
+        }
+
+        if (zonesResponse.status === 'fulfilled') {
+          const zones = Array.isArray(zonesResponse.value) ? zonesResponse.value : [];
+          setRiskZones(zones.filter((zone) => zone?.active));
+        } else {
+          console.error('Failed to load risk zones:', zonesResponse.reason);
         }
       } finally {
         if (isMounted) {
@@ -130,6 +139,22 @@ const AdminMapView = () => {
     }
   };
 
+  const getZoneStyling = (zone) => {
+    switch (zone?.riskLevel) {
+      case 'HIGH':
+        return { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2 };
+      case 'LOW':
+        return { color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.15 };
+      default:
+        return { color: '#f97316', fillColor: '#f97316', fillOpacity: 0.18 };
+    }
+  };
+
+  const formatSafetyScore = (tourist) => {
+    if (typeof tourist?.safetyScore !== 'number') return '—';
+    return `${Math.max(0, Math.min(100, Number(tourist.safetyScore))).toFixed(0)} / 100`;
+  };
+
   return (
     <AdminLayout title="Live Mission Map" subtitle="View all tourists, SOS alerts, and zone heatmaps in real time.">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -155,6 +180,7 @@ const AdminMapView = () => {
                         <div className="space-y-1">
                           <p className="font-semibold">{tourist.name}</p>
                           <p className="text-sm">Status: {getStatusLabel(tourist)}</p>
+                          <p className="text-sm">Safety Score: {formatSafetyScore(tourist)}</p>
                           <p className="text-xs text-slate-500">{formatLastSeen(tourist)}</p>
                           {tourist.nationality && (
                             <p className="text-xs text-slate-500">Nationality: {tourist.nationality}</p>
@@ -180,6 +206,39 @@ const AdminMapView = () => {
                     ))}
                 </LayerGroup>
               </Overlay>
+
+              <Overlay checked name="Risk Zones">
+                <LayerGroup>
+                  {riskZones.map(zone => {
+                    const lat = Number(zone.centerLat);
+                    const lng = Number(zone.centerLng);
+                    const radius = Number(zone.radiusMeters);
+
+                    if (Number.isNaN(lat) || Number.isNaN(lng) || Number.isNaN(radius)) {
+                      return null;
+                    }
+
+                    return (
+                      <Circle
+                        key={zone.id}
+                        center={[lat, lng]}
+                        radius={radius}
+                        pathOptions={getZoneStyling(zone)}
+                      >
+                        <Popup>
+                          <div className="space-y-1">
+                            <p className="font-semibold">{zone.name}</p>
+                            <p className="text-xs text-slate-500">Risk: {zone.riskLevel}</p>
+                            {zone.description && (
+                              <p className="text-xs text-slate-500">{zone.description}</p>
+                            )}
+                          </div>
+                        </Popup>
+                      </Circle>
+                    );
+                  })}
+                </LayerGroup>
+              </Overlay>
             </LayersControl>
           </MapContainer>
         </motion.div>
@@ -196,6 +255,7 @@ const AdminMapView = () => {
               <div className="space-y-2 text-sm text-slate-200">
                 <p className="text-base font-semibold text-white">{selectedTourist.name}</p>
                 <p>Status: <span className="font-semibold uppercase">{getStatusLabel(selectedTourist)}</span></p>
+                <p>Safety Score: <span className="font-semibold text-teal-300">{formatSafetyScore(selectedTourist)}</span></p>
                 <p>{formatLastSeen(selectedTourist)}</p>
                 {selectedTourist.phone && <p>Contact: {selectedTourist.phone}</p>}
                 {selectedTourist.emergencyContact && <p>Emergency: {selectedTourist.emergencyContact}</p>}

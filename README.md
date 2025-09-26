@@ -20,6 +20,7 @@
 - Police station locations
 - Safe route recommendations
 - Crowd density monitoring
+- Admin-managed risk zone geofences with live alerts
 
 ### 📱 PWA Features
 - Offline functionality
@@ -95,6 +96,20 @@ npm start
 ```
 
 The application will be available at `http://localhost:3000`
+
+### Backend Setup
+```bash
+cd backendapi
+./mvnw spring-boot:run
+```
+
+> The backend uses Spring Boot with MySQL. Ensure the database connection in `backendapi/src/main/resources/application.properties` points to a running MySQL instance before starting the server.
+
+### Admin Risk Zone Management
+- Login to the admin console and open **Risk Zones** to create circular geo-fences.
+- Each zone defines a center latitude/longitude, radius in meters, and risk level (Low, Medium, High).
+- When tourists enter an active zone, their safety score decreases and police alerts are issued in real time.
+- The live mission map renders all active zones to visualize restricted belts alongside SOS activity.
 
 ## 🎯 Features in Detail
 

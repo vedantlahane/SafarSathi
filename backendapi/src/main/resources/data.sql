@@ -50,7 +50,8 @@ INSERT INTO tourists (
     id_expiry,
     current_lat,
     current_lng,
-    last_seen
+    last_seen,
+    safety_score
 ) VALUES (
     UNHEX(REPLACE('ca4b21f2-ce17-49ef-a829-57d063d20163', '-', '')),
     'Aarav Sharma',
@@ -67,7 +68,8 @@ INSERT INTO tourists (
     '2026-09-26 00:00:00',
     26.2006,
     92.9376,
-    '2025-09-26 05:30:00'
+    '2025-09-26 05:30:00',
+    82.5
 ) ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     phone = VALUES(phone),
@@ -75,7 +77,8 @@ INSERT INTO tourists (
     password_hash = VALUES(password_hash),
     current_lat = VALUES(current_lat),
     current_lng = VALUES(current_lng),
-    last_seen = VALUES(last_seen);
+    last_seen = VALUES(last_seen),
+    safety_score = VALUES(safety_score);
 
 -- Additional sample police departments
 INSERT INTO police_departments (
@@ -121,3 +124,50 @@ INSERT INTO police_departments (
     true
 ) ON DUPLICATE KEY UPDATE 
     password_hash = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+
+-- Seed high-risk geofencing zones for admin console
+INSERT INTO risk_zones (
+    id,
+    name,
+    description,
+    center_lat,
+    center_lng,
+    radius_meters,
+    risk_level,
+    is_active,
+    created_at,
+    updated_at
+) VALUES
+    (
+        1,
+        'Kamakhya Hill Restricted Belt',
+        'Sensitive wildlife and temple security perimeter. Tourists require special pass.',
+        26.1667,
+        91.7086,
+        750.0,
+        'HIGH',
+        true,
+        NOW(),
+        NOW()
+    ),
+    (
+        2,
+        'Deepor Beel Wildlife Buffer',
+        'Flood-prone wetlands with limited transport access after dusk.',
+        26.1226,
+        91.6500,
+        1200.0,
+        'MEDIUM',
+        true,
+        NOW(),
+        NOW()
+    )
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    description = VALUES(description),
+    center_lat = VALUES(center_lat),
+    center_lng = VALUES(center_lng),
+    radius_meters = VALUES(radius_meters),
+    risk_level = VALUES(risk_level),
+    is_active = VALUES(is_active),
+    updated_at = NOW();

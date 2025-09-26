@@ -164,6 +164,83 @@ const apiService = {
     }
   },
 
+  /**
+   * Retrieves all configured risk zones for administrative management.
+   * @returns {Promise<object[]>}
+   */
+  getRiskZones: async () => {
+    try {
+      const response = await api.get('/admin/risk-zones');
+      return response.data;
+    } catch (error) {
+      console.error('Risk Zone Fetch Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to load risk zones.');
+    }
+  },
+
+  /**
+   * Creates a new risk zone geo-fence.
+   * @param {object} payload - Risk zone attributes.
+   * @returns {Promise<object>}
+   */
+  createRiskZone: async (payload) => {
+    try {
+      const response = await api.post('/admin/risk-zones', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Risk Zone Create Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to create risk zone.');
+    }
+  },
+
+  /**
+   * Updates an existing risk zone definition.
+   * @param {number} zoneId - Identifier of the risk zone.
+   * @param {object} payload - Updated risk zone data.
+   * @returns {Promise<object>}
+   */
+  updateRiskZone: async (zoneId, payload) => {
+    try {
+      const response = await api.put(`/admin/risk-zones/${zoneId}`, payload);
+      return response.data;
+    } catch (error) {
+      console.error('Risk Zone Update Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to update risk zone.');
+    }
+  },
+
+  /**
+   * Toggles a risk zone active status.
+   * @param {number} zoneId - Identifier of the risk zone.
+   * @param {boolean} active - Desired active flag.
+   * @returns {Promise<object>}
+   */
+  updateRiskZoneStatus: async (zoneId, active) => {
+    try {
+      const response = await api.patch(`/admin/risk-zones/${zoneId}/status`, null, {
+        params: { active }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Risk Zone Status Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to update risk zone status.');
+    }
+  },
+
+  /**
+   * Removes a risk zone entry.
+   * @param {number} zoneId - Identifier of the risk zone.
+   * @returns {Promise<void>}
+   */
+  deleteRiskZone: async (zoneId) => {
+    try {
+      await api.delete(`/admin/risk-zones/${zoneId}`);
+    } catch (error) {
+      console.error('Risk Zone Delete Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to delete risk zone.');
+    }
+  },
+
 };
 
 export default apiService;
