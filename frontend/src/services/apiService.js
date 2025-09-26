@@ -165,6 +165,20 @@ const apiService = {
   },
 
   /**
+   * Retrieves active risk zones for tourist clients.
+   * @returns {Promise<object[]>}
+   */
+  getActiveRiskZones: async () => {
+    try {
+      const response = await api.get('/risk-zones/active');
+      return response.data;
+    } catch (error) {
+      console.error('Active Risk Zone Fetch Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to load active risk zones.');
+    }
+  },
+
+  /**
    * Retrieves all configured risk zones for administrative management.
    * @returns {Promise<object[]>}
    */

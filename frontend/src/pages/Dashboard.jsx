@@ -1,5 +1,5 @@
  //pages/Dashboard.jsx - Enhanced with real-time stats and better UX
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
@@ -71,6 +71,12 @@ const Dashboard = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
+  const [isOffline, setIsOffline] = useState(() => {
+    if (typeof navigator === 'undefined') return false;
+    return !navigator.onLine;
+  });
+  const locationWatchIdRef = useRef(null);
+  const networkAnnouncedRef = useRef(false);
 
   const zoneList = useMemo(() => zones || [], [zones]);
 
@@ -128,12 +134,13 @@ const Dashboard = () => {
 
     if (activeZone && safetyStatus === 'safe') {
       setSafetyStatus('warning');
-      toast.warning(`${activeZone.name}: ${activeZone.reason}`);
+      const offlineSuffix = isOffline ? ' (Offline mode — alerts queued for sync)' : '';
+      toast.warning(`${activeZone.name}: ${activeZone.reason}${offlineSuffix}`);
     } else if (!activeZone && safetyStatus === 'warning') {
       setSafetyStatus('safe');
       toast.success(t('dashboard.safeZoneMessage', 'You are now in a safe zone'));
     }
-  }, [zoneList, safetyStatus, t]);
+  }, [zoneList, safetyStatus, isOffline, t]);
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -166,6 +173,74 @@ const Dashboard = () => {
   useEffect(() => {
     getCurrentLocation();
   }, [getCurrentLocation]);
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      return undefined;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setCurrentLocation(coords);
+        setLastActivity(new Date());
+        checkSafetyZone(coords.lat, coords.lng);
+      },
+      (error) => {
+        console.error('Location watch error:', error);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error('Location permission denied. Geo-fence alerts are limited.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 10000
+      }
+    );
+
+    locationWatchIdRef.current = watchId;
+
+    return () => {
+      if (typeof navigator !== 'undefined' && navigator.geolocation && locationWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(locationWatchIdRef.current);
+        locationWatchIdRef.current = null;
+      }
+    };
+  }, [checkSafetyZone]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsOffline(false);
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!networkAnnouncedRef.current) {
+      networkAnnouncedRef.current = true;
+      return;
+    }
+
+    if (isOffline) {
+      toast.warning('Offline mode: alerts will be stored locally until you reconnect.');
+    } else {
+      toast.success('Connection restored. Syncing with control room.');
+    }
+  }, [isOffline]);
 
   useEffect(() => {
     if (currentLocation) {
@@ -284,9 +359,13 @@ const Dashboard = () => {
       : 'bg-green-500';
   const statusText =
     safetyStatus === 'warning'
-      ? 'Warning Zone'
+      ? isOffline
+        ? 'Warning • Offline'
+        : 'Warning Zone'
       : safetyStatus === 'danger'
       ? 'SOS Active'
+      : isOffline
+      ? 'All Clear • Offline'
       : 'All Clear';
 
   const statusIcon = useMemo(() => {
@@ -355,6 +434,12 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center space-x-3 sm:space-x-4">
+            {isOffline && (
+              <span className="flex items-center gap-2 bg-orange-500 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm">
+                <span className="block w-2 h-2 bg-white rounded-full animate-pulse" />
+                Offline Mode
+              </span>
+            )}
             <LanguageSwitcher compact />
             <span className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm">
               <img src={ICONS.blockchain} alt="Blockchain ID icon" loading="lazy" className="w-4 h-4" />

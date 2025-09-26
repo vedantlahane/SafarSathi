@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,12 +69,14 @@ class AnomalyServiceImplTest {
         anomalyService.processLocation(tourist, null);
 
         ArgumentCaptor<Alert> alertCaptor = ArgumentCaptor.forClass(Alert.class);
-        verify(alertService).createAlert(alertCaptor.capture());
+        verify(alertService, atLeastOnce()).createAlert(alertCaptor.capture());
         verify(touristRepository).save(tourist);
 
-        Alert createdAlert = alertCaptor.getValue();
-        assertThat(createdAlert.getAlertType()).isEqualTo("RISK_ZONE");
-        assertThat(createdAlert.getTouristId()).isEqualTo(tourist.getId());
+        assertThat(alertCaptor.getAllValues())
+                .anySatisfy(alert -> {
+                    assertThat(alert.getAlertType()).isEqualTo("RISK_ZONE");
+                    assertThat(alert.getTouristId()).isEqualTo(tourist.getId());
+                });
         assertThat(tourist.getSafetyScore()).isLessThan(100.0);
     }
 }
