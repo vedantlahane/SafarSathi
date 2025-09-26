@@ -16,6 +16,49 @@ import { useAuth } from './AuthContext';
 
 const TouristDataContext = createContext();
 
+const RISK_ZONE_CACHE_KEY = 'safarsathi:risk-zone-cache';
+
+const cacheRiskZones = (zones) => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(RISK_ZONE_CACHE_KEY, JSON.stringify(zones));
+  } catch (error) {
+    console.warn('Unable to cache risk zones', error);
+  }
+};
+
+const generateZoneId = () => {
+  try {
+    if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch (error) {
+    console.warn('Failed to generate UUID, falling back to Math.random', error);
+  }
+  return `zone-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const normaliseBackendZones = (zones = []) =>
+  zones
+    .filter(Boolean)
+    .map(zone => ({
+      id: zone.id ?? zone.name ?? generateZoneId(),
+      name: zone.name ?? 'Risk Zone',
+      level: zone.riskLevel ? zone.riskLevel.toLowerCase() : 'warning',
+      radius: Number(zone.radiusMeters ?? zone.radius ?? 0),
+      center: {
+        lat: Number(zone.centerLat ?? zone.center?.lat ?? 0),
+        lng: Number(zone.centerLng ?? zone.center?.lng ?? 0)
+      },
+      reason: zone.description || zone.reason || 'Heightened risk area',
+      source: 'backend',
+      updatedAt: zone.updatedAt || zone.createdAt || new Date().toISOString()
+    }))
+    .filter(zone => !Number.isNaN(zone.center.lat) && !Number.isNaN(zone.center.lng) && zone.radius > 0);
+
 export const TouristDataProvider = ({ children }) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -27,6 +70,46 @@ export const TouristDataProvider = ({ children }) => {
   const [blockchainLogs, setBlockchainLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const loadRiskZones = useCallback(async () => {
+    try {
+      const backendZones = await apiService.getActiveRiskZones();
+      const mapped = normaliseBackendZones(Array.isArray(backendZones) ? backendZones : []);
+
+      if (mapped.length) {
+        cacheRiskZones(mapped);
+        return mapped;
+      }
+
+      // Fallback to cache if backend returned empty
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const cached = window.localStorage.getItem(RISK_ZONE_CACHE_KEY);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      }
+
+      const fallbackZones = await fetchGeoFenceZones();
+      cacheRiskZones(fallbackZones);
+      return fallbackZones;
+    } catch (error) {
+      console.warn('Risk zone fetch failed, attempting offline cache.', error);
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const cached = window.localStorage.getItem(RISK_ZONE_CACHE_KEY);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        }
+      } catch (cacheError) {
+        console.warn('Failed to parse cached risk zones', cacheError);
+      }
+
+      const fallbackZones = await fetchGeoFenceZones();
+      cacheRiskZones(fallbackZones);
+      return fallbackZones;
+    }
+  }, []);
 
   const initialise = useCallback(async () => {
     try {
@@ -66,13 +149,13 @@ export const TouristDataProvider = ({ children }) => {
         }
       }
 
-      const [itineraryData, contactData, anomalyData, zoneData, iotData, logData] = await Promise.all([
+      const [itineraryData, contactData, anomalyData, iotData, logData, zoneData] = await Promise.all([
         fetchItinerary(),
         fetchEmergencyContacts(),
         fetchAnomalies(),
-        fetchGeoFenceZones(),
         fetchIoTDevices(),
-        fetchBlockchainLogs()
+        fetchBlockchainLogs(),
+        loadRiskZones()
       ]);
 
       setProfile(profileData);
@@ -88,7 +171,7 @@ export const TouristDataProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [loadRiskZones, user]);
 
   useEffect(() => {
     if (user) {
