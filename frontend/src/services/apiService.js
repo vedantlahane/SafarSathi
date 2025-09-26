@@ -165,6 +165,20 @@ const apiService = {
   },
 
   /**
+   * Aggregated admin dashboard state (stats, alerts, tourists, response units).
+   * @returns {Promise<object>}
+   */
+  getAdminDashboardState: async () => {
+    try {
+      const response = await api.get('/admin/dashboard/state');
+      return response.data;
+    } catch (error) {
+      console.error('Admin Dashboard Fetch Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to load dashboard state.');
+    }
+  },
+
+  /**
    * Retrieves active risk zones for tourist clients.
    * @returns {Promise<object[]>}
    */
@@ -189,6 +203,26 @@ const apiService = {
     } catch (error) {
       console.error('Risk Zone Fetch Error:', error.response || error);
       throw new Error(error.response?.data?.message || 'Failed to load risk zones.');
+    }
+  },
+
+  /**
+   * Returns consolidated tourist dashboard state including alerts, risk zones, blockchain logs.
+   * @param {string} touristId
+   * @param {string} token
+   * @returns {Promise<object>}
+   */
+  getTouristDashboardState: async (touristId, token) => {
+    try {
+      const response = await api.get(`/tourist/${touristId}/dashboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Tourist Dashboard Fetch Error:', error.response || error);
+      throw new Error(error.response?.data?.message || 'Failed to load tourist dashboard data.');
     }
   },
 

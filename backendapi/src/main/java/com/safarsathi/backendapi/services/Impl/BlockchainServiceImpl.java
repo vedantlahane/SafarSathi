@@ -8,6 +8,8 @@ import com.safarsathi.backendapi.models.BlockchainLog;
 import com.safarsathi.backendapi.repo.BlockchainLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,5 +44,14 @@ public class BlockchainServiceImpl implements BlockchainService {
 
         // A successful verification requires the hash to exist AND have a successful status.
         return log.isPresent() && log.get().getStatus().equals(SUCCESS_STATUS);
+    }
+
+    @Override
+    public List<BlockchainLog> getRecentLogs(UUID touristId, int limit) {
+        List<BlockchainLog> logs = blockchainLogRepository.findTop10ByTouristIdOrderByTimestampDesc(touristId);
+        if (limit <= 0 || logs.size() <= limit) {
+            return logs;
+        }
+        return logs.subList(0, limit);
     }
 }

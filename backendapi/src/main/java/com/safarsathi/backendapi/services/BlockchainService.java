@@ -2,6 +2,8 @@ package com.safarsathi.backendapi.services;
 
 
 import com.safarsathi.backendapi.models.BlockchainLog;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface BlockchainService {
@@ -21,4 +23,6 @@ public interface BlockchainService {
      * @return True if the hash exists and is valid.
      */
     boolean verifyIDProof(String idHash);
+
+    List<BlockchainLog> getRecentLogs(UUID touristId, int limit);
 }

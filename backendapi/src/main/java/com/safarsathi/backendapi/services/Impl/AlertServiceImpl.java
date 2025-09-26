@@ -48,6 +48,20 @@ public class AlertServiceImpl implements AlertService {
     }
 
     @Override
+    public List<Alert> getRecentAlerts(int limit) {
+        List<Alert> recent = alertRepository.findTop20ByOrderByCreatedTimeDesc();
+        if (limit <= 0 || recent.size() <= limit) {
+            return recent;
+        }
+        return recent.subList(0, limit);
+    }
+
+    @Override
+    public List<Alert> getAlertsForTourist(UUID touristId) {
+        return alertRepository.findByTouristIdOrderByCreatedTimeDesc(touristId);
+    }
+
+    @Override
     public Alert handleSOS(UUID touristId, Double lat, Double lng) {
         Alert sosAlert = new Alert();
         sosAlert.setTouristId(touristId);

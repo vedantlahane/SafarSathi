@@ -1,19 +1,19 @@
 import React from 'react';
-import { formatTime } from '../../mock/adminData';
+import { formatTime } from '../../utils/time';
 
 const ActivityTimeline = ({ alerts = [], tourists = [] }) => {
   const events = [
     ...alerts.map(alert => ({
       id: alert.id,
       type: alert.priority === 'critical' ? 'SOS Alert' : 'Watch Alert',
-      description: alert.description,
+      description: alert.description || alert.message || alert.alertType || 'Alert raised',
       timestamp: alert.timestamp,
       icon: alert.priority === 'critical' ? '🚨' : '⚠️'
     })),
     ...tourists.map(tourist => ({
       id: `${tourist.id}-ping`,
       type: 'Ping Update',
-      description: `${tourist.name} checked in at ${tourist.lastKnownArea}`,
+      description: `${tourist.name} checked in at ${tourist.lastKnownArea || 'unknown location'}`,
       timestamp: tourist.lastPing,
       icon: '📍'
     }))

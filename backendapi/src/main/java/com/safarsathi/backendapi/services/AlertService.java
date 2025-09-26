@@ -8,6 +8,8 @@ public interface AlertService {
 
     Alert createAlert(Alert alert);
     List<Alert> getActiveAlerts();
+    List<Alert> getRecentAlerts(int limit);
+    List<Alert> getAlertsForTourist(UUID touristId);
 
     /**
      * Handles the Panic (SOS) call from the mobile app.
