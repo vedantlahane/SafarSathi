@@ -51,6 +51,32 @@ const AdminProtectedRoute = ({ children }) => {
 };
 
 /**
+ * Redirects the root route to the appropriate dashboard/login depending on session state.
+ */
+const LandingRoute = () => {
+  const { user } = useAuth();
+  const { admin } = useAdminAuth();
+
+  if (admin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Navigate to="/login" replace />;
+};
+
+/**
+ * Handles /admin base route by checking whether an admin session exists.
+ */
+const AdminLandingRoute = () => {
+  const { admin } = useAdminAuth();
+  return admin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/admin/login" replace />;
+};
+
+/**
  * Root application component wiring together the authentication provider,
  * router configuration, and global toast container.
  *
@@ -64,78 +90,79 @@ function App() {
           <Router>
             <div className="App">
               <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/map"
-                element={
-                  <ProtectedRoute>
-                    <MapView />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/id"
-                element={
-                  <ProtectedRoute>
-                    <DigitalID />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/safety"
-                element={
-                  <ProtectedRoute>
-                    <SafetyCenter />
-                  </ProtectedRoute>
-                }
-              />
+                <Route path="/" element={<LandingRoute />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/map"
+                  element={
+                    <ProtectedRoute>
+                      <MapView />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/id"
+                  element={
+                    <ProtectedRoute>
+                      <DigitalID />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/safety"
+                  element={
+                    <ProtectedRoute>
+                      <SafetyCenter />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminDashboard />
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/map"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminMapView />
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/alerts"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminAlerts />
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/risk-zones"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminRiskZones />
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
-              <Route path="/" element={<Navigate to="/dashboard" />} />
-            </Routes>
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminDashboard />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/map"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminMapView />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/alerts"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminAlerts />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/risk-zones"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminRiskZones />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route path="/admin" element={<AdminLandingRoute />} />
+
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
             <ToastContainer
               position="top-right"
               autoClose={3000}
