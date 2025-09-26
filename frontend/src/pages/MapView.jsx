@@ -144,7 +144,9 @@ const MapView = () => {
     const hour = new Date().getHours();
     const isNight = hour >= 20 || hour <= 6;
     const mappedContextZones = (contextZones || []).map(zone => ({
-      id: zone.id,
+      id: zone.id
+        ? `backend-zone-${zone.id}`
+        : `backend-zone-${zone.center?.lat ?? 'lat'}-${zone.center?.lng ?? 'lng'}`,
       position: [zone.center.lat, zone.center.lng],
       radius: zone.radius,
       name: zone.name,
@@ -156,7 +158,7 @@ const MapView = () => {
     return [
       ...mappedContextZones,
       {
-        id: 1,
+        id: 'static-chandni-chowk',
         position: [28.6129, 77.2295],
         radius: 500,
         name: "Chandni Chowk Area",
@@ -165,7 +167,7 @@ const MapView = () => {
         incidents: 12
       },
       {
-        id: 2,
+        id: 'static-noida-sector-18',
         position: [28.5355, 77.3910],
         radius: 800,
         name: "Noida Sector 18",

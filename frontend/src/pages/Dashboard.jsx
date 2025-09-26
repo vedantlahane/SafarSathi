@@ -491,15 +491,16 @@ const Dashboard = () => {
                 
                 {/* Current Location - Blinking Marker */}
                 <motion.div
+                  initial={{ scale: 1, opacity: 0.7 }}
                   animate={{ 
-                    scale: [1, 1.3, 1],
-                    opacity: [1, 0.7, 1]
+                    scale: 1.3,
+                    opacity: 1
                   }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  transition={{ repeat: Infinity, repeatType: 'mirror', duration: 1.5 }}
                   className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                 >
                   <div className="relative">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full border-[3px] border-white shadow-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
