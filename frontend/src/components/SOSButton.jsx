@@ -3,6 +3,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 
+
 // Local utility functions to replace the missing import.
 // These are included directly in the file to avoid external dependencies.
 const getBatteryLevel = async () => {
@@ -51,7 +52,9 @@ const SOSButton = ({ currentLocation, user }) => {
   const [showInstructions, setShowInstructions] = useState(false);
   const holdTimer = useRef(null);
   const countdownTimer = useRef(null);
-  const API_BASE_URL = 'http://localhost:8080/api/action'; // **[Adjust this URL to your actual backend domain]**
+
+  const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || '8080';
+  const API_BASE_URL = `http://localhost:${BACKEND_PORT}/api/action`; // **[Adjust this URL to your actual backend domain]**
 
   // Enhanced SOS with offline support and better UX
   /**
