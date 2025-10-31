@@ -99,11 +99,11 @@ The application will be available at `http://localhost:3000`
 
 ### Backend Setup
 ```bash
-cd backendapi
+cd backend
 ./mvnw spring-boot:run
 ```
 
-> The backend uses Spring Boot with MySQL. Ensure the database connection in `backendapi/src/main/resources/application.properties` points to a running MySQL instance before starting the server.
+> The backend uses Spring Boot with MySQL. Ensure the database connection in `backend/src/main/resources/application.properties` points to a running MySQL instance before starting the server.
 
 ### Admin Risk Zone Management
 - Login to the admin console and open **Risk Zones** to create circular geo-fences.
