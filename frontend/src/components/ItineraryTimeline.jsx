@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import FeatureIcon from './icons/FeatureIcon';
 
 const statusColors = {
   completed: 'bg-emerald-500',
@@ -10,37 +11,36 @@ const statusColors = {
 const ItineraryTimeline = ({ itinerary = [] }) => {
   if (!Array.isArray(itinerary) || itinerary.length === 0) {
     return (
-      <div className="bg-white/90 border border-slate-200 rounded-2xl p-6 text-center text-slate-500">
+      <div className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm text-slate-300">
         No itinerary items found.
       </div>
     );
   }
 
   return (
-    <div className="bg-white/90 border border-slate-200 rounded-3xl p-6">
-      <h3 className="text-lg font-semibold text-slate-800 mb-4">🗓️ Upcoming Itinerary</h3>
-      <div className="space-y-6">
+    <div className="space-y-3 text-slate-100">
+      <div className="flex items-center gap-3">
+        <FeatureIcon name="timeline" size="xs" className="border-white/10 text-cyan-200" />
+        <h3 className="text-base font-semibold text-white">Upcoming itinerary</h3>
+      </div>
+      <div className="space-y-5">
         {itinerary.map((item, index) => (
           <div key={item.id} className="relative pl-6">
             {index !== 0 && (
-              <span className="absolute left-2 top-0 h-full w-px bg-slate-200" aria-hidden />
+              <span className="absolute left-1.5 top-0 h-full w-px bg-white/15" aria-hidden />
             )}
             <span
-              className={`absolute left-0 top-1.5 h-3 w-3 rounded-full border-2 border-white shadow ${statusColors[item.status] || 'bg-slate-400'}`}
+              className={`absolute left-0 top-1.5 h-3 w-3 rounded-full border border-white/20 ${statusColors[item.status] || 'bg-slate-400'}`}
             />
-            <div className="bg-gradient-to-r from-white to-slate-50 border border-slate-200 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-500">
-                  {dayjs(item.day).format('DD MMM YYYY')} • {item.time}
-                </p>
-                <span className="text-xs uppercase tracking-wider text-slate-500">
-                  {item.city}
-                </span>
+            <div className="flex flex-col gap-2 rounded-2xl border-l-4 border-white/15 bg-transparent px-4 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.14em] text-white/60">
+                <span>{dayjs(item.day).format('DD MMM YYYY')} • {item.time}</span>
+                <span className="text-white/70">{item.city}</span>
               </div>
-              <h4 className="text-base font-semibold text-slate-800 mt-1">{item.title}</h4>
-              <p className="text-sm text-slate-600 mt-2">{item.notes}</p>
-              <span className={`inline-flex mt-3 px-3 py-1 rounded-full text-xs font-semibold text-white ${statusColors[item.status] || 'bg-slate-400'}`}>
-                {item.status.toUpperCase()}
+              <h4 className="text-sm font-semibold text-white">{item.title}</h4>
+              <p className="text-sm text-white/70 leading-relaxed">{item.notes}</p>
+              <span className={`inline-flex w-max rounded-full px-3 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white ${statusColors[item.status] || 'bg-slate-400'}`}>
+                {item.status}
               </span>
             </div>
           </div>

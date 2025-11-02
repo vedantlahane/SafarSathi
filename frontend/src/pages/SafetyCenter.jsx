@@ -27,34 +27,28 @@ const SafetyCenter = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-[100svh] bg-slate-950 px-4 py-6 text-slate-100 sm:px-6"
+      className="space-y-6 text-slate-100"
     >
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg backdrop-blur">
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('common.appName')}</p>
-              <h1 className="text-3xl font-semibold text-white sm:text-4xl">{t('safetyCenter.title')}</h1>
-              <p className="mt-2 text-sm text-slate-300">Live monitoring enabled for {profile?.name}</p>
-            </div>
-            <div className="max-w-xs rounded-2xl border border-emerald-400/40 bg-emerald-600/20 px-4 py-3 text-sm text-emerald-100">
-              <p className="font-semibold">24/7 Response Desk</p>
-              <p className="mt-1 text-xs text-emerald-200/80">Alerts auto-escalate if idle {'>'} 15 min in red zones.</p>
-            </div>
+      <header className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-md backdrop-blur">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('common.appName')}</p>
+            <h1 className="text-2xl font-semibold text-white">{t('safetyCenter.title')}</h1>
+            <p className="mt-1 text-sm text-slate-300">Live monitoring enabled for {profile?.name}</p>
           </div>
-        </header>
+          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs text-emerald-100">
+            <p className="font-semibold">24/7 Response Desk</p>
+            <p className="mt-1 text-emerald-200/80">Alerts auto-escalate if idle {'>'} 15 min in red zones.</p>
+          </div>
+        </div>
+      </header>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <AnomalyFeed anomalies={anomalies} onResolve={handleResolve} />
-            <GeoFenceAlertList zones={zones} />
-          </div>
-          <div className="space-y-6">
-            <TrackingPreferences preferences={profile?.preferences} onUpdate={handleUpdatePreferences} />
-            <VoiceAssistance />
-          </div>
-        </section>
-      </div>
+      <section className="space-y-6">
+        <AnomalyFeed anomalies={anomalies} onResolve={handleResolve} />
+        <GeoFenceAlertList zones={zones} />
+        <TrackingPreferences preferences={profile?.preferences} onUpdate={handleUpdatePreferences} />
+        <VoiceAssistance />
+      </section>
     </motion.div>
   );
 };

@@ -26,6 +26,7 @@
     "react-router-dom": "^7.9.2",
     "react-toastify": "^11.0.5",
     "tailwindcss": "^4.1.13",
+    "tailwind-merge": "^1.14.0",
     "tesseract.js": "^6.0.1"
   },
   "devDependencies": {

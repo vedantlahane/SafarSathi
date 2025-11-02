@@ -34,7 +34,7 @@ const DigitalID = () => {
 
   if (loading || !profile || !digitalId) {
     return (
-      <div className="flex min-h-[100svh] items-center justify-center bg-slate-950 text-slate-100">
+      <div className="flex min-h-[60vh] items-center justify-center text-slate-100">
         <div className="rounded-2xl border border-white/10 bg-slate-900/70 px-6 py-4 shadow-lg backdrop-blur">
           Loading digital ID…
         </div>
@@ -46,46 +46,37 @@ const DigitalID = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-[100svh] bg-slate-950 px-4 py-6 text-slate-100 sm:px-6"
+      className="space-y-6 text-slate-100"
     >
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-lg backdrop-blur">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('common.appName')}</p>
-              <h1 className="text-3xl font-semibold text-white sm:text-4xl">{t('digitalId.title')}</h1>
-              <p className="mt-2 text-sm text-slate-300">Logged in as {user?.email}</p>
-            </div>
-            <div className="max-w-xs rounded-2xl border border-teal-400/40 bg-teal-600/20 px-4 py-3 text-sm text-teal-100">
-              <p className="font-semibold">Tamper-proof identity</p>
-              <p className="mt-1 text-xs text-teal-200/80">Verified on blockchain ledger • {digitalId.blockchainID}</p>
-            </div>
+      <header className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-md backdrop-blur">
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{t('common.appName')}</p>
+            <h1 className="text-2xl font-semibold text-white">{t('digitalId.title')}</h1>
+            <p className="mt-1 text-sm text-slate-300">Logged in as {user?.email}</p>
           </div>
-        </header>
+          <div className="rounded-2xl border border-teal-400/30 bg-teal-500/15 px-4 py-3 text-xs text-teal-100">
+            <p className="font-semibold">Tamper-proof identity</p>
+            <p className="mt-1 text-teal-200/80">Verified on blockchain ledger • {digitalId.blockchainID}</p>
+          </div>
+        </div>
+      </header>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <DigitalIDCard profile={profile} digitalId={digitalId} />
-            <ItineraryTimeline itinerary={itinerary} />
-          </div>
-          <div className="space-y-6">
-            <EmergencyContacts contacts={contacts} />
-            <IoTDevicesPanel devices={iotDevices} />
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <BlockchainLogList logs={blockchainLogs} />
-          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6">
-            <h3 className="mb-4 text-lg font-semibold text-white">🛡️ Data Privacy</h3>
-            <ul className="space-y-3 text-sm text-slate-300">
-              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>End-to-end encrypted storage of KYC records.</span></li>
-              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Blockchain hash ensures tamper-proof incident trail.</span></li>
-              <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Visitor can revoke access anytime from Safety Center.</span></li>
-            </ul>
-          </div>
-        </section>
-      </div>
+      <section className="space-y-6">
+        <DigitalIDCard profile={profile} digitalId={digitalId} />
+        <ItineraryTimeline itinerary={itinerary} />
+        <EmergencyContacts contacts={contacts} />
+        <IoTDevicesPanel devices={iotDevices} />
+        <BlockchainLogList logs={blockchainLogs} />
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+          <h3 className="mb-3 text-base font-semibold text-white">🛡️ Data Privacy</h3>
+          <ul className="space-y-2 text-sm text-slate-300">
+            <li className="flex items-start gap-2"><span aria-hidden>•</span><span>End-to-end encrypted storage of KYC records.</span></li>
+            <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Blockchain hash ensures tamper-proof incident trail.</span></li>
+            <li className="flex items-start gap-2"><span aria-hidden>•</span><span>Visitor can revoke access anytime from Safety Center.</span></li>
+          </ul>
+        </div>
+      </section>
     </motion.div>
   );
 };

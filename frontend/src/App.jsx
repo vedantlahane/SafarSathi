@@ -5,7 +5,7 @@
  */
 
 import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'leaflet/dist/leaflet.css';
@@ -14,6 +14,9 @@ import 'leaflet/dist/leaflet.css';
 import { AuthProvider, useAuth } from './services/AuthContext';
 import { AdminAuthProvider, useAdminAuth } from './services/AdminAuthContext';
 import { TouristDataProvider } from './services/TouristDataContext';
+import MobileShell from './components/layout/MobileShell';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import FeatureIcon from './components/icons/FeatureIcon';
 
 // Pages (lazy loaded to optimise mobile bundle size)
 const Login = lazy(() => import('./pages/Login'));
@@ -76,6 +79,159 @@ const AdminLandingRoute = () => {
   return admin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/admin/login" replace />;
 };
 
+const DashboardScreen = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const actions = [
+    {
+      key: 'safety-center',
+      label: 'Open Safety Center',
+      description: 'Review alerts and update SOS settings',
+      icon: <FeatureIcon name="safety" bare className="h-5 w-5 text-cyan-100" />,
+      onSelect: () => navigate('/safety'),
+    },
+    {
+      key: 'view-id',
+      label: 'Show Digital ID',
+      description: 'Access your travel identity card',
+      icon: <FeatureIcon name="id" bare className="h-5 w-5 text-cyan-100" />,
+      onSelect: () => navigate('/id'),
+    },
+    {
+      key: 'logout',
+      label: 'Sign out',
+      description: 'Log out from SafarSathi',
+      icon: <FeatureIcon name="alert" bare className="h-5 w-5 text-rose-200" />,
+      onSelect: logout,
+    },
+  ];
+
+  const inlineActions = [
+    {
+      key: 'language-toggle',
+      node: <LanguageSwitcher compact />,
+    },
+  ];
+
+  return (
+    <MobileShell
+      title="Dashboard"
+      subtitle="Live safety snapshot"
+      actions={actions}
+      inlineActions={inlineActions}
+      tone="ocean"
+    >
+      <Dashboard />
+    </MobileShell>
+  );
+};
+
+const MapScreen = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const actions = [
+    {
+      key: 'view-dashboard',
+      label: 'View Dashboard',
+      description: 'Return to your safety overview',
+      icon: <FeatureIcon name="dashboard" bare className="h-5 w-5 text-emerald-100" />,
+      onSelect: () => navigate('/dashboard'),
+    },
+    {
+      key: 'open-safety',
+      label: 'Safety Center',
+      description: 'Configure alerts and SOS preferences',
+      icon: <FeatureIcon name="safety" bare className="h-5 w-5 text-emerald-100" />,
+      onSelect: () => navigate('/safety'),
+    },
+    {
+      key: 'logout',
+      label: 'Sign out',
+      description: 'Log out from SafarSathi',
+      icon: <FeatureIcon name="alert" bare className="h-5 w-5 text-rose-200" />,
+      onSelect: logout,
+    },
+  ];
+
+  return (
+    <MobileShell title="Map" subtitle="Safe zones near you" actions={actions} tone="forest">
+      <MapView />
+    </MobileShell>
+  );
+};
+
+const DigitalIDScreen = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const actions = [
+    {
+      key: 'view-dashboard',
+      label: 'View Dashboard',
+      description: 'Back to safety insights',
+      icon: <FeatureIcon name="dashboard" bare className="h-5 w-5 text-violet-100" />,
+      onSelect: () => navigate('/dashboard'),
+    },
+    {
+      key: 'open-map',
+      label: 'Open Map',
+      description: 'Inspect nearby safe zones',
+      icon: <FeatureIcon name="map" bare className="h-5 w-5 text-violet-100" />,
+      onSelect: () => navigate('/map'),
+    },
+    {
+      key: 'logout',
+      label: 'Sign out',
+      description: 'Log out from SafarSathi',
+      icon: <FeatureIcon name="alert" bare className="h-5 w-5 text-rose-200" />,
+      onSelect: logout,
+    },
+  ];
+
+  return (
+    <MobileShell title="Digital ID" subtitle="Verified travel identity" actions={actions} tone="violet">
+      <DigitalID />
+    </MobileShell>
+  );
+};
+
+const SafetyCenterScreen = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const actions = [
+    {
+      key: 'view-dashboard',
+      label: 'View Dashboard',
+      description: 'Return to safety overview',
+      icon: <FeatureIcon name="dashboard" bare className="h-5 w-5 text-amber-100" />,
+      onSelect: () => navigate('/dashboard'),
+    },
+    {
+      key: 'open-map',
+      label: 'Open Map',
+      description: 'Check geo-fence regions',
+      icon: <FeatureIcon name="map" bare className="h-5 w-5 text-amber-100" />,
+      onSelect: () => navigate('/map'),
+    },
+    {
+      key: 'logout',
+      label: 'Sign out',
+      description: 'Log out from SafarSathi',
+      icon: <FeatureIcon name="alert" bare className="h-5 w-5 text-rose-200" />,
+      onSelect: logout,
+    },
+  ];
+
+  return (
+    <MobileShell title="Safety Center" subtitle="Emergency and preferences" actions={actions} tone="amber">
+      <SafetyCenter />
+    </MobileShell>
+  );
+};
+
 /**
  * Root application component wiring together the authentication provider,
  * router configuration, and global toast container.
@@ -94,105 +250,98 @@ function App() {
       <AdminAuthProvider>
         <TouristDataProvider>
           <Router>
-            <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
-              <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white">
-                Skip to main content
-              </a>
-              <Suspense fallback={LoadingScreen}>
-                <main id="main-content" className="flex-1">
-                  <Routes>
-                    <Route path="/" element={<LandingRoute />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route
-                      path="/dashboard"
-                      element={
-                        <ProtectedRoute>
-                          <Dashboard />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/map"
-                      element={
-                        <ProtectedRoute>
-                          <MapView />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/id"
-                      element={
-                        <ProtectedRoute>
-                          <DigitalID />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/safety"
-                      element={
-                        <ProtectedRoute>
-                          <SafetyCenter />
-                        </ProtectedRoute>
-                      }
-                    />
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white">
+              Skip to main content
+            </a>
+            <Suspense fallback={LoadingScreen}>
+              <Routes>
+                <Route path="/" element={<LandingRoute />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardScreen />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/map"
+                  element={
+                    <ProtectedRoute>
+                      <MapScreen />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/id"
+                  element={
+                    <ProtectedRoute>
+                      <DigitalIDScreen />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/safety"
+                  element={
+                    <ProtectedRoute>
+                      <SafetyCenterScreen />
+                    </ProtectedRoute>
+                  }
+                />
 
-                    <Route path="/admin/login" element={<AdminLogin />} />
-                    <Route
-                      path="/admin/dashboard"
-                      element={
-                        <AdminProtectedRoute>
-                          <AdminDashboard />
-                        </AdminProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/map"
-                      element={
-                        <AdminProtectedRoute>
-                          <AdminMapView />
-                        </AdminProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/alerts"
-                      element={
-                        <AdminProtectedRoute>
-                          <AdminAlerts />
-                        </AdminProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/admin/risk-zones"
-                      element={
-                        <AdminProtectedRoute>
-                          <AdminRiskZones />
-                        </AdminProtectedRoute>
-                      }
-                    />
-                    <Route path="/admin" element={<AdminLandingRoute />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminDashboard />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/map"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminMapView />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/alerts"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminAlerts />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/risk-zones"
+                  element={
+                    <AdminProtectedRoute>
+                      <AdminRiskZones />
+                    </AdminProtectedRoute>
+                  }
+                />
+                <Route path="/admin" element={<AdminLandingRoute />} />
 
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </main>
-              </Suspense>
-              <footer className="border-t border-white/10 bg-slate-950/80 px-4 py-3 text-center text-xs text-slate-400 backdrop-blur">
-                <p>&copy; {new Date().getFullYear()} SafarSathi • Crafted for connected journeys</p>
-              </footer>
-              <ToastContainer
-                position="top-center"
-                autoClose={2800}
-                hideProgressBar
-                newestOnTop
-                closeOnClick
-                draggable
-                pauseOnHover
-                limit={3}
-                theme="dark"
-                toastClassName={() => 'rounded-xl bg-slate-900/90 text-slate-100 shadow-lg shadow-slate-900/40'}
-                bodyClassName={() => 'text-sm font-medium'}
-              />
-            </div>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+            <ToastContainer
+              position="top-center"
+              autoClose={2800}
+              hideProgressBar
+              newestOnTop
+              closeOnClick
+              draggable
+              pauseOnHover
+              limit={3}
+              theme="dark"
+              toastClassName={() => 'rounded-xl bg-slate-900/90 text-slate-100 shadow-lg shadow-slate-900/40'}
+              bodyClassName={() => 'text-sm font-medium'}
+            />
           </Router>
         </TouristDataProvider>
       </AdminAuthProvider>
