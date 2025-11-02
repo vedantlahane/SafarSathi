@@ -52,7 +52,7 @@ const EmergencyContacts = ({ contacts = [] }) => {
           return (
             <div
               key={contact.id}
-              className={`flex items-start justify-between gap-3 rounded-2xl border-l-4 px-3 py-2 ${variant.accent}`}
+              className={`flex flex-col gap-3 rounded-2xl border-l-4 px-3 py-2 sm:flex-row sm:items-start sm:justify-between ${variant.accent}`}
             >
               <div className="flex items-start gap-3">
                 <FeatureIcon
@@ -72,7 +72,7 @@ const EmergencyContacts = ({ contacts = [] }) => {
               <button
                 type="button"
                 onClick={() => handleCall(contact.phone)}
-                className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/10"
+                className="w-full rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 sm:w-auto"
               >
                 Call
               </button>

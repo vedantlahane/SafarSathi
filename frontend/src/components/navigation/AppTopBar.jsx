@@ -28,40 +28,48 @@ function AppTopBar({
 
   return (
     <header
+      data-shell-topbar
       className={twMerge(
-        'sticky top-0 z-40 flex min-h-[56px] items-center justify-between gap-3 px-4 pb-2 pt-[calc(env(safe-area-inset-top)_+_8px)] text-slate-50 backdrop-blur-lg shadow-[0_1px_0_rgba(15,23,42,0.6)]',
+        'sticky top-0 z-40 flex items-center justify-between gap-3 px-4 pb-2 pt-[calc(env(safe-area-inset-top)_+_8px)] text-slate-50 backdrop-blur-lg shadow-[0_1px_0_rgba(15,23,42,0.6)]',
+        // allow header theme to provide base background/border
         headerBase,
         className,
       )}
       role="banner"
     >
-      <div className="flex flex-1 items-center gap-3">
-        <div className={twMerge('flex h-10 w-10 items-center justify-center rounded-xl', iconWrap)}>
-          <span className={twMerge('text-sm font-semibold tracking-wide', accentText)} aria-hidden>
+      <div className="flex flex-1 min-w-0 items-center gap-3">
+        <div className={twMerge('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl', iconWrap)}>
+          <span className={twMerge('text-sm font-semibold tracking-wide', accentText)} aria-hidden title="SafarSathi">
             SS
           </span>
         </div>
-        <div className="leading-tight">
-          <p className={twMerge('text-[15px] font-semibold leading-tight', accentText)}>{title}</p>
-          {subtitle ? <p className="text-[12px] font-medium text-slate-400">{subtitle}</p> : null}
+        <div className="min-w-0 leading-tight">
+          <p className={twMerge('truncate text-[15px] font-semibold leading-tight', accentText)} title={title}>
+            {title}
+          </p>
+          {subtitle ? (
+            <p className="truncate text-[12px] font-medium text-slate-400" title={subtitle}>
+              {subtitle}
+            </p>
+          ) : null}
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         <span
+          role="status"
+          aria-live="polite"
           className={twMerge(
             'flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold tracking-tight',
             statusClasses,
           )}
         >
           <span
-            className={twMerge(
-              'block h-1.5 w-1.5 rounded-full',
-              isOffline ? 'bg-rose-200' : 'bg-emerald-200',
-            )}
+            className={twMerge('block h-1.5 w-1.5 rounded-full', isOffline ? 'bg-rose-200' : 'bg-emerald-200')}
             aria-hidden
           />
-          {statusLabel}
+          <span className="sr-only">Network status:</span>
+          <span aria-hidden>{statusLabel}</span>
         </span>
 
         {inlineActions?.length ? (
@@ -78,13 +86,15 @@ function AppTopBar({
           aria-haspopup="dialog"
           aria-expanded={hasMenu ? isMenuOpen : undefined}
           aria-label={hasMenu ? 'Toggle quick actions menu' : 'No quick actions available'}
+          title={hasMenu ? 'Open quick actions' : 'No quick actions available'}
           disabled={!hasMenu}
           className={twMerge(
-            'flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-white/20 disabled:cursor-not-allowed disabled:opacity-40',
+            'flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-100 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-40',
             menuHover,
           )}
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" focusable="false">
+            <title>{hasMenu ? 'More actions' : 'No actions'}</title>
             <circle cx="5" cy="12" r="1.75" fill="currentColor" />
             <circle cx="12" cy="12" r="1.75" fill="currentColor" />
             <circle cx="19" cy="12" r="1.75" fill="currentColor" />

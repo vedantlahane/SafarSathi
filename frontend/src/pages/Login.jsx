@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import apiService from '../services/apiService';
 
 const LogoMark = ({ className = '', ...props }) => (
@@ -57,6 +57,7 @@ const ShieldIcon = ({ className = '', ...props }) => (
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -110,33 +111,35 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[100svh] flex items-center justify-center px-4 py-10 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-10 sm:px-6 lg:px-8">
       {/* Animated Background (JSX unchanged) */}
-      <motion.div
-        className="absolute inset-0 opacity-30"
-        animate={{
-          background: [
-            'radial-gradient(ellipse at top left, rgba(13, 148, 136, 0.4) 0%, transparent 70%)',
-            'radial-gradient(ellipse at bottom right, rgba(124, 58, 237, 0.4) 0%, transparent 70%)',
-            'radial-gradient(ellipse at center, rgba(249, 115, 22, 0.3) 0%, transparent 70%)'
-          ]
-        }}
-        transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
-      />
+      {!prefersReducedMotion && (
+        <motion.div
+          className="absolute inset-0 opacity-30"
+          animate={{
+            background: [
+              'radial-gradient(ellipse at top left, rgba(13, 148, 136, 0.4) 0%, transparent 70%)',
+              'radial-gradient(ellipse at bottom right, rgba(124, 58, 237, 0.4) 0%, transparent 70%)',
+              'radial-gradient(ellipse at center, rgba(249, 115, 22, 0.3) 0%, transparent 70%)'
+            ]
+          }}
+          transition={{ duration: 20, repeat: Infinity, repeatType: 'reverse' }}
+        />
+      )}
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-  className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 sm:p-8 lg:p-10 rounded-2xl shadow-2xl w-full max-w-lg text-center relative overflow-hidden"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8 lg:p-10"
       >
         {/* Top Border Accent */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
         
         {/* Header (JSX unchanged) */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: -20 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           className="mb-8 space-y-4"
         >
@@ -159,15 +162,15 @@ const Login = () => {
         </motion.div>
 
         <motion.form
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.6 }}
           onSubmit={handleSubmit}
           className="text-left space-y-5 sm:space-y-6"
         >
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, x: -20 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
             <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Email</label>
@@ -183,8 +186,8 @@ const Login = () => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, x: -20 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
             <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Password</label>
@@ -200,8 +203,8 @@ const Login = () => {
           </motion.div>
 
           <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
             whileHover={{ y: -2, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -219,8 +222,8 @@ const Login = () => {
         </motion.form>
 
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
           className="bg-white/5 border border-white/15 p-4 rounded-lg mt-6 text-sm sm:text-base text-white/80 flex items-start gap-3"
         >
@@ -229,8 +232,8 @@ const Login = () => {
         </motion.div>
 
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1 }}
           transition={{ delay: 0.9, duration: 0.6 }}
           className="mt-6 text-white/70 text-sm sm:text-base"
         >

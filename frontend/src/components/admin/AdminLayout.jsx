@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminAuth } from '../../services/AdminAuthContext';
 
 const navItems = [
@@ -15,6 +15,7 @@ const linkBaseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors dura
 const AdminLayout = ({ children, title, subtitle }) => {
   const navigate = useNavigate();
   const { admin, logout } = useAdminAuth();
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -23,7 +24,7 @@ const AdminLayout = ({ children, title, subtitle }) => {
 
   return (
     <div className="min-h-[100svh] bg-slate-950 text-white">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/85 backdrop-blur-lg">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/85 backdrop-blur-lg">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-teal-300/80">SafarSathi Command Center</p>
@@ -46,10 +47,17 @@ const AdminLayout = ({ children, title, subtitle }) => {
             >
               Logout
             </motion.button>
+            <button
+              type="button"
+              onClick={() => setIsNavOpen(true)}
+              className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 sm:hidden"
+            >
+              Menu
+            </button>
           </div>
         </div>
 
-        <nav className="border-t border-white/10">
+        <nav className="border-t border-white/10 hidden sm:block">
           <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3">
             {navItems.map(item => (
               <NavLink
@@ -63,6 +71,50 @@ const AdminLayout = ({ children, title, subtitle }) => {
           </div>
         </nav>
       </header>
+
+      <AnimatePresence>
+        {isNavOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm sm:hidden"
+            onClick={() => setIsNavOpen(false)}
+          >
+            <motion.nav
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+              className="absolute inset-y-0 left-0 w-64 space-y-3 border-r border-white/10 bg-slate-950/95 px-5 py-6 text-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-teal-200">Navigation</p>
+                <button
+                  type="button"
+                  onClick={() => setIsNavOpen(false)}
+                  className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setIsNavOpen(false)}
+                    className={({ isActive }) => `${linkBaseClasses} block ${isActive ? 'bg-teal-500 text-slate-950 shadow-lg' : 'text-slate-200 hover:bg-white/10'}`}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </motion.nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.main
         initial={{ opacity: 0, y: 15 }}

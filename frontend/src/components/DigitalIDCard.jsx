@@ -51,8 +51,8 @@ const DigitalIDCard = ({ profile, digitalId }) => {
   }, [profile?.name, digitalId?.expiresAt]);
 
   return (
-    <div className="bg-white/90 backdrop-blur rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-      <div className="px-6 py-4 bg-gradient-to-r from-teal-500 to-blue-500 text-white flex items-center justify-between">
+    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-xl backdrop-blur">
+      <div className="flex items-center justify-between bg-gradient-to-r from-teal-500 to-blue-500 px-4 py-4 text-white sm:px-6">
         <div>
           <p className="text-xs uppercase tracking-widest opacity-80">SafarSathi Digital ID</p>
           <h2 className="text-xl font-semibold">{profile.name}</h2>
@@ -63,8 +63,8 @@ const DigitalIDCard = ({ profile, digitalId }) => {
         </div>
       </div>
 
-      <div ref={cardRef} className="px-6 py-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-3">
+      <div ref={cardRef} className="grid grid-cols-1 gap-6 px-4 py-5 sm:grid-cols-3 sm:px-6 sm:py-6">
+        <div className="space-y-3 sm:col-span-2">
           <div className="flex items-center space-x-3">
             <img
               src={profile.avatar}
@@ -109,15 +109,16 @@ const DigitalIDCard = ({ profile, digitalId }) => {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between space-y-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-inner">
+        <div className="flex flex-col items-center gap-4 sm:justify-between">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-inner">
             <QRCode
               value={JSON.stringify({
                 blockchainID: profile.blockchainID,
                 name: profile.name,
                 expiresAt: digitalId.expiresAt
               })}
-              size={128}
+              size={148}
+              style={{ width: 'clamp(104px, 30vw, 148px)', height: 'auto' }}
             />
             <p className="text-xs text-center text-slate-500 mt-2">Scan to verify identity</p>
           </div>
@@ -129,17 +130,17 @@ const DigitalIDCard = ({ profile, digitalId }) => {
         </div>
       </div>
 
-      <div className="px-6 py-4 bg-slate-50 flex flex-wrap gap-3 justify-end">
+      <div className="flex flex-col gap-3 bg-slate-50 px-4 py-4 sm:flex-row sm:justify-end sm:gap-4 sm:px-6">
         <button
           onClick={handleShare}
-          className="px-3 py-2 text-sm font-medium rounded-lg bg-white border border-slate-200 hover:bg-slate-100 transition"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium transition hover:bg-slate-100 sm:w-auto"
         >
           🔗 Share Secure Link
         </button>
         <button
           onClick={handleDownload}
           disabled={isDownloading}
-          className="px-3 py-2 text-sm font-medium rounded-lg bg-teal-500 text-white hover:bg-teal-600 transition disabled:opacity-50"
+          className="w-full rounded-lg bg-teal-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-teal-600 disabled:opacity-50 sm:w-auto"
         >
           {isDownloading ? 'Preparing...' : '⬇️ Download ID Card'}
         </button>

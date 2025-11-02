@@ -11,7 +11,7 @@ const priorityColor = {
 const AlertsPanel = ({ alerts = [], onSelectAlert }) => {
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-      <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-white/10 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <h2 className="text-lg font-semibold text-white">Incoming Alerts</h2>
         <span className="text-sm text-slate-300">{alerts.length} live events</span>
       </div>
@@ -29,14 +29,14 @@ const AlertsPanel = ({ alerts = [], onSelectAlert }) => {
               key={alert.id}
               whileHover={{ backgroundColor: 'rgba(148, 163, 184, 0.08)' }}
               onClick={() => onSelectAlert?.(alert)}
-              className="w-full text-left px-6 py-4 flex flex-col gap-2 transition-colors"
+              className="w-full text-left px-5 py-4 flex flex-col gap-3 transition-colors sm:px-6"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-white flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs border ${badgeClass}`}>{(alert.priority || 'info').toUpperCase()}</span>
-                  <span>{description}</span>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-white flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <span className={`w-fit px-2 py-1 rounded-full text-xs border ${badgeClass}`}>{(alert.priority || 'info').toUpperCase()}</span>
+                  <span className="leading-snug text-slate-100">{description}</span>
                 </p>
-                <p className="text-xs text-slate-400">{formatTime(alert.timestamp)}</p>
+                <p className="text-xs text-slate-400 sm:text-right">{formatTime(alert.timestamp)}</p>
               </div>
               <div className="flex flex-wrap gap-3 text-xs text-slate-300">
                 <span>👤 {touristName}</span>

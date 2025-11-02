@@ -159,31 +159,63 @@ const StatusCard = ({ themeKey, locationLabel, lastActivityLabel, score, offline
   );
 };
 
-const StatsRail = ({ stats }) => (
-  <div className="flex snap-x gap-5 overflow-x-auto pb-2 pl-1">
-    {stats.map((item, index) => (
-      <motion.div key={item.id} layout className="snap-start min-w-[142px] flex-shrink-0">
-        <div className="flex flex-col gap-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
-          <p className="text-lg font-semibold text-slate-50">{item.value}</p>
-          <p className="text-[11px] text-slate-400/80">{item.caption}</p>
-        </div>
-        {index < stats.length - 1 && (
-          <span className="mt-3 block h-px w-16 bg-slate-600/40 md:hidden" aria-hidden />
-        )}
-      </motion.div>
-    ))}
-  </div>
-);
+const StatsRail = ({ stats }) => {
+  const scrollRef = useRef(null);
+
+  const scrollBy = (direction) => {
+    if (!scrollRef.current) return;
+    const amount = scrollRef.current.clientWidth * 0.85;
+    scrollRef.current.scrollBy({ left: direction === 'next' ? amount : -amount, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => scrollBy('prev')}
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-200 transition hover:border-white/30 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        aria-label="Scroll stats backward"
+      >
+        <span aria-hidden>{'<'}</span>
+      </button>
+      <div
+        ref={scrollRef}
+        className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 pl-1"
+        role="list"
+      >
+        {stats.map((item, index) => (
+          <motion.div key={item.id} layout className="min-w-[142px] flex-shrink-0 snap-start" role="listitem" tabIndex={0}>
+            <div className="flex flex-col gap-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
+              <p className="text-lg font-semibold text-slate-50">{item.value}</p>
+              <p className="text-[11px] text-slate-400/80">{item.caption}</p>
+            </div>
+            {index < stats.length - 1 && (
+              <span className="mt-3 block h-px w-16 bg-slate-600/40 md:hidden" aria-hidden />
+            )}
+          </motion.div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => scrollBy('next')}
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-200 transition hover:border-white/30 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        aria-label="Scroll stats forward"
+      >
+        <span aria-hidden>{'>'}</span>
+      </button>
+    </div>
+  );
+};
 
 const QuickActionGrid = ({ actions }) => (
-  <div className="grid grid-cols-2 gap-3">
+  <div className="grid grid-cols-2 gap-3 max-[379px]:grid-cols-1">
     {actions.map((action) => (
       <button
         key={action.id}
         type="button"
         onClick={action.onPress}
-        className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-left text-sm text-slate-100 transition hover:border-white/40 hover:bg-white/[0.08]"
+        className="group flex min-h-[48px] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-left text-sm text-slate-100 transition hover:border-white/40 hover:bg-white/[0.08]"
       >
         <FeatureIcon
           name={action.icon}
@@ -200,13 +232,13 @@ const QuickActionGrid = ({ actions }) => (
 );
 
 const EssentialActionRow = ({ actions }) => (
-  <div className="grid grid-cols-4 gap-3">
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
     {actions.map((action) => (
       <button
         key={action.id}
         type="button"
         onClick={action.onPress}
-        className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.02] px-3 py-4 text-center text-xs font-semibold text-slate-100 transition hover:border-white/40 hover:bg-white/[0.08]"
+        className="flex min-h-[48px] flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.02] px-3 py-4 text-center text-xs font-semibold text-slate-100 transition hover:border-white/40 hover:bg-white/[0.08]"
       >
         <FeatureIcon
           name={action.icon}
