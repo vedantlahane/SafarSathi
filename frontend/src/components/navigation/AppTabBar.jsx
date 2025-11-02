@@ -22,6 +22,7 @@ function AppTabBar({ palette }) {
   return (
     <nav
       aria-label="Primary"
+      data-shell-tabbar
       className={twMerge(
         'safe-bottom sticky bottom-0 z-40 flex h-[64px] items-stretch justify-evenly px-2 pb-[calc(env(safe-area-inset-bottom)_+_6px)] pt-2 text-slate-300 shadow-[0_-2px_12px_rgba(15,23,42,0.45)] backdrop-blur-lg',
         barBackground,

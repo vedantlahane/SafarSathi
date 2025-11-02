@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import OCRService from '../services/ocrService';
 import apiService from '../services/apiService';
 
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -188,20 +189,20 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-10 px-4 sm:px-6 lg:px-12 relative overflow-hidden bg-gradient-to-br from-purple-900 via-slate-900 to-teal-900">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-10 sm:px-6 lg:px-12">
       {/* ... Animated Background and Header (JSX unchanged) ... */}
       
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+        animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 sm:p-8 lg:p-10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto relative"
+        className="relative w-full max-w-2xl rounded-2xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-8 lg:p-10"
       >
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
         
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: -20 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-center mb-6 sm:mb-8"
         >
@@ -212,16 +213,16 @@ const Register = () => {
         </motion.div>
 
         <motion.form
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.6 }}
           onSubmit={handleSubmit}
           className="space-y-5 sm:space-y-6"
         >
           {/* ID Document Upload (JSX unchanged) */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={prefersReducedMotion ? undefined : { opacity: 0, x: -20 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
             className="space-y-4"
           >
@@ -241,7 +242,7 @@ const Register = () => {
                   className="w-full bg-white/10 border border-white/20 text-white p-3 sm:p-3.5 rounded-lg backdrop-blur-md file:mr-3 sm:file:mr-4 file:py-2 file:px-3 sm:file:px-4 file:rounded-lg file:border-0 file:bg-teal-500/20 file:text-teal-200 file:font-semibold hover:file:bg-teal-500/30 transition-all duration-300"
                 />
                 {isProcessing && (
-                  <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20 backdrop-blur-sm">
                     <div className="bg-white/10 px-4 py-2 rounded-lg">
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -306,8 +307,8 @@ const Register = () => {
             )}
 
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+              animate={prefersReducedMotion ? undefined : { opacity: 1 }}
               transition={{ delay: 0.8 }}
               className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 sm:p-4"
             >
@@ -325,8 +326,8 @@ const Register = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             {/* ... Name, Email, Phone, ID Number, DOB, Gender, Nationality (JSX unchanged) ... */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={prefersReducedMotion ? undefined : { opacity: 0, x: -20 }}
+              animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
             >
               <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Full Name *</label>
@@ -342,8 +343,8 @@ const Register = () => {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={prefersReducedMotion ? undefined : { opacity: 0, x: 20 }}
+              animate={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
               transition={{ delay: 0.7, duration: 0.6 }}
             >
               <label className="block text-white/90 font-semibold mb-2 text-sm sm:text-base">Email *</label>

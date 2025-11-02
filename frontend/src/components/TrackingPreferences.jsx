@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 
 const ToggleRow = ({ label, description, checked, onChange }) => (
-  <div className="flex items-start justify-between py-3 border-b border-slate-200 last:border-b-0">
-    <div>
+  <div className="flex flex-col gap-3 border-b border-slate-200 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-1">
       <p className="font-semibold text-slate-800">{label}</p>
-      <p className="text-sm text-slate-500 max-w-xs">{description}</p>
+      <p className="text-sm text-slate-500 sm:max-w-sm">{description}</p>
     </div>
-    <label className="inline-flex items-center cursor-pointer">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="sr-only"
-      />
-      <span className={`w-11 h-6 flex items-center rounded-full p-1 transition ${checked ? 'bg-teal-500' : 'bg-slate-300'}`}>
-        <span className={`bg-white w-5 h-5 rounded-full shadow transform transition ${checked ? 'translate-x-5' : ''}`} />
-      </span>
-    </label>
+    <div className="flex w-full justify-stretch sm:w-auto sm:justify-end">
+      <label className="inline-flex w-full items-center justify-between rounded-xl border border-slate-200/40 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition cursor-pointer sm:w-auto sm:justify-end sm:border-transparent sm:bg-transparent sm:px-0 sm:py-0 sm:text-current">
+        <span className="sr-only">Toggle {label}</span>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className="sr-only"
+        />
+        <span className={`flex h-6 w-11 items-center rounded-full p-1 transition ${checked ? 'bg-teal-500' : 'bg-slate-300'}`}>
+          <span className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : ''}`} />
+        </span>
+      </label>
+    </div>
   </div>
 );
 

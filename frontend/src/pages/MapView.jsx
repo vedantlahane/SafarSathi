@@ -98,6 +98,7 @@ const MapView = () => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
   const [activePanel, setActivePanel] = useState('safety');
   const trackingRef = useRef(null);
+  const [shellOffsets, setShellOffsets] = useState({ top: 0, bottom: 0 });
 
   const queueLocationPing = useMemo(() => {
     if (!user?.token || !user?.id) {
@@ -137,6 +138,45 @@ const MapView = () => {
     }
 
     return undefined;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const topEl = document.querySelector('[data-shell-topbar]');
+    const bottomEl = document.querySelector('[data-shell-tabbar]');
+
+    if (!topEl && !bottomEl) {
+      return undefined;
+    }
+
+    const computeOffsets = () => {
+      const top = topEl?.getBoundingClientRect().height ?? 0;
+      const bottom = bottomEl?.getBoundingClientRect().height ?? 0;
+      setShellOffsets({
+        top,
+        bottom,
+      });
+    };
+
+    computeOffsets();
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(computeOffsets) : null;
+    if (resizeObserver) {
+      if (topEl) resizeObserver.observe(topEl);
+      if (bottomEl) resizeObserver.observe(bottomEl);
+    }
+
+    window.addEventListener('resize', computeOffsets);
+    window.addEventListener('orientationchange', computeOffsets);
+
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      window.removeEventListener('resize', computeOffsets);
+      window.removeEventListener('orientationchange', computeOffsets);
+    };
   }, []);
 
   // Enhanced unsafe zones with time-based risk
@@ -221,6 +261,16 @@ const MapView = () => {
       }
     ],
     [safetyScore, isTracking, incidents.length, policeStations.length]
+  );
+
+  const mapViewportHeight = useMemo(() => {
+    const guard = Math.max(shellOffsets.top + shellOffsets.bottom, 120);
+    return `max(320px, calc(100dvh - ${guard}px))`;
+  }, [shellOffsets]);
+
+  const floatingOffset = useMemo(
+    () => `calc(${Math.max(shellOffsets.bottom || 76, 72)}px + env(safe-area-inset-bottom, 0px) + 0.75rem)`,
+    [shellOffsets.bottom],
   );
 
   // AI-powered safety score calculation
@@ -577,7 +627,7 @@ const MapView = () => {
   };
 
   return (
-    <div className="relative flex min-h-[100svh] flex-col bg-slate-950 text-slate-100 lg:flex-row">
+    <div className="relative flex min-h-0 flex-col bg-slate-950 text-slate-100 lg:flex-row">
       {/* Enhanced Map Controls - Sidebar */}
       <motion.div
         initial={{ x: -300, opacity: 0 }}
@@ -711,17 +761,18 @@ const MapView = () => {
       </motion.div>
 
       {/* Map Container */}
-  <div className="relative w-full flex-1 min-h-[70vh] lg:min-h-screen">
+      <div className="relative flex-1">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
           className="h-full w-full"
+          style={{ minHeight: mapViewportHeight }}
         >
           <MapContainer
             center={mapCenter}
             zoom={13}
-            style={{ height: '100%', width: '100%', minHeight: '100vh' }}
+            style={{ height: '100%', width: '100%', minHeight: mapViewportHeight }}
             className="h-full w-full rounded-none border border-white/15 shadow-sm lg:rounded-xl"
           >
             <MapUpdater center={userLocation} />
@@ -810,7 +861,8 @@ const MapView = () => {
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}
-          className="absolute right-4 bottom-28 z-[1000] sm:right-6 sm:bottom-6"
+          className="absolute right-4 z-[1000] sm:right-6"
+          style={{ bottom: floatingOffset }}
         >
           <SOSButton currentLocation={{ lat: userLocation[0], lng: userLocation[1] }} user={user} />
         </motion.div>
@@ -820,7 +872,7 @@ const MapView = () => {
           initial={{ y: 40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0"
+    className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0"
         >
           <div
             className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-lg backdrop-blur ${
@@ -846,7 +898,8 @@ const MapView = () => {
         disabled={isControlPanelOpen}
         whileHover={isControlPanelOpen ? {} : { scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
-        className="fixed bottom-4 left-1/2 z-[1100] flex -translate-x-1/2 items-center gap-3 rounded-full border border-teal-400/40 bg-teal-600/90 px-5 py-3 text-sm font-semibold text-white shadow-xl backdrop-blur lg:hidden disabled:cursor-default disabled:opacity-80"
+        className="fixed left-1/2 z-[1100] flex -translate-x-1/2 items-center gap-3 rounded-full border border-teal-400/40 bg-teal-600/90 px-5 py-3 text-sm font-semibold text-white shadow-xl backdrop-blur lg:hidden disabled:cursor-default disabled:opacity-80"
+        style={{ bottom: floatingOffset }}
       >
         Safety controls
         <span className="text-xs font-medium text-slate-300">

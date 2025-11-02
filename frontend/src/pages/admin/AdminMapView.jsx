@@ -152,12 +152,13 @@ const AdminMapView = () => {
     <AdminLayout title="Live Mission Map" subtitle="View all tourists, SOS alerts, and zone heatmaps in real time.">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <motion.div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/40 shadow-xl lg:col-span-2">
-          <MapContainer
-            center={[mapCenter.lat, mapCenter.lng]}
-            zoom={12}
-            style={{ height: '65vh', minHeight: '420px', width: '100%' }}
-            className="rounded-3xl"
-          >
+          <div className="aspect-[3/4] w-full lg:aspect-[4/3] lg:min-h-[420px]">
+            <MapContainer
+              center={[mapCenter.lat, mapCenter.lng]}
+              zoom={12}
+              style={{ height: '100%', width: '100%' }}
+              className="h-full w-full rounded-3xl"
+            >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -238,7 +239,8 @@ const AdminMapView = () => {
                 </LayerGroup>
               </Overlay>
             </LayersControl>
-          </MapContainer>
+            </MapContainer>
+          </div>
         </motion.div>
 
         <div className="space-y-6">
