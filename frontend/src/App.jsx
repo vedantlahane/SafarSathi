@@ -4,7 +4,7 @@
  * for the SafarSathi frontend experience.
  */
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -239,6 +239,69 @@ const SafetyCenterScreen = () => {
  * @returns {JSX.Element}
  */
 function App() {
+  const [toastOffset, setToastOffset] = useState(24);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    let resizeObserver;
+    let resizeObserverTarget = null;
+    let mutationObserver;
+
+    const detachResizeObserver = () => {
+      if (resizeObserverTarget) {
+        resizeObserver?.disconnect();
+        resizeObserver = undefined;
+        resizeObserverTarget = null;
+      }
+    };
+
+    const attachResizeObserver = (target) => {
+      if (!('ResizeObserver' in window) || !target || target === resizeObserverTarget) return;
+      detachResizeObserver();
+      resizeObserver = new ResizeObserver(() => computeOffset());
+      resizeObserver.observe(target);
+      resizeObserverTarget = target;
+    };
+
+    const computeOffset = () => {
+      const topBar = document.querySelector('[data-shell-topbar]');
+      const viewportOffset = window.visualViewport?.offsetTop ?? 0;
+      const baseOffset = topBar ? topBar.getBoundingClientRect().bottom + 12 : 24 + viewportOffset;
+
+      if (topBar) {
+        attachResizeObserver(topBar);
+      } else {
+        detachResizeObserver();
+      }
+
+      setToastOffset((prev) => {
+        const next = Math.round(baseOffset);
+        return prev === next ? prev : next;
+      });
+    };
+
+    const handleResize = () => {
+      window.requestAnimationFrame(computeOffset);
+    };
+
+    computeOffset();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    if ('MutationObserver' in window) {
+      mutationObserver = new MutationObserver(() => computeOffset());
+      mutationObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      detachResizeObserver();
+      mutationObserver?.disconnect();
+    };
+  }, []);
+
   const LoadingScreen = (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200" aria-live="polite">
       <p className="text-base font-semibold tracking-wide">Loading SafarSathi…</p>
@@ -339,8 +402,12 @@ function App() {
               pauseOnHover
               limit={3}
               theme="dark"
-              toastClassName={() => 'rounded-xl bg-slate-900/90 text-slate-100 shadow-lg shadow-slate-900/40'}
-              bodyClassName={() => 'text-sm font-medium'}
+              style={{ top: `${toastOffset}px` }}
+              toastStyle={{ width: 'min(92vw, 360px)', margin: '0 auto' }}
+              toastClassName={() =>
+                'rounded-xl border border-white/10 bg-slate-900/90 text-slate-100 shadow-lg shadow-slate-900/40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/75'
+              }
+              bodyClassName={() => 'text-sm font-medium leading-snug'}
             />
           </Router>
         </TouristDataProvider>
