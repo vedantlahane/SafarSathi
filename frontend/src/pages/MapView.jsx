@@ -307,7 +307,16 @@ const MapView = () => {
         },
         (error) => {
           console.error('Location error:', error);
-          toast.error('Unable to get your location');
+          let message = 'Unable to get your location';
+          if (error?.code === error.PERMISSION_DENIED) {
+            message = 'Location permission denied. Turn it on to view nearby safety data.';
+          } else if (error?.code === error.POSITION_UNAVAILABLE) {
+            message = 'Location unavailable. Check GPS or network settings.';
+          } else if (error?.code === error.TIMEOUT) {
+            message = 'Location request timed out. Try again closer to open sky.';
+          }
+
+          toast.error(message);
         }
       );
     }
@@ -347,7 +356,23 @@ const MapView = () => {
       },
       (error) => {
         console.error('Tracking error:', error);
-        toast.error('Location tracking failed');
+
+        let message = 'Location tracking failed';
+        if (error?.code === error.PERMISSION_DENIED) {
+          message = 'Location permission denied. Enable access to keep live tracking on.';
+        } else if (error?.code === error.POSITION_UNAVAILABLE) {
+          message = 'Location unavailable. Check GPS or network and try again.';
+        } else if (error?.code === error.TIMEOUT) {
+          message = 'Location request timed out. Move to an open area and retry.';
+        }
+
+        toast.error(message);
+
+        if (trackingRef.current) {
+          navigator.geolocation.clearWatch(trackingRef.current);
+          trackingRef.current = null;
+        }
+
         setIsTracking(false);
       },
       options

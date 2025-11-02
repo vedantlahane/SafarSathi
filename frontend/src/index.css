@@ -5,6 +5,20 @@
 @layer base {
 	:root {
 		font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+		/* Mobile shell tokens */
+		--ss-spacing-xs: 6px;
+		--ss-spacing-sm: 12px;
+		--ss-spacing-md: 16px;
+		--ss-spacing-lg: 24px;
+		--ss-radius-sm: 8px;
+		--ss-radius-md: 12px;
+		--ss-elevation-1: 0 6px 18px rgba(2,6,23,0.45);
+		--ss-elevation-2: 0 12px 32px rgba(2,6,23,0.55);
+
+		/* safe area helpers (iOS/Android) */
+		--safe-area-inset-top: env(safe-area-inset-top, 0px);
+		--safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
 	body {
