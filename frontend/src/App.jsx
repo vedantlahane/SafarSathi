@@ -14,14 +14,14 @@ import 'leaflet/dist/leaflet.css';
 import { AuthProvider, useAuth } from './services/AuthContext';
 import { AdminAuthProvider, useAdminAuth } from './services/AdminAuthContext';
 import { TouristDataProvider } from './services/TouristDataContext';
-import MobileShell from './components/layout/MobileShell';
+import MobileShell from './layout/MobileShell.jsx';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import FeatureIcon from './components/icons/FeatureIcon';
 
 // Pages (lazy loaded to optimise mobile bundle size)
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Dashboard = lazy(() => import('./features/dashboard/DashboardPage.jsx'));
 const MapView = lazy(() => import('./pages/MapView'));
 const DigitalID = lazy(() => import('./pages/DigitalID'));
 const SafetyCenter = lazy(() => import('./pages/SafetyCenter'));
