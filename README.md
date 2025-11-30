@@ -1,13 +1,13 @@
 # SafarSathi - Tourist Safety PWA
 
-🛡️ **SafarSathi** is a modern Progressive Web Application designed to enhance tourist safety through AI-powered features, real-time monitoring, and emergency assistance.
+🛡️ **SafarSathi** is a modern Progressive Web Application designed to enhance tourist safety through AI-powered features, real-time monitoring, blockchain-backed identity, and emergency assistance.
 
 ## ✨ Features
 
 ### 🧠 AI-Powered Safety
 - Smart safety scoring based on location and time
-- Intelligent risk assessment
-- Real-time threat detection
+- Intelligent risk assessment and anomaly detection
+- Real-time threat detection with geo-fence alerts
 
 ### 🆘 Emergency System
 - Hold-to-activate SOS button with haptic feedback
@@ -15,11 +15,15 @@
 - Emergency contact notifications
 - Offline emergency support
 
+### 🪪 Digital Tourist ID
+- Blockchain-backed identity card with QR verification
+- Secure download and share actions
+- Validity tracking and verification status
+
 ### 🗺️ Interactive Map
-- Real-time safety zones
+- Real-time safety zones with Leaflet.js
 - Police station locations
 - Safe route recommendations
-- Crowd density monitoring
 - Admin-managed risk zone geofences with live alerts
 
 ### 📱 PWA Features
@@ -28,24 +32,35 @@
 - Home screen installation
 - Cross-platform compatibility
 
+### 🌐 Multilingual Support
+- i18next-powered internationalisation
+- English + Hindi, Assamese, Bengali, Tamil
+- Auto language detection
+
 ### 🎨 Modern Design
-- Glassmorphism UI
-- Responsive design
+- Glassmorphism UI with Tailwind CSS
+- Responsive mobile-first design
 - Dark theme support
-- Smooth animations
+- Framer Motion animations
 
 ## 🚀 Tech Stack
 
 ### Frontend
-- **React** - UI Framework
-- **Leaflet.js** - Interactive maps
-- **TensorFlow.js** - AI features
-- **Service Workers** - PWA functionality
+- **React 19** + **Vite 7** - Modern build tooling
+- **React Router v7** - Client-side routing
+- **Tailwind CSS v4** - Utility-first styling
+- **Leaflet.js / React-Leaflet** - Interactive maps
+- **Framer Motion** - Smooth animations
+- **i18next** - Internationalisation
+- **Tesseract.js** - OCR for ID verification
+- **Day.js** - Date/time formatting
 
-### Styling
-- **Modern CSS** with custom properties
-- **Glassmorphism** design system
-- **Responsive** mobile-first approach
+### Backend
+- **Spring Boot 3.5** - Java REST API
+- **Spring Data JPA** - Database access
+- **MySQL** - Relational database
+- **WebSocket** - Real-time communication
+- **Lombok** - Boilerplate reduction
 
 ## 📁 Project Structure
 
@@ -53,49 +68,54 @@
 SafarSathi/
 ├── frontend/
 │   ├── public/
-│   │   ├── manifest.json
-│   │   └── service-worker.js
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── AuthContext.js
-│   │   │   └── SOSButton.js
-│   │   ├── pages/
-│   │   │   ├── Dashboard.js
-│   │   │   ├── Login.js
-│   │   │   ├── MapView.js
-│   │   │   └── Register.js
-│   │   ├── services/
-│   │   │   └── api.js
-│   │   ├── styles/
-│   │   │   ├── Dashboard.css
-│   │   │   ├── Login.css
-│   │   │   ├── MapView.css
-│   │   │   ├── Register.css
-│   │   │   └── SOSButton.css
-│   │   ├── utils/
-│   │   │   └── helpers.js
-│   │   ├── App.js
-│   │   ├── App.css
-│   │   └── index.js
+│   │   ├── components/           # Shared UI widgets
+│   │   │   ├── admin/            # Admin-specific components
+│   │   │   ├── icons/            # Icon components
+│   │   │   ├── layout/           # Layout wrappers
+│   │   │   └── navigation/       # Navigation bars
+│   │   ├── features/
+│   │   │   └── dashboard/        # Dashboard feature module
+│   │   │       ├── components/   # Dashboard-specific widgets
+│   │   │       └── DashboardPage.jsx
+│   │   ├── hooks/                # Custom React hooks
+│   │   ├── layout/               # App shell components
+│   │   ├── mock/                 # Mock data for development
+│   │   ├── pages/                # Route-level screens
+│   │   │   └── admin/            # Admin console pages
+│   │   ├── services/             # API, auth, and context providers
+│   │   ├── utils/                # Helper functions
+│   │   ├── App.jsx
+│   │   └── main.jsx
 │   ├── package.json
-│   └── package-lock.json
+│   └── vite.config.js
+├── backend/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/safarsathi/
+│   │   │   └── resources/
+│   │   └── test/
+│   └── pom.xml
+├── dataSets/                     # JSON data for police stations, restricted areas
 └── README.md
 ```
 
 ## 🛠️ Installation & Setup
 
 ### Prerequisites
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
+- Java 17
+- MySQL 8.x
 - npm or yarn
 
 ### Frontend Setup
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
-The application will be available at `http://localhost:3000`
+The application will be available at `http://localhost:5173`
 
 ### Backend Setup
 ```bash
@@ -159,7 +179,7 @@ cd backend
 - Background sync for emergency alerts
 
 ## 🔒 Security Features
-- Client-side encryption for sensitive data
+- Blockchain-backed identity verification
 - Secure session management
 - Input validation and sanitization
 - HTTPS enforcement
@@ -170,14 +190,25 @@ cd backend
 - Safari
 - Edge
 
+## 🗺️ Available Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/register`, `/login` | Traveller onboarding with OCR-ready KYC form |
+| `/dashboard` | Real-time traveller home with safety stats, quick actions, and SOS |
+| `/map` | Leaflet map with AI safety scoring and tracking controls |
+| `/id` | Digital ID wallet with QR verification and blockchain logs |
+| `/safety` | Safety Center: anomaly feed, geo-fence alerts, tracking toggles |
+| `/admin/*` | Authority console: dashboards, alerts, live map, e-FIR generation |
+
 ## 🤝 Contributing
-This project was developed for a hackathon. Contributions are welcome!
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 This project is licensed under the MIT License.
 
 ## 👥 Team
-Developed by Team SafarSathi for the Hackathon 2025
+Developed by Team SafarSathi
 
 ---
 
