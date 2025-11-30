@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { useTouristData } from '../services/TouristDataContext';
 import AnomalyFeed from '../components/AnomalyFeed';
 import GeoFenceAlertList from '../components/GeoFenceAlertList';
-import TrackingPreferences from '../components/TrackingPreferences';
+import TrackingSettings from '../features/dashboard/components/TrackingSettings.jsx';
 import VoiceAssistance from '../components/VoiceAssistance';
 
 const SafetyCenter = () => {
@@ -46,7 +46,7 @@ const SafetyCenter = () => {
       <section className="space-y-6">
         <AnomalyFeed anomalies={anomalies} onResolve={handleResolve} />
         <GeoFenceAlertList zones={zones} />
-        <TrackingPreferences preferences={profile?.preferences} onUpdate={handleUpdatePreferences} />
+  <TrackingSettings preferences={profile?.preferences} onUpdate={handleUpdatePreferences} />
         <VoiceAssistance />
       </section>
     </motion.div>

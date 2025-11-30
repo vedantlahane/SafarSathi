@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../services/AuthContext';
 import { useTouristData } from '../services/TouristDataContext';
-import DigitalIDCard from '../components/DigitalIDCard';
-import ItineraryTimeline from '../components/ItineraryTimeline';
-import EmergencyContacts from '../components/EmergencyContacts';
+import TravelIDCard from '../features/dashboard/components/TravelIDCard.jsx';
+import TripTimeline from '../features/dashboard/components/TripTimeline.jsx';
+import EmergencyContactsList from '../features/dashboard/components/EmergencyContactsList.jsx';
+import ConnectedDevices from '../features/dashboard/components/ConnectedDevices.jsx';
 import BlockchainLogList from '../components/BlockchainLogList';
-import IoTDevicesPanel from '../components/IoTDevicesPanel';
 
 const DigitalID = () => {
   const { t } = useTranslation();
@@ -63,10 +63,10 @@ const DigitalID = () => {
       </header>
 
       <section className="space-y-6">
-        <DigitalIDCard profile={profile} digitalId={digitalId} />
-        <ItineraryTimeline itinerary={itinerary} />
-        <EmergencyContacts contacts={contacts} />
-        <IoTDevicesPanel devices={iotDevices} />
+  <TravelIDCard profile={profile} digitalId={digitalId} />
+  <TripTimeline itinerary={itinerary} />
+  <EmergencyContactsList contacts={contacts} />
+  <ConnectedDevices devices={iotDevices} />
         <BlockchainLogList logs={blockchainLogs} />
         <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
           <h3 className="mb-3 text-base font-semibold text-white">🛡️ Data Privacy</h3>
