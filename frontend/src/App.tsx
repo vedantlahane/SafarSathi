@@ -1,13 +1,13 @@
-import { Button} from "@/components/ui/button"
-import './App.css'
-
+import { Button } from "./components/ui/button"
+import MobileLayout from "./layout/MobileLayout"
 function App() {
+
 
   return (
     <>
-      <div className="flex min-h-svh flex-col items-center justify-center">
-        <Button>Click Me</Button>
-      </div>
+      <p className="text-8xl">fuck this</p>
+      <Button>Click Me</Button>
+      <MobileLayout/>
     </>
   )
 }
