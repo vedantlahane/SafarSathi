@@ -46,8 +46,8 @@ const MobileLayout = () => {
 
             </TabsList>
           </header>
-          <div></div>
-          <TabsContent value="home">
+          <div className='flex-1 overflow-y-auto p-2 content-container'>
+            <TabsContent value="home">
             <Home />
           </TabsContent>
           <TabsContent value="map">
@@ -59,6 +59,8 @@ const MobileLayout = () => {
           <TabsContent value="settings">
             <Settings />
           </TabsContent>
+          </div>
+          
 
 
           {/*Mobile Bottom Navigation */}
