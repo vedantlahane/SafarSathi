@@ -46,19 +46,19 @@ const MobileLayout = () => {
 
             </TabsList>
           </header>
-          <div className='flex-1 overflow-y-auto p-2 content-container'>
-            <TabsContent value="home">
-            <Home />
-          </TabsContent>
-          <TabsContent value="map">
-            <Map />
-          </TabsContent>
-          <TabsContent value="identity">
-            <Identity />
-          </TabsContent>
-          <TabsContent value="settings">
-            <Settings />
-          </TabsContent>
+          <div className='flex-1 overflow-hidden p-2 content-container flex flex-col'>
+            <TabsContent value="home" className="flex-1 overflow-y-auto">
+              <Home />
+            </TabsContent>
+            <TabsContent value="map" className="flex-1 flex flex-col">
+              <Map />
+            </TabsContent>
+            <TabsContent value="identity">
+              <Identity />
+            </TabsContent>
+            <TabsContent value="settings">
+              <Settings />
+            </TabsContent>
           </div>
           
 
