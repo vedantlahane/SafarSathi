@@ -1,12 +1,6 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { MapPin, ShieldAlert, Bus, Share2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
 
 type AlertItem = {
@@ -53,86 +47,66 @@ const Home = () => {
     );
   }; // CLOSING FORCE HERE
   return (
-    <div className="space-y-6">
-      <section className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-primary"> SafarSathi</h2>
-          <p className="text-muted-foreground text-sm">Your Safe Travel Companion</p>
-        </div>
+    <div className="space-y-4 text-[13px]">
+      <section className="flex items-center justify-end">
         <Button
           variant="destructive"
           size="icon"
-          className="rounded-full h-12 w-12 shadow-lg animate-pulse"
+          className="h-11 w-11 rounded-full shadow-md"
           onClick={sendSOS}
         >
-          <ShieldAlert className="h-6 w-6 text-black" />
+          <ShieldAlert className="h-5 w-5 text-black" />
         </Button>
       </section>
 
-
-      {/* Safety Status Card */}
-      <Card className=" p-1  bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-
-        <CardContent className="p-6 relative z-10">
-          <div className="flex justify-between items-start mb-4">
+      <Card className="overflow-hidden border-none bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
+        <CardContent className="relative p-4">
+          <div className="absolute right-0 top-0 h-20 w-20 -translate-y-8 translate-x-6 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-emerald-100 text-sm font-medium">Safety Score</p>
-              <h3 className="text-3xl font-bold tracking-tighter mt-1">94%</h3>
+              <p className="text-[12px] text-emerald-100">Safety score</p>
+              <h3 className="text-2xl font-bold leading-tight">94%</h3>
             </div>
-            <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
-              <ShieldAlert className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 backdrop-blur">
+              <ShieldAlert className="h-4 w-4 text-white" />
             </div>
           </div>
-
-          <div className="flex gap-2 mb-4">
-            <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold border border-white/10">
-              Safe Zone
-            </span>
-            <span className="px-3 py-1 rounded-full bg-black/20 text-xs font-medium">
-              Civil Lines
-            </span>
+          <div className="mt-3 flex gap-2 text-[11px] font-semibold">
+            <span className="rounded-full bg-white/20 px-2.5 py-1 backdrop-blur">Safe zone</span>
+            <span className="rounded-full bg-black/20 px-2.5 py-1">Civil Lines</span>
           </div>
-
-          {/* <div className="text-xs text-emerald-100/80">
-            Last updated: Just now
-          </div> */}
         </CardContent>
       </Card>
 
-      {/* Recent Alerts Grid */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold">Recent Alerts</h3>
+      <section className="space-y-2">
+        <div className="flex items-center justify-between text-[13px] font-semibold">
+          <span>Recent alerts</span>
+          <span className="text-[11px] text-muted-foreground">Live preview</span>
+        </div>
 
-        {/* If no alerts, show a peaceful message */}
         {alerts.length === 0 && (
-          <div className="text-center p-8 text-gray-400">
-            <p>No recent alerts. Stay safe! 🛡️</p>
-          </div>
+          <Card className="border-dashed">
+            <CardContent className="p-4 text-center text-[12px] text-muted-foreground">
+              No recent alerts. Stay safe! 🛡️
+            </CardContent>
+          </Card>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {alerts.map((alert) => (
             <Card key={alert.id} className="shadow-sm">
-              <CardContent className="p-4 flex items-start gap-4">
-                {/* Icon Container */}
-                <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-full">
-                  <ShieldAlert className="h-5 w-5 text-red-600" />
+              <CardContent className="flex items-start gap-3 p-3">
+                <div className="rounded-full bg-red-50 p-2 dark:bg-red-900/20">
+                  <ShieldAlert className="h-4 w-4 text-red-600" />
                 </div>
-
-                {/* Text Content */}
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium text-red-700 dark:text-red-400">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-start justify-between">
+                    <h4 className="text-[13px] font-semibold text-red-700 dark:text-red-400">
                       {alert.type}
                     </h4>
-                    <span className="text-xs text-muted-foreground">
-                      {alert.time}
-                    </span>
+                    <span className="text-[11px] text-muted-foreground">{alert.time}</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    {alert.message}
-                  </p>
+                  <p className="text-[12px] text-muted-foreground leading-snug">{alert.message}</p>
                 </div>
               </CardContent>
             </Card>
