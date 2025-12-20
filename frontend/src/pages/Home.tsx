@@ -56,8 +56,8 @@ const Home = () => {
     <div className="space-y-6">
       <section className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-primary"> SafarSathi</h2>
-          <p className="text-muted-foreground">Your Safe Travel Companion</p>
+          <h2 className="text-xl font-bold text-primary"> SafarSathi</h2>
+          <p className="text-muted-foreground text-sm">Your Safe Travel Companion</p>
         </div>
         <Button
           variant="destructive"
@@ -78,7 +78,7 @@ const Home = () => {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-emerald-100 text-sm font-medium">Safety Score</p>
-              <h3 className="text-4xl font-bold tracking-tighter mt-1">94%</h3>
+              <h3 className="text-3xl font-bold tracking-tighter mt-1">94%</h3>
             </div>
             <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
               <ShieldAlert className="h-5 w-5 text-white" />
