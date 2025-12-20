@@ -1,189 +1,158 @@
-# SafarSathi Frontend (Research Prototype)
+# Proactive Tourist Safety System — Frontend Master Guide
 
-Mobile-first frontend for SafarSathi, an Integrated IoT-Based System for Proactive Tourist Safety. Built to demo offline edge logic, simulated biometrics, and dynamic risk scoring for research.
+Single, expert-level guide for building the SafarSathi hybrid web client as an edge computing node. It aligns the implementation with the invention disclosure "An Integrated IoT-Based System for Proactive Tourist Safety Monitoring and Dynamic Incident Response" by translating patent concepts (Gateway Layer, Dynamic Safety Score, Tamper-Evident Cryptographic Log, IoT sensor fusion) into a concrete React/TypeScript codebase that works offline.
 
-## 🛠 Tech Stack
+## Purpose and Scope
 
-- Framework: React 19 (Vite 7)
-- Language: TypeScript 5.9
-- Styling: Tailwind CSS 4
-- Maps: React-Leaflet 5 + Leaflet (OpenStreetMap)
-- State Management: Zustand (planned for Phase 2)
-- Geospatial Logic: Turf.js (planned for Phase 1)
-- PWA: Vite PWA Plugin (planned for Phase 1)
+- Treat the frontend as the "Gateway Layer": simulate edge IoT inputs, fuse data locally, and stay operable offline (airplane mode / disaster zones).
+- Keep the Panic Button responsive under load; favor concurrent React updates and lightweight state subscriptions.
+- Enforce tamper evidence via client-side SHA-256 hashing (Web Crypto API) and local blockchain log persisted offline.
+- Provide a deployable PWA shell: installable, offline-first, secure contexts (HTTPS/localhost), and geolocation/crypto availability.
 
-## 🚀 Quick Start
+## Tech Stack and Dependency Mandate
+
+| Category | Package | Version (current or target) | Notes |
+| --- | --- | --- | --- |
+| Core | react, react-dom | ^19.2.0 | Concurrent features for high-frequency UI updates. |
+| Build | vite | ^7.2.4 | Fast HMR; PWA plugin added below. |
+| Language | typescript | ~5.9.3 | Enable `strict` + `noImplicitAny`. |
+| Styling | tailwindcss | ^4.1.18 | Utility-first; define safety palette. |
+| Icons | lucide-react | ^0.555.0 | Lightweight icon set. |
+| Maps | leaflet, react-leaflet | ^1.9.4, ^5.0.0 | Offline-tile friendly. |
+| State | @reduxjs/toolkit, react-redux | ^2.x, ^9.x (add) | RTK slices/selectors; lean subscriptions for perf. |
+| Router | react-router-dom | ^6.20.0 (add) | For multi-screen flows if needed. |
+| Charts | recharts | ^2.10.0 (add) | DSS trendline. |
+| Gauge | react-gauge-chart | ^0.5.1 (add) | Semi-circle safety gauge. |
+| QR gen | qrcode.react | ^3.1.0 (add) | Use `QRCodeSVG` named export. |
+| QR scan | @yudiel/react-qr-scanner | latest (add) | Hook-based camera scanning. |
+| Storage | idb | ^8.0.0 (add) | IndexedDB wrapper for the log. |
+| PWA | vite-plugin-pwa | ^0.20.x (add) | Service worker/manifest automation. |
+| Geospatial | turf (optional) | ^7.x | Use only if Leaflet helpers are insufficient. |
+
+> Install missing packages when implementing modules: `npm install @reduxjs/toolkit react-redux recharts react-gauge-chart qrcode.react @yudiel/react-qr-scanner idb vite-plugin-pwa react-router-dom`.
+
+## Project Setup
 
 ```bash
 npm install
 npm run dev
-# build
-npm run build
+npm run build   # type-check + production bundle
+npm run lint    # eslint
 ```
 
-## 📂 Project Structure
+TypeScript config: ensure `compilerOptions.strict = true` and `noImplicitAny = true` in tsconfig.json.
+
+## Reference Architecture (Frontend as Edge Node)
+
+- PWA shell: installable, offline cache of app shell, icons, manifest, and critical datasets; service worker uses Cache-First for shell and Stale-While-Revalidate for data.
+- Dual-path Panic logic: online posts to API + WebSocket; offline triggers local notification and shows emergency QR beacon.
+- Local blockchain log: every significant event (zone entry, panic, DSS drop) mined into a SHA-256–linked chain; validity check surfaces integrity warnings in UI.
+- Dynamic Safety Score (DSS): deterministic heuristic over biometrics, environment, and geo context; recalculates on each simulated tick.
+- Offline geofencing: point-in-polygon checks on-device; triggers score penalty, notification, and blockchain log entry.
+- Identity QR: compact JSON payload with abbreviated keys for density; high error correction; scanner validates schema.
+
+## Recommended Directory Map
 
 ```
 src/
-├── assets/              # Static assets
-├── components/
-│   ├── ui/              # Primitives (button, card, tabs)
-│   └── simulation/      # Dev console for biometric sliders (planned)
-├── layout/              # Main mobile layout (UserLayout.tsx)
-├── lib/                 # Utilities (cn, future geospatial helpers)
-├── pages/               # Screens (Home, Map, Identity, Settings)
-└── store/               # Global state (planned: user location, biometrics)
-
-dataSets/                # JSON overlays (Assam restricted zones, police stations)
+├── components/           # UI primitives and composites
+│   ├── ui/               # button, card, tabs, toast, gauge wrapper
+│   ├── identity/         # IdentityQR, QRScanner
+│   ├── blockchain/       # BlockchainLogViewer
+│   ├── dashboard/        # SafetyScoreGauge, Trendline
+│   └── panic/            # PanicButton FAB
+├── features/             # Screen-level modules (Home, Map, Identity, Settings)
+├── hooks/                # useBiometricSimulation, useGeoLocation, useGeoFence
+├── lib/                  # Block, Blockchain, safetyEngine, geo math
+├── store/                # Redux Toolkit slices (biometric, log, app)
+├── pages/                # Routed pages if react-router is enabled
+└── utils/                # crypto, formatting helpers
+public/manifest.webmanifest
 ```
 
-## 🧭 Current Implementation
+## Core Modules and Implementation Guidance
 
-- Entry: src/main.tsx mounts src/App.tsx inside StrictMode.
-- Shell: src/layout/UserLayout.tsx renders Radix Tabs (Home, Map, Identity, Settings) with desktop top bar + mobile bottom bar; single-page, no React Router.
-- Home: src/pages/Home.tsx shows a static safety card and a mock SOS button using navigator.geolocation; alerts are local state only.
-- Map: src/pages/Map.tsx centers on Guwahati; renders circles/markers from dataSets/assamRistrictedAreas.json and dataSets/assamPoliceStations.json; includes Nominatim search and locate-me; custom police divIcon.
-- Identity / Settings: src/pages/Identity.tsx and src/pages/Settings.tsx are placeholders.
-- UI kit: src/components/ui for button/card/tabs; icons from lucide-react.
-- Styling: Tailwind 4 utility classes; globals in src/index.css.
-- Data & network: No backend/API integration yet; all data is static/local. No auth, persistence, or WebSocket client.
+### 1) Tamper-Evident Cryptographic Log
 
-## 🔍 Detailed Frontend Outline (Living Map)
+- Use Web Crypto API only; do not add crypto-js. Implement `sha256(message: string): Promise<string>` in `src/utils/crypto.ts` using TextEncoder + `crypto.subtle.digest`.
+- `Block` model: `{ index, timestamp (ISO), data: Record<string, unknown>, previousHash, hash }`. Provide async `calculateHash()`; instantiate via a factory that awaits hashing.
+- `Blockchain` class: start with genesis (index 0, previousHash "0"); `addBlock(data)` appends with previous hash; `isChainValid()` re-hashes and checks links. Persist chain to IndexedDB via `idb` and keep an in-memory mirror.
+- UI: `BlockchainLogViewer` lists blocks with truncated hashes; if `isValid` is false, surface a red integrity banner.
 
-- Layout & navigation
-  - Single-page tabbed shell (Radix Tabs) for mobile; desktop shows top tabs.
-  - No client-side routing yet; state is preserved per tab session.
-- Pages
-  - Home: safety card + local SOS; recent alerts list (in-memory). Planned: dynamic safety score, biometric indicators, incident history.
-  - Map: Leaflet canvas with restricted zones (circles) and police markers; search (Nominatim), locate-me; popups for zones/stations. Planned: live position, DSS overlays, filter toggles, offline cache indicator.
-  - Identity: placeholder. Planned: digital ID card, QR, blockchain log snippets, verification status.
-  - Settings: placeholder. Planned: data export, PWA/offline status, simulation toggles, theme.
-- Components
-  - UI primitives: button, card, tabs (shadcn-style). Planned additions: badge, toast, gauge, slider, switch, dropdown.
-  - Simulation: Dev console (planned) for heart rate, gait, env noise sliders; toggle in layout.
-  - Map helpers (planned): risk legend, layer toggles, accuracy ring, mini status bar.
-- Data sources
-  - Static JSON: dataSets/assamRistrictedAreas.json, dataSets/assamPoliceStations.json.
-  - Planned API hooks: auth, SOS, risk zones, dashboard, profile.
-  - Storage plan: localStorage for incident logs; optional in-memory store for session state.
-- State management
-  - Current: local component state only.
-  - Planned: Zustand store for user location, geo-fence hits, biometrics, DSS score, alerts feed.
-- Styling/theming
-  - Tailwind utilities; no design tokens yet. Planned: token map for semantic colors (safe/warn/danger), spacing, radii; dark/light adherence.
-- Build & quality
-  - Scripts: dev/build/preview/lint. Planned: add type-check script and preflight.
-  - Testing (planned): vitest + React Testing Library smoke tests for Home/Map; hook tests for geo-fence and DSS.
-- Environments
-  - Dev: Vite dev server.
-  - Offline goal: PWA caching of assets + dataSets, offline geo-fence checks, cached tiles when possible.
+### 2) Biometric Simulation and DSS
 
-## 🗺️ Development Roadmap (Research Focus)
+- Hook `useBiometricSimulation`: emits heartRate, skinTemp, hrv, aqi every 1–2s; supports narrative states (normal 60–80 bpm, stress 120+, recovery taper). Allow developer toggle panel for state control.
+- Safety heuristic (frontend baseline):
+  - Start 100.
+  - Heart rate > 100: -10; > 140: -30.
+  - AQI > 150: -15.
+  - In risk zone: -40.
+  - Clamp to 0–100; compute trend over last 5 minutes for arrow/sparkline.
+- Components: `SafetyScoreGauge` (react-gauge-chart) with color zones (Green 80–100, Yellow 50–79, Red 0–49) and `SafetyTrend` (recharts line).
 
-### Phase 1: Edge Engine (Offline Capabilities)
+### 3) Identity and QR System
 
-- [ ] Install geospatial lib: `npm install @turf/turf`
-- [ ] Offline geo-fencing hook (src/hooks/useGeoFence.ts):
-  - watchPosition for live location
-  - turf.booleanPointInPolygon against restricted zones
-  - local toast/alert when entering a zone
-- [ ] PWA: `npm install vite-plugin-pwa`; cache dataSets/ and assets so geo-checks run in Airplane Mode
+- QR generation: `IdentityQR` uses `QRCodeSVG` (named export) with `level="H"`, compact payload `{ uid, bt, ec, t }` to aid scan reliability on cracked/dirty screens.
+- QR scanning: `QRScanner` via `@yudiel/react-qr-scanner`; handle camera permission errors gracefully and show guidance. Validate parsed JSON schema before trusting.
+- Offline "optical beacon": Panic offline path navigates to IdentityQR with a panic payload for rescue devices to ingest.
 
-### Phase 2: Sensor Simulation (Biometrics)
+### 4) Offline Geo-Fencing and Maps
 
-- [ ] State mgmt: `npm install zustand`
-- [ ] Global store (src/store/simulationStore.ts): heartRate, gait (Walking/Running/Fall), envNoise; setters/toggles
-- [ ] Dev console (src/components/simulation/DevConsole.tsx): sliders/dropdowns for simulated vitals; toggle in UserLayout
+- Map: react-leaflet with base tiles (OSM); plan for pre-caching tiles when possible. Layers: risk polygons (red, semi-transparent), police markers, user marker.
+- Geometry: implement `isPointInPolygon(point, polygon)` (ray-casting) in `src/lib/geo.ts`. For many vertices, move to a Web Worker if UI jank appears.
+- Triggers on entry: apply DSS penalty, show local Notification, and log a blockchain block `{ type: "ZONE_ENTRY", zone, riskLevel }`.
 
-### Phase 3: Dynamic Safety Score (DSS)
+### 5) Panic Button (Dual Path)
 
-- [ ] Helper (src/lib/safetyAlgorithm.ts): Score = 100 - (ZonePenalty + BiometricPenalty); e.g., in-zone (-30) + HR>120 (-20) => 50
-- [ ] Home dashboard: replace static card with dynamic gauge; colors Green>80, Yellow 50-79, Red<50
+- UI: fixed FAB bottom-center; long-press (≈3s) with radial progress to avoid false triggers; aria-label="Emergency Panic Button".
+- Logic:
+  - Gather GPS + latest biometrics into panic payload.
+  - Online: POST to `/api/emergency`, open WebSocket, show "tracking active" state.
+  - Offline: fire high-priority notification, switch to QR beacon view, mine block with panic payload.
 
-### Phase 4: Data Logging for Research
+### 6) State Management (Redux Toolkit slices)
 
-- [ ] Incident logger: persist alerts to localStorage when score < 50 with timestamp/trigger/lat,lng
-- [ ] Export: add Settings action to download logs as CSV for plotting
+- Store: configure with RTK; enable serializableCheck exceptions for Web Crypto buffers if needed.
+- Slices: `biometricSlice` `{ heartRate, skinTemp, hrv, aqi, currentScore }`; `logSlice` `{ chain, isValid }` with thunks to persist/load from IndexedDB; `appSlice` `{ isOnline, isPanicActive, currentUser, location }`.
+- Selectors: expose per-field selectors to keep React-Redux subscriptions narrow during high-frequency simulation.
+- Optional RTK Query: for backend wiring (auth, emergency API) while keeping offline fallbacks local.
 
-### Phase 5: Backend Wiring (Optional for paper, useful for demo)
+### 7) PWA and Offline Readiness
 
-- [ ] Connect auth flows (register/login/profile) to backend APIs
-- [ ] Wire SOS and location pings to `/api/action/*`; show confirmations and failures
-- [ ] Fetch risk zones from `/api/risk-zones/active`; merge with static overlays as fallback
-- [ ] Add error/loading states for API calls; retry/backoff for network loss
+- Add `vite-plugin-pwa` with:
+  - `registerType: 'autoUpdate'`.
+  - Cache list: app shell assets, `dataSets/*.json`, manifest, icons, fallback page.
+  - Strategies: Cache-First for shell; Stale-While-Revalidate for JSON; Network-First with fallback for map tiles if cached.
+- Manifest: `display: 'standalone'`, `start_url: '/'`, safety-colored icons (192/512 px), theme color that matches safe state.
+- Verify in DevTools > Application: service worker active, offline toggle still loads dashboard and panic QR.
 
-### Phase 6: UX Polish & Accessibility
+## Testing and Validation
 
-- [ ] Toast system for geo-fence hits, SOS status, offline mode
-- [ ] Haptics/vibration cues on SOS (where supported)
-- [ ] Focus states, keyboard support on desktop; sufficient contrast for gauges and alerts
-- [ ] Motion: subtle transitions for tab changes and marker popups
+- Unit (Vitest): blockchain hashing determinism and tamper detection; `isPointInPolygon` inside/outside cases; safety score heuristic thresholds.
+- Component (RTL): Safety gauge color bands; panic button long-press behavior; QR generator renders expected payload.
+- Offline drills: DevTools offline mode → dashboard loads, Panic triggers QR path (no API call), blockchain logging still works.
 
-### Phase 7: Testing & Validation
+## Implementation Checklist (actionable)
 
-- [ ] Unit: safetyAlgorithm, geo-fence hook (with mocked coords/zones)
-- [ ] Component: Home (gauge thresholds), Map (renders zones/markers, search fly-to), Simulation console (state updates)
-- [ ] E2E (optional): basic tab navigation and SOS happy path with Playwright/Cypress
+- [ ] Add dependencies: @reduxjs/toolkit, react-redux, recharts, react-gauge-chart, qrcode.react, @yudiel/react-qr-scanner, idb, vite-plugin-pwa, react-router-dom.
+- [ ] Enforce TS strictness; add `npm run typecheck` script if desired.
+- [ ] Implement `src/utils/crypto.ts` (Web Crypto) and `src/lib/blockchain.ts` (Block/Blockchain classes) with IndexedDB persistence.
+- [ ] Build Redux slices/store and wire UI components (gauge, trend, blockchain viewer, panic FAB) via selectors.
+- [ ] Add service worker via vite-plugin-pwa and manifest with install icons.
+- [ ] Create IdentityQR + QRScanner components with compact payloads and error handling.
+- [ ] Implement offline geofence math and triggers; add notifications and log entries.
+- [ ] Write Vitest coverage for blockchain, geo, DSS; run offline drills.
 
-## 📝 Implementation Snippets
-
-### Offline Geo-Fencing (draft)
+## Appendix: Web Crypto SHA-256 Reference
 
 ```typescript
-import { useEffect } from "react";
-import * as turf from "@turf/turf";
-import zones from "../dataSets/assamRistrictedAreas.json";
-
-export const useGeoFence = (userLocation: [number, number] | null) => {
-  useEffect(() => {
-    if (!userLocation) return;
-
-    const point = turf.point([userLocation[1], userLocation[0]]); // lng, lat
-
-    zones.restrictedZones.forEach((zone) => {
-      const circle = turf.circle([zone.position[1], zone.position[0]], zone.radius / 1000, { units: "kilometers" });
-      const inside = turf.booleanPointInPolygon(point, circle);
-      if (inside) {
-        alert(`WARNING: You have entered ${zone.name}`);
-        // TODO: trigger global alert state
-      }
-    });
-  }, [userLocation]);
-};
+// src/utils/crypto.ts
+export async function sha256(message: string): Promise<string> {
+  const msg = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msg);
+  const bytes = Array.from(new Uint8Array(hashBuffer));
+  return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 ```
 
-### Simulation Store (draft)
-
-```typescript
-import { create } from "zustand";
-
-type SimState = {
-  heartRate: number;
-  gait: "Walking" | "Running" | "Fall";
-  envNoise: number;
-  setHeartRate: (hr: number) => void;
-  setGait: (g: SimState["gait"]) => void;
-  setEnvNoise: (n: number) => void;
-};
-
-export const useSimStore = create<SimState>((set) => ({
-  heartRate: 75,
-  gait: "Walking",
-  envNoise: 20,
-  setHeartRate: (hr) => set({ heartRate: hr }),
-  setGait: (g) => set({ gait: g }),
-  setEnvNoise: (n) => set({ envNoise: n }),
-}));
-```
-
-## 🎨 Styling Notes
-
-- Use bg-destructive for panic states; bg-primary for safe states.
-- Keep touch targets ≥44px for mobile.
-- Tabs and cards rely on shadcn-style primitives; remain mobile-first.
-
-## ⚠️ Known Issues / WIP
-
-- Auth and backend calls are not wired; data is static.
-- Map tiles need connectivity unless cached via PWA.
-- No persistence beyond localStorage in planned logging phase.
+Use this helper inside Block.calculateHash to keep hashing native and non-blocking.
