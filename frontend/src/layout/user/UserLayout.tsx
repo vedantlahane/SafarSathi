@@ -1,10 +1,21 @@
-import { Home as HomeIcon, Map as MapIcon, User, Settings as SettingsIcon } from "lucide-react";
+import {
+  Home as HomeIcon,
+  Map as MapIcon,
+  User,
+  Settings as SettingsIcon,
+} from "lucide-react";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "../../components/ui/tabs";
 import Home from "@/pages/Home";
 import Map from "@/pages/Map";
 import Identity from "@/pages/Identity";
-import Settings from "@/pages/Settings";
+import Settings from "@/pages/Settings"
+import Header from "./Header";
 
 const NAV_ITEMS = [
   { value: "home", label: "Home", icon: HomeIcon },
@@ -30,35 +41,39 @@ const NavBar = ({ className }: { className?: string }) => (
 
 const MobileLayout = () => {
   return (
-    <div className="h-screen w-full bg-background text-[13px]">
-      <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden">
+    <div className="h-screen w-full">
+      <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden p-4">
+        <Header/>
         <Tabs defaultValue="home" className="flex flex-1 flex-col">
           {/* Unified header/nav on desktop */}
           <header className="hidden items-center justify-between px-6 py-3 md:flex">
-            <div className="text-sm font-semibold tracking-tight">Safar Sathi</div>
+            <div className="text-sm font-semibold tracking-tight">
+              Safar Sathi
+            </div>
             <NavBar className="bg-card text-[12px] shadow-sm" />
           </header>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden px-3 pb-16 pt-2 md:pb-6">
-            <TabsContent value="home" className="flex h-full flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto">
-                <Home />
-              </div>
-            </TabsContent>
-            <TabsContent value="map" className="flex h-full flex-col">
-              <Map />
-            </TabsContent>
-            <TabsContent value="identity" className="h-full overflow-auto">
-              <Identity />
-            </TabsContent>
-            <TabsContent value="settings" className="h-full overflow-auto">
-              <Settings />
-            </TabsContent>
-          </div>
+          <TabsContent
+            value="home"
+            className="flex h-full flex-col overflow-hidden  pb-16 pt-2 md:pb-6"
+          >
+            <div className="flex-1 overflow-y-auto">
+              <Home />
+            </div>
+          </TabsContent>
+          <TabsContent value="map" className="flex h-full flex-col px-3 pb-16 pt-2 md:pb-6">
+            <Map />
+          </TabsContent>
+          <TabsContent value="identity" className="h-full overflow-auto px-3 pb-16 pt-2 md:pb-6">
+            <Identity />
+          </TabsContent>
+          <TabsContent value="settings" className="h-full overflow-auto px-3 pb-16 pt-2 md:pb-6">
+            <Settings />
+          </TabsContent>
 
           {/* Mobile bottom nav reuses same items */}
-          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-16 bg-gradient-to-t from-background via-background/80 to-transparent md:hidden" />
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-16 bg-linear-to-t from-background via-background/80 to-transparent md:hidden" />
           <div className="md:hidden fixed inset-x-3 bottom-3 z-30 rounded-full bg-card/95 px-2 py-1 shadow-lg backdrop-blur">
             <NavBar className="flex w-full justify-between bg-transparent" />
           </div>
