@@ -1,4 +1,4 @@
-import MobileLayout from "./layout/UserLayout"
+import MobileLayout from "./layout/user/UserLayout"
 function App() {
 
 
