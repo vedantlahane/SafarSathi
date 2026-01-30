@@ -1,79 +1,72 @@
-import { useState, useEffect } from "react"
-import { QrCode, Map, Receipt, ShieldAlert } from "lucide-react"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 
-/* ================= TYPES ================= */
+import { useState, useEffect } from "react";
+import { QrCode, Map, Receipt, ShieldAlert } from "lucide-react";
 
-type AlertType = "Alert" | "Info"
-
-type AlertItem = {
-  id: number
-  type: AlertType
-  message: string
-  time: string
-}
-
-type SafetyLog = {
-  id: number
-  action: string
-  timestamp: string
-  verified: boolean
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 /* ================= MOCK ================= */
 
-const mockAlerts: AlertItem[] = []
+interface Alert {
+  id: string;
+  type: string;
+  message: string;
+  time: string;
+}
 
-const mockSafetyLogs: SafetyLog[] = [
- 
-]
+interface SafetyLog {
+  id: string;
+  action: string;
+  timestamp: string;
+  verified?: boolean;
+}
 
-/* ================= COMPONENT ================= */
+const mockAlerts: Alert[] = [];
+const mockSafetyLogs: SafetyLog[] = [];
 
-export default function Home() {
-  const [alerts, setAlerts] = useState<AlertItem[]>(() => {
-    const stored = localStorage.getItem("alerts")
-    return stored ? JSON.parse(stored) : mockAlerts
-  })
+export default function Main(){
+  const [alerts, setAlerts] = useState<Alert[]>(() => {
+    const stored = localStorage.getItem("alerts");
+    return stored ? JSON.parse(stored) : mockAlerts;
+  });
 
   const [safetyLogs, setSafetyLogs] = useState<SafetyLog[]>(() => {
-    const stored = localStorage.getItem("safetyLogs")
-    return stored ? JSON.parse(stored) : mockSafetyLogs
-  })
+    const stored = localStorage.getItem("safetyLogs");
+    return stored ? JSON.parse(stored) : mockSafetyLogs;
+  });
 
-  const [showSafetyLogs, setShowSafetyLogs] = useState(false)
+  const [showSafetyLogs, setShowSafetyLogs] = useState<boolean>(false);
 
-  const [safetyScore, setSafetyScore] = useState(94);
-localStorage.clear()
+  const [safetyScore, setSafetyScore] = useState<number>(94);
+  localStorage.clear();
   useEffect(() => {
-    localStorage.setItem("alerts", JSON.stringify(alerts))
-  }, [alerts])
+    localStorage.setItem("alerts", JSON.stringify(alerts));
+  }, [alerts]);
 
   useEffect(() => {
-    localStorage.setItem("safetyLogs", JSON.stringify(safetyLogs))
-  }, [safetyLogs])
+    localStorage.setItem("safetyLogs", JSON.stringify(safetyLogs));
+  }, [safetyLogs]);
 
+
+  const [name, setName] = useState<string>("User");
   return (
-    <div className="min-h-screen">
-      
-
+    <>
       {/* MAIN */}
-      <main className="flex flex-col gap-6 py-6 pb-32">
+      <main className="flex flex-col gap-6 p-1 pb-32">
         {/* SAFETY SCORE */}
-        <Card className="relative overflow-hidden border-none bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
+        <Card className="relative overflow-hidden border-none bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
           <CardContent className="relative p-4">
             <div className="absolute right-0 top-0 h-20 w-20 -translate-y-8 translate-x-6 rounded-full bg-white/10 blur-2xl" />
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-emerald-100">
-                  Dynamic Safety Score
-                </p>
-                <h3 className="text-3xl font-bold leading-tight">{safetyScore}</h3>
+                <h2 className="text-xl font-bold leading-tight">Hello, {name}</h2>
+                <p className="text-sm text-emerald-100">Your Dynamic Safety Score</p>
+                <h3 className="text-3xl font-bold leading-tight">
+                  {safetyScore}
+                </h3>
               </div>
 
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 backdrop-blur">
@@ -94,20 +87,12 @@ localStorage.clear()
           <div className="border-t border-white/20 px-4 py-3">
             <div className="mb-3 flex items-center justify-between text-sm">
               <span className="font-semibold">5-Minute Trend</span>
-              <Badge className="bg-success/20 text-success">
-                +2% Stable
-              </Badge>
+              <Badge className="bg-success/20 text-success">+2% Stable</Badge>
             </div>
 
             <svg viewBox="0 0 300 60" className="h-16 w-full">
               <defs>
-                <linearGradient
-                  id="trendGradient"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
+                <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
                   <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                 </linearGradient>
@@ -162,7 +147,7 @@ localStorage.clear()
                   const color =
                     alert.type === "Alert"
                       ? "text-yellow-600"
-                      : "text-blue-600"
+                      : "text-blue-600";
 
                   return (
                     <Card key={alert.id} className="shadow-sm">
@@ -174,10 +159,7 @@ localStorage.clear()
                         <div className="flex-1 space-y-1">
                           <div className="flex justify-between">
                             <h4
-                              className={cn(
-                                "text-[13px] font-semibold",
-                                color
-                              )}
+                              className={cn("text-[13px] font-semibold", color)}
                             >
                               {alert.type}
                             </h4>
@@ -192,7 +174,7 @@ localStorage.clear()
                         </div>
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })}
               </div>
             </>
@@ -240,6 +222,6 @@ localStorage.clear()
           </section>
         )}
       </main>
-    </div>
-  )
+    </>
+  );
 }
