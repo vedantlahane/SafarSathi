@@ -11,7 +11,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "../../components/ui/tabs";
-import Home from "@/pages/Home";
+import Home from "@/pages/home/Home";
 import Map from "@/pages/Map";
 import Identity from "@/pages/Identity";
 import Settings from "@/pages/Settings"
@@ -42,7 +42,7 @@ const NavBar = ({ className }: { className?: string }) => (
 const MobileLayout = () => {
   return (
     <div className="h-screen w-full">
-      <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden p-4">
+      <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden">
         <Header/>
         <Tabs defaultValue="home" className="flex flex-1 flex-col">
           {/* Unified header/nav on desktop */}
@@ -56,7 +56,7 @@ const MobileLayout = () => {
           {/* Content */}
           <TabsContent
             value="home"
-            className="flex h-full flex-col overflow-hidden  pb-16 pt-2 md:pb-6"
+            className="flex h-full flex-col overflow-hidden  pb-16 md:pb-6"
           >
             <div className="flex-1 overflow-y-auto">
               <Home />
