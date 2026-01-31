@@ -1,7 +1,10 @@
 export interface Alert {
-  id: string;
+  id: number;
   touristId: string;
-  message: string;
-  status: "open" | "acknowledged" | "resolved";
-  createdAt: string;
+  alertType: string;
+  lat?: number;
+  lng?: number;
+  status: string;
+  message?: string;
+  createdTime: string;
 }

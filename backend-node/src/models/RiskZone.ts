@@ -1,8 +1,14 @@
+export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
+
 export interface RiskZone {
-  id: string;
+  id: number;
   name: string;
-  active: boolean;
-  latitude: number;
-  longitude: number;
+  description?: string;
+  centerLat: number;
+  centerLng: number;
   radiusMeters: number;
+  riskLevel: RiskLevel;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }

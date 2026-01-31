@@ -1,37 +1,23 @@
-import type { AdminUser } from "../models/admin.js";
-import type { Alert } from "../models/Alert.js";
-import { alerts, tourists } from "./dataStore.js";
-import { generateId } from "../utils/id.js";
+import type { PoliceDepartment } from "../models/PoliceDepartment.js";
+import { policeDepartments } from "./dataStore.js";
+import { sha256 } from "../utils/hash.js";
 
-const admins: AdminUser[] = [
-  { id: generateId("admin"), email: "admin@safarsathi.local", name: "Admin" }
-];
-
-export function loginAdmin(email: string) {
-  const admin = admins.find((a) => a.email === email);
+export function validateAdminLogin(email: string, password: string) {
+  if (!email || !password) {
+    return null;
+  }
+  const admin = policeDepartments.find((dept) => dept.email.toLowerCase() === email.trim().toLowerCase());
   if (!admin) {
-    return { ok: false, message: "Invalid credentials" };
+    return null;
   }
-  return { ok: true, admin, token: `admin_${admin.id}` };
-}
-
-export function verifyTouristId(_idNumber: string) {
-  return { ok: true, verified: true, reason: "stubbed" };
-}
-
-export function listAlerts(): Alert[] {
-  return alerts;
-}
-
-export function updateAlertStatus(alertId: string, status: Alert["status"]) {
-  const alert = alerts.find((a) => a.id === alertId);
-  if (!alert) {
-    return { ok: false, message: "Alert not found" };
+  const hashedPassword = sha256(password);
+  if (hashedPassword !== admin.passwordHash) {
+    return null;
   }
-  alert.status = status;
-  return { ok: true, alert };
+  return admin;
 }
 
-export function listTourists() {
-  return tourists;
+export function generateAdminToken(policeDepartment: PoliceDepartment) {
+  const tokenData = `${policeDepartment.email}:${Date.now()}`;
+  return Buffer.from(tokenData, "utf8").toString("base64");
 }

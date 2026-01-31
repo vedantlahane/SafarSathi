@@ -1,9 +1,14 @@
 import type { PoliceDepartment } from "../models/PoliceDepartment.js";
 import { policeDepartments } from "./dataStore.js";
-import { generateId } from "../utils/id.js";
+import { randomUUID } from "crypto";
+import { sha256 } from "../utils/hash.js";
 
 export function createPoliceDepartment(payload: Omit<PoliceDepartment, "id">) {
-  const dept: PoliceDepartment = { id: generateId("police"), ...payload };
+  const dept: PoliceDepartment = {
+    ...payload,
+    id: randomUUID(),
+    passwordHash: sha256(payload.passwordHash)
+  };
   policeDepartments.push(dept);
   return dept;
 }
@@ -13,7 +18,7 @@ export function listPoliceDepartments() {
 }
 
 export function getPoliceDepartment(id: string) {
-  return policeDepartments.find((d) => d.id === id);
+  return policeDepartments.find((d) => d.id === id) ?? null;
 }
 
 export function updatePoliceDepartment(id: string, payload: Partial<PoliceDepartment>) {
@@ -21,7 +26,16 @@ export function updatePoliceDepartment(id: string, payload: Partial<PoliceDepart
   if (!dept) {
     return null;
   }
-  Object.assign(dept, payload);
+  dept.name = payload.name ?? dept.name;
+  dept.email = payload.email ?? dept.email;
+  dept.departmentCode = payload.departmentCode ?? dept.departmentCode;
+  dept.latitude = payload.latitude ?? dept.latitude;
+  dept.longitude = payload.longitude ?? dept.longitude;
+  dept.city = payload.city ?? dept.city;
+  dept.district = payload.district ?? dept.district;
+  dept.state = payload.state ?? dept.state;
+  dept.contactNumber = payload.contactNumber ?? dept.contactNumber;
+  dept.isActive = payload.isActive ?? dept.isActive;
   return dept;
 }
 
