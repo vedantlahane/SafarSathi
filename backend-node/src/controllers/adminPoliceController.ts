@@ -17,7 +17,11 @@ export function listPolice(_req: Request, res: Response) {
 }
 
 export function getPolice(req: Request, res: Response) {
-  const dept = getPoliceDepartment(req.params.id);
+  const id = normalizeParam(req.params.id);
+  if (!id) {
+    return res.status(400).json({ message: "Invalid police ID." });
+  }
+  const dept = getPoliceDepartment(id);
   if (!dept) {
     return res.status(404).json({ message: "Not found" });
   }
@@ -25,7 +29,11 @@ export function getPolice(req: Request, res: Response) {
 }
 
 export function updatePolice(req: Request, res: Response) {
-  const dept = updatePoliceDepartment(req.params.id, req.body);
+  const id = normalizeParam(req.params.id);
+  if (!id) {
+    return res.status(400).json({ message: "Invalid police ID." });
+  }
+  const dept = updatePoliceDepartment(id, req.body);
   if (!dept) {
     return res.status(404).json({ message: "Not found" });
   }
@@ -33,7 +41,11 @@ export function updatePolice(req: Request, res: Response) {
 }
 
 export function deletePolice(req: Request, res: Response) {
-  const ok = deletePoliceDepartment(req.params.id);
+  const id = normalizeParam(req.params.id);
+  if (!id) {
+    return res.status(400).json({ message: "Invalid police ID." });
+  }
+  const ok = deletePoliceDepartment(id);
   if (!ok) {
     return res.status(404).json({ message: "Not found" });
   }
@@ -43,4 +55,11 @@ export function deletePolice(req: Request, res: Response) {
 function stripPassword(dept: { passwordHash?: string }) {
   const { passwordHash, ...rest } = dept;
   return rest;
+}
+
+function normalizeParam(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
 }

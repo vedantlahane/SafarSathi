@@ -1,4 +1,4 @@
-import type { WebSocketServer } from "ws";
+import type { WebSocket, WebSocketServer } from "ws";
 import type { Alert } from "../models/Alert.js";
 
 let websocketServer: WebSocketServer | null = null;
@@ -12,7 +12,7 @@ export function broadcastAlert(alert: Alert) {
     return;
   }
   const payload = JSON.stringify({ destination: "/topic/alerts", payload: alert });
-  websocketServer.clients.forEach((client) => {
+  websocketServer.clients.forEach((client: WebSocket) => {
     if (client.readyState === 1) {
       client.send(payload);
     }

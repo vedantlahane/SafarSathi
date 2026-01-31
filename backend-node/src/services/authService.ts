@@ -5,7 +5,11 @@ import { issueDigitalID } from "./BlockchainService.js";
 import { randomUUID } from "crypto";
 import { processLocation } from "./AnomalyService.js";
 
-export function registerTourist(payload: Tourist) {
+type TouristRegistration = Omit<Tourist, "id" | "idHash" | "idExpiry" | "lastSeen" | "safetyScore">;
+
+export function registerTourist(
+  payload: TouristRegistration
+): { ok: true; tourist: Tourist } | { ok: false; message: string } {
   const existing = tourists.find((t) => t.email === payload.email);
   if (existing) {
     return { ok: false, message: "Email already registered" };
