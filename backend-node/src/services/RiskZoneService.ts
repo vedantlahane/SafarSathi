@@ -15,9 +15,9 @@ export function createRiskZone(payload: Omit<RiskZone, "id" | "createdAt" | "upd
     id: nextRiskZoneId(),
     createdAt: now,
     updatedAt: now,
+    ...payload,
     riskLevel: payload.riskLevel ?? "MEDIUM",
-    active: payload.active ?? true,
-    ...payload
+    active: payload.active ?? true
   };
   riskZones.push(zone);
   saveStore();

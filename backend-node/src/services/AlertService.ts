@@ -4,7 +4,9 @@ import { broadcastAlert } from "./websocketHub.js";
 
 const RESOLVED_STATUS = "RESOLVED";
 
-export function createAlert(alert: Omit<Alert, "id" | "createdTime"> & Partial<Pick<Alert, "createdTime">>) {
+export function createAlert(
+  alert: Omit<Alert, "id" | "createdTime" | "status"> & Partial<Pick<Alert, "createdTime" | "status">>
+) {
   const createdTime = alert.createdTime ?? new Date().toISOString();
   const status = alert.status ?? "NEW";
   const saved: Alert = {
