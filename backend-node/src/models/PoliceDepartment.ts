@@ -1,6 +1,14 @@
 export interface PoliceDepartment {
   id: string;
   name: string;
-  address?: string;
-  phone?: string;
+  email: string;
+  passwordHash: string;
+  departmentCode: string;
+  latitude: number;
+  longitude: number;
+  city: string;
+  district: string;
+  state: string;
+  contactNumber: string;
+  isActive?: boolean;
 }
