@@ -3,7 +3,7 @@ import type { PoliceDepartment } from "../models/PoliceDepartment.js";
 import type { RiskZone } from "../models/RiskZone.js";
 import type { Tourist } from "../models/Tourist.js";
 import { alerts, policeDepartments, riskZones, tourists } from "./dataStore.js";
-import { getRecentLogs } from "./blockchainService.js";
+import { getRecentLogs } from "./BlockchainService.js";
 
 export function getAdminDashboardState() {
   const recentAlerts = getRecentAlerts(50);

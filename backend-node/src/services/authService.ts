@@ -1,9 +1,9 @@
 import type { Tourist } from "../models/Tourist.js";
-import { tourists } from "./dataStore.js";
+import { tourists, saveStore } from "./dataStore.js";
 import { sha256 } from "../utils/hash.js";
-import { issueDigitalID } from "./blockchainService.js";
+import { issueDigitalID } from "./BlockchainService.js";
 import { randomUUID } from "crypto";
-import { processLocation } from "./anomalyService.js";
+import { processLocation } from "./AnomalyService.js";
 
 export function registerTourist(payload: Tourist) {
   const existing = tourists.find((t) => t.email === payload.email);
@@ -40,6 +40,7 @@ export function registerTourist(payload: Tourist) {
   };
   tourists.push(tourist);
   issueDigitalID(tourist.id, tourist.idHash);
+  saveStore();
   return { ok: true, tourist };
 }
 
@@ -80,6 +81,7 @@ export function updateLocation(touristId: string, lat: number, lng: number, accu
   tourist.currentLng = lng;
   tourist.lastSeen = new Date().toISOString();
   processLocation(tourist, accuracy);
+  saveStore();
   return tourist;
 }
 

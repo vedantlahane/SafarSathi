@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const env = {
-  port: Number(process.env.PORT ?? 8080),
+  port: Number(process.env.PORT ?? 8081),
   corsOrigin: process.env.CORS_ORIGIN ?? "*",
   logLevel: process.env.LOG_LEVEL ?? "info"
 };

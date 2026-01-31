@@ -3,17 +3,25 @@ import { createSOS, recordLocation } from "../services/sosService.js";
 
 export function postLocation(req: Request, res: Response) {
   const { touristId } = req.params;
-  const { lat, lng } = req.body as { lat?: number; lng?: number };
+  const { lat, lng, accuracy } = req.body as { lat?: number; lng?: number; accuracy?: number };
   if (typeof lat !== "number" || typeof lng !== "number") {
-    return res.status(400).json({ success: false, error: "lat and lng required", timestamp: new Date().toISOString() });
+    return res.status(400).json({ message: "lat and lng required" });
   }
-  const data = recordLocation(touristId, { lat, lng });
-  return res.json({ success: true, data, timestamp: new Date().toISOString() });
+  try {
+    recordLocation(touristId, { lat, lng, accuracy });
+    return res.status(204).send();
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message === "Tourist not found.") {
+      return res.status(404).json({ message: "Tourist not found." });
+    }
+    throw error;
+  }
 }
 
 export function postSOS(req: Request, res: Response) {
   const { touristId } = req.params;
-  const { message } = req.body as { message?: string };
-  const alert = createSOS(touristId, message);
-  return res.status(201).json({ success: true, data: alert, timestamp: new Date().toISOString() });
+  const { lat, lng } = req.body as { lat?: number; lng?: number };
+  createSOS(touristId, lat, lng);
+  return res.json({ status: "SOS Alert initiated. Emergency response notified." });
 }

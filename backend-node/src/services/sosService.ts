@@ -1,4 +1,4 @@
-import { handleSOS } from "./alertService.js";
+import { handleSOS } from "./AlertService.js";
 import { updateLocation } from "./authService.js";
 
 export function recordLocation(touristId: string, location: { lat: number; lng: number; accuracy?: number }) {
