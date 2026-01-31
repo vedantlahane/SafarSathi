@@ -1,19 +1,20 @@
 
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { QrCode, Map, Receipt, ShieldAlert } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { connectAlertsSocket, fetchTouristDashboard, type TouristAlert } from "@/lib/api";
+import { useSession } from "@/lib/session";
 
-/* ================= MOCK ================= */
-
-interface Alert {
-  id: string;
+interface AlertView {
+  id: number;
   type: string;
   message: string;
   time: string;
+  priority: string;
 }
 
 interface SafetyLog {
@@ -23,34 +24,96 @@ interface SafetyLog {
   verified?: boolean;
 }
 
-const mockAlerts: Alert[] = [];
-const mockSafetyLogs: SafetyLog[] = [];
-
 export default function Main(){
-  const [alerts, setAlerts] = useState<Alert[]>(() => {
-    const stored = localStorage.getItem("alerts");
-    return stored ? JSON.parse(stored) : mockAlerts;
-  });
-
-  const [safetyLogs, setSafetyLogs] = useState<SafetyLog[]>(() => {
-    const stored = localStorage.getItem("safetyLogs");
-    return stored ? JSON.parse(stored) : mockSafetyLogs;
-  });
-
+  const session = useSession();
+  const [alerts, setAlerts] = useState<AlertView[]>([]);
+  const [safetyLogs, setSafetyLogs] = useState<SafetyLog[]>([]);
   const [showSafetyLogs, setShowSafetyLogs] = useState<boolean>(false);
-
-  const [safetyScore, setSafetyScore] = useState<number>(94);
-  localStorage.clear();
-  useEffect(() => {
-    localStorage.setItem("alerts", JSON.stringify(alerts));
-  }, [alerts]);
-
-  useEffect(() => {
-    localStorage.setItem("safetyLogs", JSON.stringify(safetyLogs));
-  }, [safetyLogs]);
-
-
+  const [safetyScore, setSafetyScore] = useState<number>(100);
+  const [status, setStatus] = useState<string>("safe");
   const [name, setName] = useState<string>("User");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const hasSession = Boolean(session?.touristId);
+
+  const formattedAlerts = useMemo(() => alerts, [alerts]);
+
+  useEffect(() => {
+    if (!hasSession || !session?.touristId) {
+      setAlerts([]);
+      setSafetyLogs([]);
+      setSafetyScore(100);
+      setStatus("safe");
+      setName(session?.name ?? "User");
+      return;
+    }
+
+    let isActive = true;
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        const dashboard = await fetchTouristDashboard(session.touristId);
+        if (!isActive) {
+          return;
+        }
+        setName(dashboard.profile.name ?? session.name ?? "User");
+        setSafetyScore(dashboard.safetyScore ?? 100);
+        setStatus(dashboard.status ?? "safe");
+        setAlerts(mapDashboardAlerts(dashboard.alerts));
+        setSafetyLogs(
+          dashboard.blockchainLogs.map((log) => ({
+            id: log.id,
+            action: log.status,
+            timestamp: formatTimestamp(log.timestamp),
+            verified: log.status?.toLowerCase() === "confirmed"
+          }))
+        );
+        setError(null);
+      } catch (err) {
+        if (!isActive) {
+          return;
+        }
+        setError((err as Error).message || "Unable to load dashboard.");
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+    const interval = window.setInterval(loadDashboard, 30000);
+    return () => {
+      isActive = false;
+      window.clearInterval(interval);
+    };
+  }, [hasSession, session?.touristId, session?.name]);
+
+  useEffect(() => {
+    if (!hasSession) {
+      return;
+    }
+    const socket = connectAlertsSocket((payload) => {
+      const incoming = payload as { id: number; alertType?: string; message?: string; createdTime?: string };
+      setAlerts((prev) => {
+        const next = [
+          {
+            id: incoming.id ?? Date.now(),
+            type: incoming.alertType ?? "ALERT",
+            message: incoming.message ?? "Alert received",
+            time: formatTimestamp(incoming.createdTime ?? new Date().toISOString()),
+            priority: "info"
+          },
+          ...prev
+        ];
+        return next.slice(0, 50);
+      });
+    });
+    return () => {
+      socket.close();
+    };
+  }, [hasSession]);
   return (
     <>
       {/* MAIN */}
@@ -63,7 +126,7 @@ export default function Main(){
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold leading-tight">Hello, {name}</h2>
-                <p className="text-sm text-emerald-100">Your Dynamic Safety Score</p>
+                <p className="text-sm text-emerald-100">Status: {status.toUpperCase()}</p>
                 <h3 className="text-3xl font-bold leading-tight">
                   {safetyScore}
                 </h3>
@@ -115,7 +178,13 @@ export default function Main(){
 
         {/* ALERTS / QUICK ACTIONS */}
         <section className="space-y-3">
-          {alerts.length === 0 ? (
+          {!hasSession ? (
+            <Card className="border-dashed">
+              <CardContent className="p-4 text-center text-[12px] text-muted-foreground">
+                Sign in to view live alerts, safety score, and ID verification.
+              </CardContent>
+            </Card>
+          ) : formattedAlerts.length === 0 ? (
             <>
               <div className="grid grid-cols-2 gap-2">
                 <Card className="p-4 flex flex-col items-center gap-2">
@@ -131,21 +200,30 @@ export default function Main(){
 
               <Card className="border-dashed">
                 <CardContent className="p-4 text-center text-[12px] text-muted-foreground">
-                  No active alerts. You’re all set.
+                  {loading ? "Loading alerts…" : "No active alerts. You’re all set."}
                 </CardContent>
               </Card>
+              {error && (
+                <Card className="border-dashed">
+                  <CardContent className="p-4 text-center text-[12px] text-destructive">
+                    {error}
+                  </CardContent>
+                </Card>
+              )}
             </>
           ) : (
             <>
               <div className="flex items-center justify-between text-sm font-semibold">
                 <span>Active Alerts</span>
-                <Badge variant="secondary">{alerts.length}</Badge>
+                <Badge variant="secondary">{formattedAlerts.length}</Badge>
               </div>
 
               <div className="max-h-80 overflow-y-auto space-y-2">
-                {alerts.map((alert) => {
+                {formattedAlerts.map((alert) => {
                   const color =
-                    alert.type === "Alert"
+                    alert.priority === "critical"
+                      ? "text-red-600"
+                      : alert.priority === "high"
                       ? "text-yellow-600"
                       : "text-blue-600";
 
@@ -191,7 +269,7 @@ export default function Main(){
           </button>
         </section>
 
-        {showSafetyLogs && (
+        {showSafetyLogs && hasSession && (
           <section className="space-y-2">
             {safetyLogs.map((log) => (
               <Card key={log.id} className="shadow-sm">
@@ -224,4 +302,22 @@ export default function Main(){
       </main>
     </>
   );
+}
+
+function mapDashboardAlerts(alerts: TouristAlert[]): AlertView[] {
+  return alerts.map((alert) => ({
+    id: alert.id,
+    type: alert.alertType,
+    message: alert.message ?? "Alert received",
+    time: formatTimestamp(alert.timestamp),
+    priority: alert.priority
+  }));
+}
+
+function formatTimestamp(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString();
 }

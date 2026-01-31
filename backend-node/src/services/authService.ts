@@ -68,6 +68,31 @@ export function getProfile(touristId: string) {
   return tourists.find((t) => t.id === touristId) ?? null;
 }
 
+export function updateProfile(touristId: string, payload: Record<string, unknown>) {
+  const tourist = tourists.find((t) => t.id === touristId);
+  if (!tourist) {
+    return null;
+  }
+
+  const email = payload.email as string | undefined;
+  if (email && tourists.some((t) => t.email === email && t.id !== touristId)) {
+    throw new Error("Email already registered");
+  }
+
+  tourist.name = (payload.name as string | undefined) ?? tourist.name;
+  tourist.email = email ?? tourist.email;
+  tourist.phone = (payload.phone as string | undefined) ?? tourist.phone;
+  tourist.passportNumber = (payload.passportNumber as string | undefined) ?? tourist.passportNumber;
+  tourist.dateOfBirth = (payload.dateOfBirth as string | undefined) ?? tourist.dateOfBirth;
+  tourist.address = (payload.address as string | undefined) ?? tourist.address;
+  tourist.gender = (payload.gender as string | undefined) ?? tourist.gender;
+  tourist.nationality = (payload.nationality as string | undefined) ?? tourist.nationality;
+  tourist.emergencyContact = (payload.emergencyContact as string | undefined) ?? tourist.emergencyContact;
+
+  saveStore();
+  return tourist;
+}
+
 export function verifyIdHash(idHash: string) {
   const tourist = tourists.find((t) => t.idHash === idHash);
   if (!tourist) {

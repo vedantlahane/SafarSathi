@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { generateAdminToken, validateAdminLogin } from "../services/adminService.js";
-import { getActiveAlerts, updateAlertStatus } from "../services/AlertService.js";
+import { getActiveAlerts, getAllAlerts, updateAlertStatus } from "../services/AlertService.js";
 import { listTourists, verifyIdHash } from "../services/authService.js";
 import { verifyIDProof } from "../services/BlockchainService.js";
 
@@ -57,6 +57,10 @@ export function verifyId(req: Request, res: Response) {
 
 export function getAlerts(_req: Request, res: Response) {
   res.json(getActiveAlerts());
+}
+
+export function getAlertHistory(_req: Request, res: Response) {
+  res.json(getAllAlerts());
 }
 
 export function updateAlert(req: Request, res: Response) {
