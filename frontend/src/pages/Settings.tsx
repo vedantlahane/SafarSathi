@@ -126,10 +126,18 @@ const Settings = () => {
     };
 
     return (
-        <div className="space-y-3 text-[13px]">
-            <Card>
+        <div className="space-y-4 text-[13px]">
+            <Card className="rounded-2xl border-none bg-gradient-to-br from-slate-900 to-slate-700 text-white">
+                <CardContent className="p-5">
+                    <div className="text-[11px] text-white/70">SafarSathi</div>
+                    <div className="text-lg font-semibold">Account & Preferences</div>
+                    <div className="mt-2 text-[12px] text-white/70">Manage your profile, safety tools, and admin portal access.</div>
+                </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-none bg-white shadow-sm">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Settings</CardTitle>
+                    <CardTitle className="text-sm">Quick Tools</CardTitle>
                     <CardDescription className="text-[12px]">Lightweight controls for the prototype.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 text-[12px] text-muted-foreground">
@@ -149,21 +157,21 @@ const Settings = () => {
                     </Button>
                 </CardContent>
             </Card>
-            <Card>
+
+            <Card className="rounded-2xl border-none bg-white shadow-sm">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Account</CardTitle>
                     <CardDescription className="text-[12px]">Sign in or create your tourist profile.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-[12px] text-muted-foreground">
                     {session && (
-                        <div className="space-y-2">
-                            <p>
-                                Signed in as <span className="font-semibold text-foreground">{session.name ?? session.email}</span>
-                            </p>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <div className="text-[11px] text-slate-500">Signed in</div>
+                            <div className="text-[13px] font-semibold text-slate-900">{session.name ?? session.email}</div>
                             <Button
                                 size="sm"
                                 variant="secondary"
-                                className="text-[12px]"
+                                className="mt-3 text-[12px]"
                                 onClick={() => clearSession()}
                             >
                                 Sign out
@@ -178,7 +186,7 @@ const Settings = () => {
                                 <input
                                     value={profileName}
                                     onChange={(e) => setProfileName(e.target.value)}
-                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                     placeholder={session.name ?? "Your name"}
                                 />
                             </div>
@@ -187,7 +195,7 @@ const Settings = () => {
                                 <input
                                     value={profilePhone}
                                     onChange={(e) => setProfilePhone(e.target.value)}
-                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                     placeholder="+91..."
                                 />
                             </div>
@@ -196,7 +204,7 @@ const Settings = () => {
                                 <input
                                     value={profileAddress}
                                     onChange={(e) => setProfileAddress(e.target.value)}
-                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                     placeholder="Current address"
                                 />
                             </div>
@@ -206,7 +214,7 @@ const Settings = () => {
                                     <input
                                         value={profileNationality}
                                         onChange={(e) => setProfileNationality(e.target.value)}
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="Indian"
                                     />
                                 </div>
@@ -215,7 +223,7 @@ const Settings = () => {
                                     <input
                                         value={profileGender}
                                         onChange={(e) => setProfileGender(e.target.value)}
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="Male"
                                     />
                                 </div>
@@ -235,7 +243,7 @@ const Settings = () => {
                                         value={loginEmail}
                                         onChange={(e) => setLoginEmail(e.target.value)}
                                         type="email"
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="you@example.com"
                                     />
                                 </div>
@@ -245,7 +253,7 @@ const Settings = () => {
                                         value={loginPassword}
                                         onChange={(e) => setLoginPassword(e.target.value)}
                                         type="password"
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -262,7 +270,7 @@ const Settings = () => {
                                     <input
                                         value={registerName}
                                         onChange={(e) => setRegisterName(e.target.value)}
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="Tourist name"
                                     />
                                 </div>
@@ -272,7 +280,7 @@ const Settings = () => {
                                         value={registerEmail}
                                         onChange={(e) => setRegisterEmail(e.target.value)}
                                         type="email"
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="you@example.com"
                                     />
                                 </div>
@@ -282,7 +290,7 @@ const Settings = () => {
                                         <input
                                             value={registerPhone}
                                             onChange={(e) => setRegisterPhone(e.target.value)}
-                                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                             placeholder="+91..."
                                         />
                                     </div>
@@ -291,7 +299,7 @@ const Settings = () => {
                                         <input
                                             value={registerPassport}
                                             onChange={(e) => setRegisterPassport(e.target.value)}
-                                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                             placeholder="P123456"
                                         />
                                     </div>
@@ -302,7 +310,7 @@ const Settings = () => {
                                         value={registerPassword}
                                         onChange={(e) => setRegisterPassword(e.target.value)}
                                         type="password"
-                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-[12px]"
+                                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-[12px]"
                                         placeholder="Create a password"
                                     />
                                 </div>

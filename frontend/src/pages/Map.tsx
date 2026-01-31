@@ -259,7 +259,21 @@ const Map = () => {
 
     return (
         <div className="flex flex-col flex-1 w-full gap-4 min-h-0">
-            <Card className="overflow-hidden border bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-xl">
+            <div className="grid grid-cols-2 gap-3">
+                <Card className="rounded-2xl border-none bg-white shadow-sm">
+                    <CardContent className="p-4">
+                        <div className="text-[11px] text-muted-foreground">Active zones</div>
+                        <div className="text-xl font-semibold text-slate-900">{zones.length}</div>
+                    </CardContent>
+                </Card>
+                <Card className="rounded-2xl border-none bg-white shadow-sm">
+                    <CardContent className="p-4">
+                        <div className="text-[11px] text-muted-foreground">Police units</div>
+                        <div className="text-xl font-semibold text-slate-900">{stations.length}</div>
+                    </CardContent>
+                </Card>
+            </div>
+            <Card className="overflow-hidden rounded-2xl border bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-xl">
                 <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-sm">
                         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -275,7 +289,7 @@ const Map = () => {
                         <Button
                             size="sm"
                             variant={riskFilter === "all" ? "default" : "secondary"}
-                            className="h-7 px-3 text-[11px]"
+                            className="h-7 rounded-full px-3 text-[11px]"
                             onClick={() => setRiskFilter("all")}
                         >
                             All Zones
@@ -283,7 +297,7 @@ const Map = () => {
                         <Button
                             size="sm"
                             variant={riskFilter === "high" ? "default" : "secondary"}
-                            className="h-7 px-3 text-[11px]"
+                            className="h-7 rounded-full px-3 text-[11px]"
                             onClick={() => setRiskFilter("high")}
                         >
                             High
@@ -291,7 +305,7 @@ const Map = () => {
                         <Button
                             size="sm"
                             variant={riskFilter === "medium" ? "default" : "secondary"}
-                            className="h-7 px-3 text-[11px]"
+                            className="h-7 rounded-full px-3 text-[11px]"
                             onClick={() => setRiskFilter("medium")}
                         >
                             Medium
@@ -299,7 +313,7 @@ const Map = () => {
                         <Button
                             size="sm"
                             variant={riskFilter === "low" ? "default" : "secondary"}
-                            className="h-7 px-3 text-[11px]"
+                            className="h-7 rounded-full px-3 text-[11px]"
                             onClick={() => setRiskFilter("low")}
                         >
                             Low
@@ -307,7 +321,7 @@ const Map = () => {
                         <Button
                             size="sm"
                             variant={policeFilter === "available" ? "default" : "secondary"}
-                            className="h-7 px-3 text-[11px]"
+                            className="h-7 rounded-full px-3 text-[11px]"
                             onClick={() => setPoliceFilter(policeFilter === "available" ? "all" : "available")}
                         >
                             {policeFilter === "available" ? "All Police" : "Available Only"}
