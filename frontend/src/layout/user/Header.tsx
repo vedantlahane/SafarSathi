@@ -1,7 +1,9 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useState } from "react";
+import { useSession } from "@/lib/session";
+
 export default () => {
-  const [name, setName] = useState("User");
+  const session = useSession();
+  const name = session?.name ?? "User";
   return (
     <header className="hidden md:flex sticky top-0 z-20 items-center border-b border-gray-500 pb-4">
       <div className="flex items-center gap-3">

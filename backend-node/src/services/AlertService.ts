@@ -25,6 +25,10 @@ export function getActiveAlerts() {
   return alerts.filter((alert) => alert.status !== RESOLVED_STATUS);
 }
 
+export function getAllAlerts() {
+  return [...alerts].sort((a, b) => b.createdTime.localeCompare(a.createdTime));
+}
+
 export function getRecentAlerts(limit: number) {
   const sorted = [...alerts].sort((a, b) => b.createdTime.localeCompare(a.createdTime));
   if (limit <= 0 || sorted.length <= limit) {

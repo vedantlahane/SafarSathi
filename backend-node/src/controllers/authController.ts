@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import type { Tourist } from "../models/Tourist.js";
-import { getProfile, login as issueLoginToken, registerTourist, validateTouristLoginByEmail } from "../services/authService.js";
+import {
+  getProfile,
+  login as issueLoginToken,
+  registerTourist,
+  updateProfile,
+  validateTouristLoginByEmail
+} from "../services/authService.js";
 
 export function register(req: Request, res: Response) {
   const payload = req.body as Record<string, unknown>;
@@ -74,6 +80,22 @@ export function profile(req: Request, res: Response) {
   return res.json(buildUserResponse(profileData));
 }
 
+export function updateProfileDetails(req: Request, res: Response) {
+  const touristId = normalizeParam(req.params.touristId);
+  if (!touristId || !isValidUuid(touristId)) {
+    return res.status(400).json({ message: "Invalid tourist ID format." });
+  }
+  try {
+    const updated = updateProfile(touristId, req.body as Record<string, unknown>);
+    if (!updated) {
+      return res.status(404).json({ message: "Tourist not found." });
+    }
+    return res.json(buildUserResponse(updated));
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
+}
+
 function buildUserResponse(tourist: {
   id: string;
   name: string;
@@ -88,6 +110,8 @@ function buildUserResponse(tourist: {
   currentLat?: number;
   currentLng?: number;
   lastSeen?: string;
+  idHash?: string;
+  idExpiry?: string;
 }) {
   return {
     id: tourist.id,
@@ -102,7 +126,9 @@ function buildUserResponse(tourist: {
     emergencyContact: tourist.emergencyContact,
     currentLat: tourist.currentLat,
     currentLng: tourist.currentLng,
-    lastSeen: tourist.lastSeen
+    lastSeen: tourist.lastSeen,
+    idHash: tourist.idHash,
+    idExpiry: tourist.idExpiry
   };
 }
 
