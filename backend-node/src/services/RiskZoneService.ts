@@ -1,5 +1,5 @@
 import type { RiskZone } from "../models/RiskZone.js";
-import { riskZones, nextRiskZoneId } from "./dataStore.js";
+import { riskZones, nextRiskZoneId, saveStore } from "./dataStore.js";
 
 export function listRiskZones() {
   return riskZones;
@@ -20,6 +20,7 @@ export function createRiskZone(payload: Omit<RiskZone, "id" | "createdAt" | "upd
     ...payload
   };
   riskZones.push(zone);
+  saveStore();
   return zone;
 }
 
@@ -30,6 +31,7 @@ export function updateRiskZone(id: number, payload: Partial<RiskZone>) {
   }
   Object.assign(zone, payload);
   zone.updatedAt = new Date().toISOString();
+  saveStore();
   return zone;
 }
 
@@ -40,6 +42,7 @@ export function toggleZoneStatus(id: number, active: boolean) {
   }
   zone.active = active;
   zone.updatedAt = new Date().toISOString();
+  saveStore();
   return zone;
 }
 
@@ -49,5 +52,6 @@ export function deleteRiskZone(id: number) {
     return false;
   }
   riskZones.splice(index, 1);
+  saveStore();
   return true;
 }

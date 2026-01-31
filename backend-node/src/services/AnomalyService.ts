@@ -1,7 +1,7 @@
 import type { Tourist } from "../models/Tourist.js";
 import type { RiskZone } from "../models/RiskZone.js";
 import { riskZones } from "./dataStore.js";
-import { createAlert } from "./alertService.js";
+import { createAlert } from "./AlertService.js";
 import { calculateDeviation, isPointWithinRadius } from "../utils/geoFence.js";
 
 const INACTIVITY_THRESHOLD_MINUTES = 30;

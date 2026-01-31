@@ -7,6 +7,7 @@ import { corsOptions } from "./config/cors.js";
 import routes from "./routes/index.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { registerWebSocketServer } from "./services/websocketHub.js";
 
 const app = express();
 
@@ -17,14 +18,8 @@ app.use(routes);
 app.use(errorHandler);
 
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server, path: "/ws" });
-
-wss.on("connection", (socket) => {
-  socket.send(JSON.stringify({ message: "Connected to SafarSathi WS" }));
-  socket.on("message", (data) => {
-    socket.send(JSON.stringify({ echo: data.toString() }));
-  });
-});
+const wss = new WebSocketServer({ server, path: "/ws-connect" });
+registerWebSocketServer(wss);
 
 server.listen(env.port, () => {
   // eslint-disable-next-line no-console

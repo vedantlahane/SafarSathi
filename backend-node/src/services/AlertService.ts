@@ -1,5 +1,5 @@
 import type { Alert } from "../models/Alert.js";
-import { alerts, nextAlertId } from "./dataStore.js";
+import { alerts, nextAlertId, saveStore } from "./dataStore.js";
 import { broadcastAlert } from "./websocketHub.js";
 
 const RESOLVED_STATUS = "RESOLVED";
@@ -15,6 +15,7 @@ export function createAlert(alert: Omit<Alert, "id" | "createdTime"> & Partial<P
   };
   alerts.push(saved);
   broadcastAlert(saved);
+  saveStore();
   return saved;
 }
 
@@ -54,5 +55,6 @@ export function updateAlertStatus(alertId: number, newStatus: string) {
   }
   alert.status = newStatus;
   broadcastAlert(alert);
+  saveStore();
   return alert;
 }

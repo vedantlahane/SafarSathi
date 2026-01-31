@@ -1,5 +1,5 @@
 import type { PoliceDepartment } from "../models/PoliceDepartment.js";
-import { policeDepartments } from "./dataStore.js";
+import { policeDepartments, saveStore } from "./dataStore.js";
 import { randomUUID } from "crypto";
 import { sha256 } from "../utils/hash.js";
 
@@ -10,6 +10,7 @@ export function createPoliceDepartment(payload: Omit<PoliceDepartment, "id">) {
     passwordHash: sha256(payload.passwordHash)
   };
   policeDepartments.push(dept);
+  saveStore();
   return dept;
 }
 
@@ -36,6 +37,7 @@ export function updatePoliceDepartment(id: string, payload: Partial<PoliceDepart
   dept.state = payload.state ?? dept.state;
   dept.contactNumber = payload.contactNumber ?? dept.contactNumber;
   dept.isActive = payload.isActive ?? dept.isActive;
+  saveStore();
   return dept;
 }
 
@@ -45,5 +47,6 @@ export function deletePoliceDepartment(id: string) {
     return false;
   }
   policeDepartments.splice(index, 1);
+  saveStore();
   return true;
 }

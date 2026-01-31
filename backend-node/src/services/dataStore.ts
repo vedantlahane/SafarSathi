@@ -5,13 +5,31 @@ import type { RiskZone } from "../models/RiskZone.js";
 import type { Tourist } from "../models/Tourist.js";
 import { randomUUID } from "crypto";
 import { sha256 } from "../utils/hash.js";
+import fs from "fs";
+import path from "path";
+
+type PersistedStore = {
+	tourists: Tourist[];
+	riskZones: RiskZone[];
+	policeDepartments: PoliceDepartment[];
+	alerts: Alert[];
+	blockchainLogs: BlockchainLog[];
+	counters: {
+		alertId: number;
+		riskZoneId: number;
+		blockchainLogId: number;
+	};
+};
+
+const dataDir = path.resolve(process.cwd(), "data");
+const dataFile = path.join(dataDir, "store.json");
 
 const now = new Date();
 const nowIso = now.toISOString();
 const idExpiry = new Date(now.getTime());
 idExpiry.setFullYear(idExpiry.getFullYear() + 1);
 
-export const tourists: Tourist[] = [
+const seedTourists: Tourist[] = [
 	{
 		id: "ca4b21f2-ce17-49ef-a829-57d063d20163",
 		name: "Aarav Sharma",
@@ -33,7 +51,7 @@ export const tourists: Tourist[] = [
 	}
 ];
 
-export const riskZones: RiskZone[] = [
+const seedRiskZones: RiskZone[] = [
 	{
 		id: 1,
 		name: "Kamakhya Hill Restricted Belt",
@@ -60,7 +78,7 @@ export const riskZones: RiskZone[] = [
 	}
 ];
 
-export const policeDepartments: PoliceDepartment[] = [
+const seedPoliceDepartments: PoliceDepartment[] = [
 	{
 		id: randomUUID(),
 		name: "SafarSathi Control Center",
@@ -105,21 +123,92 @@ export const policeDepartments: PoliceDepartment[] = [
 	}
 ];
 
+const seedAlerts: Alert[] = [];
+const seedBlockchainLogs: BlockchainLog[] = [];
+
+export const tourists: Tourist[] = [];
+export const riskZones: RiskZone[] = [];
+export const policeDepartments: PoliceDepartment[] = [];
 export const alerts: Alert[] = [];
 export const blockchainLogs: BlockchainLog[] = [];
 
 let alertIdCounter = 1;
-let riskZoneIdCounter = Math.max(0, ...riskZones.map((zone) => zone.id)) + 1;
+let riskZoneIdCounter = Math.max(0, ...seedRiskZones.map((zone) => zone.id)) + 1;
 let blockchainLogIdCounter = 1;
 
+initializeStore();
+
 export function nextAlertId() {
-	return alertIdCounter++;
+	const next = alertIdCounter++;
+	saveStore();
+	return next;
 }
 
 export function nextRiskZoneId() {
-	return riskZoneIdCounter++;
+	const next = riskZoneIdCounter++;
+	saveStore();
+	return next;
 }
 
 export function nextBlockchainLogId() {
-	return blockchainLogIdCounter++;
+	const next = blockchainLogIdCounter++;
+	saveStore();
+	return next;
+}
+
+export function saveStore() {
+	const payload: PersistedStore = {
+		tourists,
+		riskZones,
+		policeDepartments,
+		alerts,
+		blockchainLogs,
+		counters: {
+			alertId: alertIdCounter,
+			riskZoneId: riskZoneIdCounter,
+			blockchainLogId: blockchainLogIdCounter
+		}
+	};
+	if (!fs.existsSync(dataDir)) {
+		fs.mkdirSync(dataDir, { recursive: true });
+	}
+	fs.writeFileSync(dataFile, JSON.stringify(payload, null, 2), "utf8");
+}
+
+function initializeStore() {
+	const persisted = loadPersistedStore();
+	if (persisted) {
+		tourists.push(...persisted.tourists);
+		riskZones.push(...persisted.riskZones);
+		policeDepartments.push(...persisted.policeDepartments);
+		alerts.push(...persisted.alerts);
+		blockchainLogs.push(...persisted.blockchainLogs);
+		alertIdCounter = persisted.counters.alertId;
+		riskZoneIdCounter = persisted.counters.riskZoneId;
+		blockchainLogIdCounter = persisted.counters.blockchainLogId;
+		return;
+	}
+
+	tourists.push(...seedTourists);
+	riskZones.push(...seedRiskZones);
+	policeDepartments.push(...seedPoliceDepartments);
+	alerts.push(...seedAlerts);
+	blockchainLogs.push(...seedBlockchainLogs);
+	saveStore();
+}
+
+function loadPersistedStore(): PersistedStore | null {
+	if (!fs.existsSync(dataFile)) {
+		return null;
+	}
+	try {
+		const raw = fs.readFileSync(dataFile, "utf8");
+		const parsed = JSON.parse(raw) as PersistedStore;
+		if (!parsed || !parsed.tourists || !parsed.riskZones) {
+			return null;
+		}
+		return parsed;
+	} catch {
+		return null;
+	}
 }

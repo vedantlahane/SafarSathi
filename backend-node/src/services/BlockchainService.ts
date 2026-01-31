@@ -1,5 +1,5 @@
 import type { BlockchainLog } from "../models/BlockchainLog.js";
-import { blockchainLogs, nextBlockchainLogId } from "./dataStore.js";
+import { blockchainLogs, nextBlockchainLogId, saveStore } from "./dataStore.js";
 import { randomUUID } from "crypto";
 
 const MOCK_TX_PREFIX = "0xHACK_SAT_";
@@ -15,6 +15,7 @@ export function issueDigitalID(touristId: string, idHash: string) {
     timestamp: new Date().toISOString()
   };
   blockchainLogs.push(log);
+  saveStore();
   return log;
 }
 

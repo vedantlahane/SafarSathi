@@ -4,31 +4,47 @@ import {
   deleteRiskZone,
   listActiveRiskZones,
   listRiskZones,
+  toggleZoneStatus,
   updateRiskZone
 } from "../services/RiskZoneService.js";
 
 export function listZones(_req: Request, res: Response) {
-  res.json({ success: true, data: listRiskZones(), timestamp: new Date().toISOString() });
+  res.json(listRiskZones());
 }
 
 export function listActiveZones(_req: Request, res: Response) {
-  res.json({ success: true, data: listActiveRiskZones(), timestamp: new Date().toISOString() });
+  res.json(listActiveRiskZones());
 }
 
 export function createZone(req: Request, res: Response) {
   const zone = createRiskZone(req.body);
-  res.status(201).json({ success: true, data: zone, timestamp: new Date().toISOString() });
+  res.status(201).json(zone);
 }
 
 export function updateZone(req: Request, res: Response) {
-  const zone = updateRiskZone(req.params.zoneId, req.body);
+  const zoneId = Number(req.params.zoneId);
+  const zone = updateRiskZone(zoneId, req.body);
   if (!zone) {
-    return res.status(404).json({ success: false, error: "Not found", timestamp: new Date().toISOString() });
+    return res.status(404).json({ message: "Not found" });
   }
-  return res.json({ success: true, data: zone, timestamp: new Date().toISOString() });
+  return res.json(zone);
 }
 
 export function deleteZone(req: Request, res: Response) {
-  const ok = deleteRiskZone(req.params.zoneId);
-  return res.status(ok ? 200 : 404).json({ success: ok, timestamp: new Date().toISOString() });
+  const zoneId = Number(req.params.zoneId);
+  const ok = deleteRiskZone(zoneId);
+  if (!ok) {
+    return res.status(404).json({ message: "Not found" });
+  }
+  return res.status(204).send();
+}
+
+export function toggleZone(req: Request, res: Response) {
+  const zoneId = Number(req.params.zoneId);
+  const active = String(req.query.active ?? "true") === "true";
+  const zone = toggleZoneStatus(zoneId, active);
+  if (!zone) {
+    return res.status(404).json({ message: "Not found" });
+  }
+  return res.json(zone);
 }

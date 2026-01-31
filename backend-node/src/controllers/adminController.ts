@@ -1,38 +1,76 @@
 import type { Request, Response } from "express";
-import {
-  listAlerts,
-  listTourists,
-  loginAdmin,
-  updateAlertStatus,
-  verifyTouristId
-} from "../services/adminService.js";
+import { generateAdminToken, validateAdminLogin } from "../services/adminService.js";
+import { getActiveAlerts, updateAlertStatus } from "../services/AlertService.js";
+import { listTourists, verifyIdHash } from "../services/authService.js";
+import { verifyIDProof } from "../services/BlockchainService.js";
 
 export function adminLogin(req: Request, res: Response) {
-  const { email } = req.body as { email?: string };
-  const result = email ? loginAdmin(email) : { ok: false, message: "Email required" };
-  res.status(result.ok ? 200 : 400).json({ success: result.ok, data: result, timestamp: new Date().toISOString() });
+  const { email, password } = req.body as { email?: string; password?: string };
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: "Email and password are required" });
+  }
+  try {
+    const admin = validateAdminLogin(email, password);
+    if (!admin) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+    const token = generateAdminToken(admin);
+    return res.json({
+      success: true,
+      message: "Login successful",
+      token,
+      admin: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        departmentCode: admin.departmentCode,
+        city: admin.city,
+        district: admin.district,
+        state: admin.state
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: `Login failed: ${(error as Error).message}` });
+  }
 }
 
 export function verifyId(req: Request, res: Response) {
-  const idNumber = String(req.query.idNumber ?? "");
-  const result = verifyTouristId(idNumber);
-  res.json({ success: true, data: result, timestamp: new Date().toISOString() });
+  const hash = String(req.query.hash ?? "");
+  if (!hash) {
+    return res.status(400).json({ message: "hash is required" });
+  }
+  try {
+    const tourist = verifyIdHash(hash);
+    const isProofValid = verifyIDProof(hash);
+    const passportPartial = tourist.passportNumber ? `${tourist.passportNumber.slice(0, 2)}****` : "";
+    return res.json({
+      valid: isProofValid,
+      name: tourist.name,
+      passport_partial: passportPartial,
+      id_expiry: tourist.idExpiry,
+      blockchain_status: isProofValid ? "VERIFIED ON IMMUTABLE LOG" : "PROOF FAILED"
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: (error as Error).message });
+  }
 }
 
 export function getAlerts(_req: Request, res: Response) {
-  res.json({ success: true, data: listAlerts(), timestamp: new Date().toISOString() });
+  res.json(getActiveAlerts());
 }
 
 export function updateAlert(req: Request, res: Response) {
   const { alertId } = req.params;
-  const { status } = req.body as { status?: "open" | "acknowledged" | "resolved" };
+  const status =
+    (req.query.status as string | undefined) ??
+    (req.body as { status?: string }).status;
   if (!status) {
-    return res.status(400).json({ success: false, error: "status required", timestamp: new Date().toISOString() });
+    return res.status(400).json({ message: "status required" });
   }
-  const result = updateAlertStatus(alertId, status);
-  return res.status(result.ok ? 200 : 404).json({ success: result.ok, data: result, error: result.ok ? undefined : result.message, timestamp: new Date().toISOString() });
+  const updated = updateAlertStatus(Number(alertId), status.toUpperCase());
+  return res.json(updated);
 }
 
 export function getTourists(_req: Request, res: Response) {
-  res.json({ success: true, data: listTourists(), timestamp: new Date().toISOString() });
+  res.json(listTourists());
 }
