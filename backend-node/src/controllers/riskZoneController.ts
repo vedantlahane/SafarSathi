@@ -8,41 +8,41 @@ import {
   updateRiskZone
 } from "../services/RiskZoneService.js";
 
-export function listZones(_req: Request, res: Response) {
-  res.json(listRiskZones());
+export async function listZones(_req: Request, res: Response) {
+  res.json(await listRiskZones());
 }
 
-export function listActiveZones(_req: Request, res: Response) {
-  res.json(listActiveRiskZones());
+export async function listActiveZones(_req: Request, res: Response) {
+  res.json(await listActiveRiskZones());
 }
 
-export function createZone(req: Request, res: Response) {
-  const zone = createRiskZone(req.body);
+export async function createZone(req: Request, res: Response) {
+  const zone = await createRiskZone(req.body);
   res.status(201).json(zone);
 }
 
-export function updateZone(req: Request, res: Response) {
+export async function updateZone(req: Request, res: Response) {
   const zoneId = Number(req.params.zoneId);
-  const zone = updateRiskZone(zoneId, req.body);
+  const zone = await updateRiskZone(zoneId, req.body);
   if (!zone) {
     return res.status(404).json({ message: "Not found" });
   }
   return res.json(zone);
 }
 
-export function deleteZone(req: Request, res: Response) {
+export async function deleteZone(req: Request, res: Response) {
   const zoneId = Number(req.params.zoneId);
-  const ok = deleteRiskZone(zoneId);
+  const ok = await deleteRiskZone(zoneId);
   if (!ok) {
     return res.status(404).json({ message: "Not found" });
   }
   return res.status(204).send();
 }
 
-export function toggleZone(req: Request, res: Response) {
+export async function toggleZone(req: Request, res: Response) {
   const zoneId = Number(req.params.zoneId);
   const active = String(req.query.active ?? "true") === "true";
-  const zone = toggleZoneStatus(zoneId, active);
+  const zone = await toggleZoneStatus(zoneId, active);
   if (!zone) {
     return res.status(404).json({ message: "Not found" });
   }

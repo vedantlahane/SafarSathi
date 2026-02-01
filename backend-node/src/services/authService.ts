@@ -1,19 +1,40 @@
-import type { Tourist } from "../models/Tourist.js";
-import { tourists, saveStore } from "./dataStore.js";
 import { sha256 } from "../utils/hash.js";
 import { issueDigitalID } from "./BlockchainService.js";
 import { randomUUID } from "crypto";
 import { processLocation } from "./AnomalyService.js";
+import {
+  getAllTourists,
+  getTouristById,
+  getTouristByEmail,
+  createTourist,
+  updateTourist,
+  type ITourist,
+} from "./mongoStore.js";
+import { TouristModel } from "../schemas/index.js";
 
-type TouristRegistration = Omit<Tourist, "id" | "idHash" | "idExpiry" | "lastSeen" | "safetyScore">;
+type TouristRegistration = {
+  name: string;
+  email: string;
+  phone: string;
+  passportNumber: string;
+  dateOfBirth: string;
+  address: string;
+  gender: string;
+  nationality: string;
+  emergencyContact: string;
+  passwordHash: string; // Actually raw password from frontend
+  currentLat?: number;
+  currentLng?: number;
+};
 
-export function registerTourist(
+export async function registerTourist(
   payload: TouristRegistration
-): { ok: true; tourist: Tourist } | { ok: false; message: string } {
-  const existing = tourists.find((t) => t.email === payload.email);
+): Promise<{ ok: true; tourist: ITourist } | { ok: false; message: string }> {
+  const existing = await getTouristByEmail(payload.email);
   if (existing) {
     return { ok: false, message: "Email already registered" };
   }
+
   const rawPassword = payload.passwordHash;
   const hashedPassword = sha256(rawPassword);
   const idHashInput = `${payload.passportNumber}${payload.phone}${new Date().toISOString()}`;
@@ -23,8 +44,8 @@ export function registerTourist(
   const expiry = new Date(now.getTime());
   expiry.setFullYear(expiry.getFullYear() + 1);
 
-  const tourist: Tourist = {
-    id: randomUUID(),
+  const tourist = await createTourist({
+    _id: randomUUID(),
     name: payload.name,
     email: payload.email,
     phone: payload.phone,
@@ -40,16 +61,15 @@ export function registerTourist(
     lastSeen: now.toISOString(),
     safetyScore: 100,
     currentLat: payload.currentLat,
-    currentLng: payload.currentLng
-  };
-  tourists.push(tourist);
-  issueDigitalID(tourist.id, tourist.idHash);
-  saveStore();
+    currentLng: payload.currentLng,
+  });
+
+  await issueDigitalID(tourist._id, tourist.idHash);
   return { ok: true, tourist };
 }
 
-export function validateTouristLoginByEmail(email: string, rawPassword: string) {
-  const tourist = tourists.find((t) => t.email === email);
+export async function validateTouristLoginByEmail(email: string, rawPassword: string) {
+  const tourist = await getTouristByEmail(email);
   if (!tourist) {
     return null;
   }
@@ -64,56 +84,65 @@ export function login(phone: string) {
   return `MOCK_JWT_TOKEN_${sha256(phone).substring(0, 10)}`;
 }
 
-export function getProfile(touristId: string) {
-  return tourists.find((t) => t.id === touristId) ?? null;
+export async function getProfile(touristId: string) {
+  return getTouristById(touristId);
 }
 
-export function updateProfile(touristId: string, payload: Record<string, unknown>) {
-  const tourist = tourists.find((t) => t.id === touristId);
+export async function updateProfile(touristId: string, payload: Record<string, unknown>) {
+  const tourist = await getTouristById(touristId);
   if (!tourist) {
     return null;
   }
 
   const email = payload.email as string | undefined;
-  if (email && tourists.some((t) => t.email === email && t.id !== touristId)) {
-    throw new Error("Email already registered");
+  if (email) {
+    const existingWithEmail = await getTouristByEmail(email);
+    if (existingWithEmail && existingWithEmail._id !== touristId) {
+      throw new Error("Email already registered");
+    }
   }
 
-  tourist.name = (payload.name as string | undefined) ?? tourist.name;
-  tourist.email = email ?? tourist.email;
-  tourist.phone = (payload.phone as string | undefined) ?? tourist.phone;
-  tourist.passportNumber = (payload.passportNumber as string | undefined) ?? tourist.passportNumber;
-  tourist.dateOfBirth = (payload.dateOfBirth as string | undefined) ?? tourist.dateOfBirth;
-  tourist.address = (payload.address as string | undefined) ?? tourist.address;
-  tourist.gender = (payload.gender as string | undefined) ?? tourist.gender;
-  tourist.nationality = (payload.nationality as string | undefined) ?? tourist.nationality;
-  tourist.emergencyContact = (payload.emergencyContact as string | undefined) ?? tourist.emergencyContact;
+  const updates: Partial<ITourist> = {};
+  if (payload.name !== undefined) updates.name = payload.name as string;
+  if (payload.email !== undefined) updates.email = payload.email as string;
+  if (payload.phone !== undefined) updates.phone = payload.phone as string;
+  if (payload.passportNumber !== undefined) updates.passportNumber = payload.passportNumber as string;
+  if (payload.dateOfBirth !== undefined) updates.dateOfBirth = payload.dateOfBirth as string;
+  if (payload.address !== undefined) updates.address = payload.address as string;
+  if (payload.gender !== undefined) updates.gender = payload.gender as string;
+  if (payload.nationality !== undefined) updates.nationality = payload.nationality as string;
+  if (payload.emergencyContact !== undefined) updates.emergencyContact = payload.emergencyContact as string;
 
-  saveStore();
-  return tourist;
+  return updateTourist(touristId, updates);
 }
 
-export function verifyIdHash(idHash: string) {
-  const tourist = tourists.find((t) => t.idHash === idHash);
+export async function verifyIdHash(idHash: string) {
+  const tourist = await TouristModel.findOne({ idHash }).lean();
   if (!tourist) {
     throw new Error("Digital ID not found or invalid.");
   }
   return tourist;
 }
 
-export function updateLocation(touristId: string, lat: number, lng: number, accuracy?: number) {
-  const tourist = tourists.find((t) => t.id === touristId);
+export async function updateLocation(touristId: string, lat: number, lng: number, accuracy?: number) {
+  const tourist = await getTouristById(touristId);
   if (!tourist) {
     throw new Error("Tourist not found.");
   }
-  tourist.currentLat = lat;
-  tourist.currentLng = lng;
-  tourist.lastSeen = new Date().toISOString();
-  processLocation(tourist, accuracy);
-  saveStore();
-  return tourist;
+
+  const updated = await updateTourist(touristId, {
+    currentLat: lat,
+    currentLng: lng,
+    lastSeen: new Date().toISOString(),
+  });
+
+  if (updated) {
+    await processLocation(updated, accuracy);
+  }
+
+  return updated;
 }
 
-export function listTourists() {
-  return tourists;
+export async function listTourists() {
+  return getAllTourists();
 }

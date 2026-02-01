@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { createSOS, recordLocation } from "../services/sosService.js";
 
-export function postLocation(req: Request, res: Response) {
+export async function postLocation(req: Request, res: Response) {
   const touristId = normalizeParam(req.params.touristId);
   if (!touristId) {
     return res.status(400).json({ message: "Invalid tourist ID." });
@@ -11,7 +11,7 @@ export function postLocation(req: Request, res: Response) {
     return res.status(400).json({ message: "lat and lng required" });
   }
   try {
-    recordLocation(touristId, { lat, lng, accuracy });
+    await recordLocation(touristId, { lat, lng, accuracy });
     return res.status(204).send();
   } catch (error) {
     const message = (error as Error).message;
@@ -22,13 +22,13 @@ export function postLocation(req: Request, res: Response) {
   }
 }
 
-export function postSOS(req: Request, res: Response) {
+export async function postSOS(req: Request, res: Response) {
   const touristId = normalizeParam(req.params.touristId);
   if (!touristId) {
     return res.status(400).json({ message: "Invalid tourist ID." });
   }
   const { lat, lng } = req.body as { lat?: number; lng?: number };
-  createSOS(touristId, lat, lng);
+  await createSOS(touristId, lat, lng);
   return res.json({ status: "SOS Alert initiated. Emergency response notified." });
 }
 
