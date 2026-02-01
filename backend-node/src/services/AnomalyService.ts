@@ -1,29 +1,28 @@
-import type { Tourist } from "../models/Tourist.js";
-import type { RiskZone } from "../models/RiskZone.js";
-import { riskZones } from "./dataStore.js";
 import { createAlert } from "./AlertService.js";
 import { calculateDeviation, isPointWithinRadius } from "../utils/geoFence.js";
+import { getActiveRiskZones, updateTourist, type IRiskZone } from "./mongoStore.js";
+import type { ITourist } from "../schemas/index.js";
 
 const INACTIVITY_THRESHOLD_MINUTES = 30;
 const DEVIATION_THRESHOLD_KM = 5.0;
 
 const touristActiveZones = new Map<string, Set<number>>();
 
-export function processLocation(tourist: Tourist, accuracy?: number) {
-  checkInactivity(tourist);
-  checkRouteDeviation(tourist);
-  checkGeoFence(tourist);
+export async function processLocation(tourist: ITourist, accuracy?: number) {
+  await checkInactivity(tourist);
+  await checkRouteDeviation(tourist);
+  await checkGeoFence(tourist);
 }
 
-function checkInactivity(tourist: Tourist) {
+async function checkInactivity(tourist: ITourist) {
   if (!tourist.lastSeen) {
     return;
   }
   const lastSeen = new Date(tourist.lastSeen).getTime();
   const minutesSinceLastSeen = (Date.now() - lastSeen) / 60000;
   if (minutesSinceLastSeen > INACTIVITY_THRESHOLD_MINUTES) {
-    createAlert({
-      touristId: tourist.id,
+    await createAlert({
+      touristId: tourist._id,
       alertType: "INACTIVITY",
       lat: tourist.currentLat,
       lng: tourist.currentLng,
@@ -32,11 +31,11 @@ function checkInactivity(tourist: Tourist) {
   }
 }
 
-function checkRouteDeviation(tourist: Tourist) {
+async function checkRouteDeviation(tourist: ITourist) {
   const deviationKm = calculateDeviation(tourist.currentLat, tourist.currentLng);
   if (deviationKm > DEVIATION_THRESHOLD_KM) {
-    createAlert({
-      touristId: tourist.id,
+    await createAlert({
+      touristId: tourist._id,
       alertType: "DEVIATION",
       lat: tourist.currentLat,
       lng: tourist.currentLng,
@@ -45,33 +44,33 @@ function checkRouteDeviation(tourist: Tourist) {
   }
 }
 
-function checkGeoFence(tourist: Tourist) {
+async function checkGeoFence(tourist: ITourist) {
   const { currentLat: lat, currentLng: lng } = tourist;
   if (typeof lat !== "number" || typeof lng !== "number") {
     return;
   }
 
-  const activeZones = riskZones.filter((zone) => zone.active);
+  const activeZones = await getActiveRiskZones();
   if (activeZones.length === 0) {
-    touristActiveZones.delete(tourist.id);
+    touristActiveZones.delete(tourist._id);
     return;
   }
 
-  const zoneLookup = new Map(activeZones.map((zone) => [zone.id, zone]));
+  const zoneLookup = new Map(activeZones.map((zone) => [zone.zoneId, zone]));
 
   const currentlyInside = new Set<number>(
     activeZones
       .filter((zone) => isPointWithinRadius(lat, lng, zone.centerLat, zone.centerLng, zone.radiusMeters))
-      .map((zone) => zone.id)
+      .map((zone) => zone.zoneId)
   );
 
-  const previous = touristActiveZones.get(tourist.id) ?? new Set<number>();
+  const previous = touristActiveZones.get(tourist._id) ?? new Set<number>();
   const entered = new Set<number>([...currentlyInside].filter((id) => !previous.has(id)));
 
   if (currentlyInside.size > 0) {
-    touristActiveZones.set(tourist.id, currentlyInside);
+    touristActiveZones.set(tourist._id, currentlyInside);
   } else {
-    touristActiveZones.delete(tourist.id);
+    touristActiveZones.delete(tourist._id);
   }
 
   if (entered.size === 0) {
@@ -85,18 +84,19 @@ function checkGeoFence(tourist: Tourist) {
       continue;
     }
     safetyScore = Math.max(0, safetyScore - penaltyFor(zone));
-    createAlert({
-      touristId: tourist.id,
+    await createAlert({
+      touristId: tourist._id,
       alertType: "RISK_ZONE",
       lat,
       lng,
       message: `Tourist entered risk zone '${zone.name}' [${zone.riskLevel}]`
     });
   }
-  tourist.safetyScore = Math.max(0, Math.min(100, safetyScore));
+  // Update the tourist's safety score in DB
+  await updateTourist(tourist._id, { safetyScore: Math.max(0, Math.min(100, safetyScore)) });
 }
 
-function penaltyFor(zone: RiskZone) {
+function penaltyFor(zone: IRiskZone) {
   if (!zone.riskLevel) {
     return 8.0;
   }

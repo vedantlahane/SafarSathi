@@ -1,66 +1,65 @@
-import type { Alert } from "../models/Alert.js";
-import { alerts, nextAlertId, saveStore } from "./dataStore.js";
 import { broadcastAlert } from "./websocketHub.js";
+import {
+  getAllAlerts as getAll,
+  getAlertsByTouristId,
+  getOpenAlerts,
+  getAlertById,
+  createAlert as createAlertDoc,
+  updateAlert as updateAlertDoc,
+  type IAlert,
+} from "./mongoStore.js";
 
-const RESOLVED_STATUS = "RESOLVED";
-
-export function createAlert(
-  alert: Omit<Alert, "id" | "createdTime" | "status"> & Partial<Pick<Alert, "createdTime" | "status">>
+export async function createAlert(
+  alert: Partial<IAlert>
 ) {
-  const createdTime = alert.createdTime ?? new Date().toISOString();
-  const status = alert.status ?? "NEW";
-  const saved: Alert = {
+  const saved = await createAlertDoc({
     ...alert,
-    id: nextAlertId(),
-    createdTime,
-    status
-  };
-  alerts.push(saved);
+    status: alert.status ?? "OPEN",
+  });
   broadcastAlert(saved);
-  saveStore();
   return saved;
 }
 
-export function getActiveAlerts() {
-  return alerts.filter((alert) => alert.status !== RESOLVED_STATUS);
+export async function getActiveAlerts() {
+  return getOpenAlerts();
 }
 
-export function getAllAlerts() {
-  return [...alerts].sort((a, b) => b.createdTime.localeCompare(a.createdTime));
+export async function getAllAlerts() {
+  return getAll();
 }
 
-export function getRecentAlerts(limit: number) {
-  const sorted = [...alerts].sort((a, b) => b.createdTime.localeCompare(a.createdTime));
-  if (limit <= 0 || sorted.length <= limit) {
-    return sorted;
+export async function getRecentAlerts(limit: number) {
+  const all = await getAll();
+  if (limit <= 0 || all.length <= limit) {
+    return all;
   }
-  return sorted.slice(0, limit);
+  return all.slice(0, limit);
 }
 
-export function getAlertsForTourist(touristId: string) {
-  return alerts
-    .filter((alert) => alert.touristId === touristId)
-    .sort((a, b) => b.createdTime.localeCompare(a.createdTime));
+export async function getAlertsForTourist(touristId: string) {
+  return getAlertsByTouristId(touristId);
 }
 
-export function handleSOS(touristId: string, lat?: number, lng?: number) {
+export async function handleSOS(touristId: string, lat?: number, lng?: number) {
   const message = `TOURIST IN IMMEDIATE DANGER. LAST LOC: ${lat}, ${lng}`;
   return createAlert({
     touristId,
-    lat,
-    lng,
+    latitude: lat,
+    longitude: lng,
     alertType: "SOS",
-    message
+    priority: "CRITICAL",
+    message,
   });
 }
 
-export function updateAlertStatus(alertId: number, newStatus: string) {
-  const alert = alerts.find((a) => a.id === alertId);
+export async function updateAlertStatus(alertId: number, newStatus: string) {
+  const alert = await getAlertById(alertId);
   if (!alert) {
     throw new Error(`Alert not found with ID: ${alertId}`);
   }
-  alert.status = newStatus;
-  broadcastAlert(alert);
-  saveStore();
-  return alert;
+  const updated = await updateAlertDoc(alertId, { status: newStatus });
+  if (updated) {
+    broadcastAlert(updated);
+  }
+  return updated;
 }

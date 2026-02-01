@@ -1,14 +1,27 @@
-import type { Alert } from "../models/Alert.js";
-import type { PoliceDepartment } from "../models/PoliceDepartment.js";
-import type { RiskZone } from "../models/RiskZone.js";
-import type { Tourist } from "../models/Tourist.js";
-import { alerts, policeDepartments, riskZones, tourists } from "./dataStore.js";
 import { getRecentLogs } from "./BlockchainService.js";
+import {
+  getAllTourists,
+  getTouristById,
+  getAllAlerts,
+  getAllPoliceDepartments,
+  getActiveRiskZones,
+  getAlertsByTouristId,
+  type ITourist,
+  type IAlert,
+  type IPoliceDepartment,
+  type IRiskZone,
+} from "./mongoStore.js";
 
-export function getAdminDashboardState() {
-  const recentAlerts = getRecentAlerts(50);
-  const touristLookup = new Map(tourists.map((t) => [t.id, t]));
-  const alertsByTourist = new Map<string, Alert[]>();
+export async function getAdminDashboardState() {
+  const [allAlerts, allTourists, allPoliceDepartments] = await Promise.all([
+    getAllAlerts(),
+    getAllTourists(),
+    getAllPoliceDepartments(),
+  ]);
+
+  const recentAlerts = allAlerts.slice(0, 50);
+  const touristLookup = new Map(allTourists.map((t) => [t._id, t]));
+  const alertsByTourist = new Map<string, IAlert[]>();
   for (const alert of recentAlerts) {
     if (!alert.touristId) {
       continue;
@@ -22,8 +35,8 @@ export function getAdminDashboardState() {
     .map((alert) => toAlertView(alert, touristLookup.get(alert.touristId)))
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
-  const touristSummaries = tourists
-    .map((tourist) => toTouristSummary(tourist, alertsByTourist.get(tourist.id) ?? []))
+  const touristSummaries = allTourists
+    .map((tourist) => toTouristSummary(tourist, alertsByTourist.get(tourist._id) ?? []))
     .sort((a, b) => (b.lastPing ?? "").localeCompare(a.lastPing ?? ""));
 
   const stats = {
@@ -33,7 +46,7 @@ export function getAdminDashboardState() {
     totalTourists: touristSummaries.length
   };
 
-  const responseUnits = policeDepartments.map((dept) => toResponseUnit(dept));
+  const responseUnits = allPoliceDepartments.map((dept) => toResponseUnit(dept));
 
   return {
     stats,
@@ -43,22 +56,25 @@ export function getAdminDashboardState() {
   };
 }
 
-export function getTouristDashboard(touristId: string) {
-  const tourist = tourists.find((t) => t.id === touristId) ?? null;
+export async function getTouristDashboard(touristId: string) {
+  const tourist = await getTouristById(touristId);
   if (!tourist) {
     return null;
   }
 
-  const touristAlerts = alerts
-    .filter((alert) => alert.touristId === touristId)
-    .sort((a, b) => b.createdTime.localeCompare(a.createdTime))
-    .map((alert) => toTouristAlert(alert));
+  const [touristAlertsRaw, activeRiskZones, blockchainLogsRaw] = await Promise.all([
+    getAlertsByTouristId(touristId),
+    getActiveRiskZones(),
+    getRecentLogs(touristId, 10),
+  ]);
+
+  const touristAlerts = touristAlertsRaw.map((alert) => toTouristAlert(alert));
 
   const safetyScore = tourist.safetyScore ?? 100;
   const status = deriveTouristStatus(safetyScore, touristAlerts);
 
   const profile = {
-    id: tourist.id,
+    id: tourist._id,
     name: tourist.name,
     email: tourist.email,
     phone: tourist.phone,
@@ -78,15 +94,13 @@ export function getTouristDashboard(touristId: string) {
     lastSeen: tourist.lastSeen ?? null
   };
 
-  const riskZoneViews = riskZones
-    .filter((zone) => zone.active)
-    .map((zone) => toRiskZoneView(zone));
+  const riskZoneViews = activeRiskZones.map((zone) => toRiskZoneView(zone));
 
-  const blockchainLogs = getRecentLogs(touristId, 10).map((log) => ({
-    id: log.id,
+  const blockchainLogs = blockchainLogsRaw.map((log) => ({
+    id: log.logId,
     transactionId: log.transactionId,
     status: log.status,
-    timestamp: log.timestamp
+    timestamp: log.createdAt?.toISOString() ?? new Date().toISOString()
   }));
 
   const openAlerts = touristAlerts.filter((alert) => isAlertActive(alert.status)).length;
@@ -103,33 +117,25 @@ export function getTouristDashboard(touristId: string) {
   };
 }
 
-function getRecentAlerts(limit: number) {
-  const sorted = [...alerts].sort((a, b) => b.createdTime.localeCompare(a.createdTime));
-  if (limit <= 0 || sorted.length <= limit) {
-    return sorted;
-  }
-  return sorted.slice(0, limit);
-}
-
-function toAlertView(alert: Alert, tourist?: Tourist) {
+function toAlertView(alert: IAlert, tourist?: ITourist) {
   const priority = derivePriority(alert);
   const description = alert.message ?? alert.alertType;
   return {
-    id: alert.id,
+    id: alert.alertId,
     touristId: alert.touristId,
     touristName: tourist?.name ?? "Unknown",
     alertType: alert.alertType,
     priority,
     status: alert.status,
     description,
-    timestamp: alert.createdTime,
+    timestamp: alert.createdAt?.toISOString() ?? new Date().toISOString(),
     lat: alert.lat ?? null,
     lng: alert.lng ?? null,
     assignedUnit: null
   };
 }
 
-function toTouristSummary(tourist: Tourist, alertsForTourist: Alert[]) {
+function toTouristSummary(tourist: ITourist, alertsForTourist: IAlert[]) {
   const safetyScore = tourist.safetyScore ?? 100;
   const status = deriveTouristStatus(
     safetyScore,
@@ -137,7 +143,7 @@ function toTouristSummary(tourist: Tourist, alertsForTourist: Alert[]) {
   );
   const lastKnownArea = buildLastKnownArea(tourist.currentLat, tourist.currentLng);
   return {
-    id: tourist.id,
+    id: tourist._id,
     name: tourist.name,
     status,
     safetyScore,
@@ -148,12 +154,12 @@ function toTouristSummary(tourist: Tourist, alertsForTourist: Alert[]) {
   };
 }
 
-function toResponseUnit(dept: PoliceDepartment) {
+function toResponseUnit(dept: IPoliceDepartment) {
   const status = dept.isActive ? "available" : "offline";
   const type = dept.departmentCode?.toUpperCase().includes("CONTROL") ? "Control Center" : "Response Unit";
   const etaMinutes = dept.isActive ? 6 : 15;
   return {
-    id: dept.id,
+    id: dept._id,
     name: dept.name,
     status,
     type,
@@ -167,20 +173,20 @@ function toResponseUnit(dept: PoliceDepartment) {
   };
 }
 
-function toTouristAlert(alert: Alert) {
+function toTouristAlert(alert: IAlert) {
   return {
-    id: alert.id,
+    id: alert.alertId,
     alertType: alert.alertType,
     priority: derivePriority(alert),
     status: alert.status,
     message: alert.message ?? null,
-    timestamp: alert.createdTime
+    timestamp: alert.createdAt?.toISOString() ?? new Date().toISOString()
   };
 }
 
-function toRiskZoneView(zone: RiskZone) {
+function toRiskZoneView(zone: IRiskZone) {
   return {
-    id: zone.id,
+    id: zone.zoneId,
     name: zone.name,
     description: zone.description ?? null,
     centerLat: zone.centerLat,
@@ -188,11 +194,11 @@ function toRiskZoneView(zone: RiskZone) {
     radiusMeters: zone.radiusMeters,
     riskLevel: zone.riskLevel ?? null,
     active: zone.active,
-    updatedAt: zone.updatedAt ?? null
+    updatedAt: zone.updatedAt?.toISOString() ?? null
   };
 }
 
-function deriveTouristStatus(safetyScore: number, alertsList: Array<{ priority: string; status: string }>) {
+function deriveTouristStatus(safetyScore: number, alertsList: Array<{ priority: string; status?: string }>) {
   const hasCriticalAlert = alertsList.some(
     (alert) => isAlertActive(alert.status) && alert.priority.toLowerCase() === "critical"
   );
@@ -206,7 +212,7 @@ function deriveTouristStatus(safetyScore: number, alertsList: Array<{ priority: 
   return "safe";
 }
 
-function derivePriority(alert: Alert) {
+function derivePriority(alert: IAlert) {
   const type = alert.alertType ? alert.alertType.toUpperCase() : "";
   switch (type) {
     case "SOS":

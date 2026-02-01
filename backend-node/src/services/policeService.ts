@@ -1,52 +1,34 @@
-import type { PoliceDepartment } from "../models/PoliceDepartment.js";
-import { policeDepartments, saveStore } from "./dataStore.js";
 import { randomUUID } from "crypto";
 import { sha256 } from "../utils/hash.js";
+import {
+  getAllPoliceDepartments,
+  getPoliceDepartmentById,
+  createPoliceDepartment as createDept,
+  updatePoliceDepartment as updateDept,
+  deletePoliceDepartment as deleteDept,
+  type IPoliceDepartment,
+} from "./mongoStore.js";
 
-export function createPoliceDepartment(payload: Omit<PoliceDepartment, "id">) {
-  const dept: PoliceDepartment = {
+export async function createPoliceDepartment(payload: Partial<IPoliceDepartment> & { passwordHash: string }) {
+  return createDept({
     ...payload,
-    id: randomUUID(),
-    passwordHash: sha256(payload.passwordHash)
-  };
-  policeDepartments.push(dept);
-  saveStore();
-  return dept;
+    _id: randomUUID(),
+    passwordHash: sha256(payload.passwordHash),
+  });
 }
 
-export function listPoliceDepartments() {
-  return policeDepartments;
+export async function listPoliceDepartments() {
+  return getAllPoliceDepartments();
 }
 
-export function getPoliceDepartment(id: string) {
-  return policeDepartments.find((d) => d.id === id) ?? null;
+export async function getPoliceDepartment(id: string) {
+  return getPoliceDepartmentById(id);
 }
 
-export function updatePoliceDepartment(id: string, payload: Partial<PoliceDepartment>) {
-  const dept = policeDepartments.find((d) => d.id === id);
-  if (!dept) {
-    return null;
-  }
-  dept.name = payload.name ?? dept.name;
-  dept.email = payload.email ?? dept.email;
-  dept.departmentCode = payload.departmentCode ?? dept.departmentCode;
-  dept.latitude = payload.latitude ?? dept.latitude;
-  dept.longitude = payload.longitude ?? dept.longitude;
-  dept.city = payload.city ?? dept.city;
-  dept.district = payload.district ?? dept.district;
-  dept.state = payload.state ?? dept.state;
-  dept.contactNumber = payload.contactNumber ?? dept.contactNumber;
-  dept.isActive = payload.isActive ?? dept.isActive;
-  saveStore();
-  return dept;
+export async function updatePoliceDepartment(id: string, payload: Partial<IPoliceDepartment>) {
+  return updateDept(id, payload);
 }
 
-export function deletePoliceDepartment(id: string) {
-  const index = policeDepartments.findIndex((d) => d.id === id);
-  if (index === -1) {
-    return false;
-  }
-  policeDepartments.splice(index, 1);
-  saveStore();
-  return true;
+export async function deletePoliceDepartment(id: string) {
+  return deleteDept(id);
 }

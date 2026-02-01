@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import type { Tourist } from "../models/Tourist.js";
 import {
   getProfile,
   login as issueLoginToken,
@@ -8,7 +7,7 @@ import {
   validateTouristLoginByEmail
 } from "../services/authService.js";
 
-export function register(req: Request, res: Response) {
+export async function register(req: Request, res: Response) {
   const payload = req.body as Record<string, unknown>;
   const name = payload.name as string | undefined;
   const email = payload.email as string | undefined;
@@ -20,7 +19,7 @@ export function register(req: Request, res: Response) {
     return res.status(400).json({ message: "Required fields missing." });
   }
 
-  const result = registerTourist({
+  const result = await registerTourist({
     name,
     email,
     phone,
@@ -33,7 +32,7 @@ export function register(req: Request, res: Response) {
     emergencyContact: payload.emergencyContact as string | undefined,
     currentLat: payload.currentLat as number | undefined,
     currentLng: payload.currentLng as number | undefined
-  } satisfies Omit<Tourist, "id" | "idHash" | "idExpiry" | "lastSeen" | "safetyScore">);
+  });
   if (!result.ok) {
     return res.status(400).json({ message: result.message });
   }
@@ -41,19 +40,19 @@ export function register(req: Request, res: Response) {
   const token = issueLoginToken(result.tourist.phone);
   const user = buildUserResponse(result.tourist);
   return res.status(201).json({
-    touristId: result.tourist.id,
+    touristId: result.tourist._id,
     qr_content: `/api/admin/id/verify?hash=${result.tourist.idHash}`,
     token,
     user
   });
 }
 
-export function login(req: Request, res: Response) {
+export async function login(req: Request, res: Response) {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password || !email.trim() || !password.trim()) {
     return res.status(400).json({ message: "Email and password are required." });
   }
-  const tourist = validateTouristLoginByEmail(email, password);
+  const tourist = await validateTouristLoginByEmail(email, password);
   if (!tourist) {
     return res.status(401).json({ message: "Invalid email or password." });
   }
@@ -61,32 +60,32 @@ export function login(req: Request, res: Response) {
   const token = issueLoginToken(tourist.phone);
   const user = buildUserResponse(tourist);
   return res.json({
-    touristId: tourist.id,
+    touristId: tourist._id,
     qr_content: `/api/admin/id/verify?hash=${tourist.idHash}`,
     token,
     user
   });
 }
 
-export function profile(req: Request, res: Response) {
+export async function profile(req: Request, res: Response) {
   const touristId = normalizeParam(req.params.touristId);
   if (!touristId || !isValidUuid(touristId)) {
     return res.status(400).json({ message: "Invalid tourist ID format." });
   }
-  const profileData = getProfile(touristId);
+  const profileData = await getProfile(touristId);
   if (!profileData) {
     return res.status(404).json({ message: "Tourist not found." });
   }
   return res.json(buildUserResponse(profileData));
 }
 
-export function updateProfileDetails(req: Request, res: Response) {
+export async function updateProfileDetails(req: Request, res: Response) {
   const touristId = normalizeParam(req.params.touristId);
   if (!touristId || !isValidUuid(touristId)) {
     return res.status(400).json({ message: "Invalid tourist ID format." });
   }
   try {
-    const updated = updateProfile(touristId, req.body as Record<string, unknown>);
+    const updated = await updateProfile(touristId, req.body as Record<string, unknown>);
     if (!updated) {
       return res.status(404).json({ message: "Tourist not found." });
     }
@@ -97,7 +96,7 @@ export function updateProfileDetails(req: Request, res: Response) {
 }
 
 function buildUserResponse(tourist: {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   phone: string;
@@ -114,7 +113,7 @@ function buildUserResponse(tourist: {
   idExpiry?: string;
 }) {
   return {
-    id: tourist.id,
+    id: tourist._id,
     name: tourist.name,
     email: tourist.email,
     phone: tourist.phone,

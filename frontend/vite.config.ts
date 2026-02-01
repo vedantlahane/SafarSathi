@@ -18,5 +18,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-
+  server: {
+    // Handle SPA routing - redirect all paths to index.html
+    historyApiFallback: true,
+  },
+  preview: {
+    // Also handle SPA routing in preview mode
+    historyApiFallback: true,
+  },
 })

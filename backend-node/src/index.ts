@@ -8,6 +8,8 @@ import routes from "./routes/index.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { registerWebSocketServer } from "./services/websocketHub.js";
+import { connectDatabase } from "./config/database.js";
+import { seedDatabase } from "./services/mongoStore.js";
 
 const app = express();
 
@@ -21,7 +23,30 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws-connect" });
 registerWebSocketServer(wss);
 
-server.listen(env.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`backend-node listening on port ${env.port}`);
-});
+// Connect to MongoDB and start server
+async function start() {
+  try {
+    const connected = await connectDatabase();
+    
+    if (connected) {
+      await seedDatabase();
+    }
+    
+    server.listen(env.port, "0.0.0.0", () => {
+      // eslint-disable-next-line no-console
+      console.log(`🚀 backend-node listening on http://localhost:${env.port}`);
+    });
+
+    // Keep process alive
+    process.on("SIGINT", () => {
+      console.log("\n👋 Shutting down...");
+      server.close();
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+start().catch(console.error);

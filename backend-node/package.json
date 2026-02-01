@@ -12,6 +12,7 @@
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
+    "mongoose": "^9.1.5",
     "pino": "latest",
     "pino-http": "latest",
     "ws": "latest"

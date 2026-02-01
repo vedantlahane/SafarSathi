@@ -1,57 +1,37 @@
-import type { RiskZone } from "../models/RiskZone.js";
-import { riskZones, nextRiskZoneId, saveStore } from "./dataStore.js";
+import {
+  getAllRiskZones,
+  getActiveRiskZones,
+  getRiskZoneById,
+  createRiskZone as createZone,
+  updateRiskZone as updateZone,
+  deleteRiskZone as deleteZone,
+  type IRiskZone,
+} from "./mongoStore.js";
 
-export function listRiskZones() {
-  return riskZones;
+export async function listRiskZones() {
+  return getAllRiskZones();
 }
 
-export function listActiveRiskZones() {
-  return riskZones.filter((z) => z.active);
+export async function listActiveRiskZones() {
+  return getActiveRiskZones();
 }
 
-export function createRiskZone(payload: Omit<RiskZone, "id" | "createdAt" | "updatedAt">) {
-  const now = new Date().toISOString();
-  const zone: RiskZone = {
-    id: nextRiskZoneId(),
-    createdAt: now,
-    updatedAt: now,
+export async function createRiskZone(payload: Partial<IRiskZone>) {
+  return createZone({
     ...payload,
     riskLevel: payload.riskLevel ?? "MEDIUM",
-    active: payload.active ?? true
-  };
-  riskZones.push(zone);
-  saveStore();
-  return zone;
+    active: payload.active ?? true,
+  });
 }
 
-export function updateRiskZone(id: number, payload: Partial<RiskZone>) {
-  const zone = riskZones.find((z) => z.id === id);
-  if (!zone) {
-    return null;
-  }
-  Object.assign(zone, payload);
-  zone.updatedAt = new Date().toISOString();
-  saveStore();
-  return zone;
+export async function updateRiskZone(id: number, payload: Partial<IRiskZone>) {
+  return updateZone(id, payload);
 }
 
-export function toggleZoneStatus(id: number, active: boolean) {
-  const zone = riskZones.find((z) => z.id === id);
-  if (!zone) {
-    return null;
-  }
-  zone.active = active;
-  zone.updatedAt = new Date().toISOString();
-  saveStore();
-  return zone;
+export async function toggleZoneStatus(id: number, active: boolean) {
+  return updateZone(id, { active });
 }
 
-export function deleteRiskZone(id: number) {
-  const index = riskZones.findIndex((z) => z.id === id);
-  if (index === -1) {
-    return false;
-  }
-  riskZones.splice(index, 1);
-  saveStore();
-  return true;
+export async function deleteRiskZone(id: number) {
+  return deleteZone(id);
 }
