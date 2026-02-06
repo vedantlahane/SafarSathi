@@ -132,7 +132,7 @@ const Identity = () => {
           <div className="absolute inset-0 animate-ping rounded-3xl bg-primary/20" style={{ animationDuration: "3s" }} />
           <div className="absolute inset-2 animate-ping rounded-2xl bg-primary/10" style={{ animationDuration: "2s", animationDelay: "0.5s" }} />
           
-          <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-2xl shadow-blue-500/25">
+          <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-linear-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-2xl shadow-blue-500/25">
             <CreditCard className="h-14 w-14 text-white" />
           </div>
           <div className="absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-lg border">
@@ -217,12 +217,12 @@ const Identity = () => {
       <div ref={cardRef} className="relative">
         <Card className="overflow-hidden border-0 shadow-2xl rounded-3xl">
           {/* Card Front */}
-          <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white min-h-[280px]">
+          <div className="relative bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white min-h-70">
             {/* Holographic Effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 via-transparent to-purple-500/20 opacity-50" />
+            <div className="absolute inset-0 bg-linrear-to-tr from-blue-500/20 via-transparent to-purple-500/20 opacity-50" />
             <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/50 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent" />
             </div>
 
             {/* Pattern */}
@@ -260,8 +260,8 @@ const Identity = () => {
 
               {/* Chip */}
               <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-14 rounded-lg bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 p-0.5">
-                  <div className="h-full w-full rounded-md bg-gradient-to-br from-amber-200 to-amber-400 flex items-center justify-center">
+                <div className="h-10 w-14 rounded-lg bg-linear-to-br from-amber-300 via-amber-400 to-amber-500 p-0.5">
+                  <div className="h-full w-full rounded-md bg-linear-to-br from-amber-200 to-amber-400 flex items-center justify-center">
                     <div className="grid grid-cols-3 gap-0.5">
                       {[...Array(6)].map((_, i) => (
                         <div key={i} className="h-1.5 w-2 bg-amber-600/40 rounded-sm" />
@@ -311,7 +311,7 @@ const Identity = () => {
             </div>
 
             {/* Shine Effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent transform -skew-x-12" />
+            <div className="absolute inset-0 bg-linear-to-tr from-transparent via-white/5 to-transparent transform -skew-x-12" />
           </div>
         </Card>
       </div>
@@ -401,7 +401,7 @@ const Identity = () => {
       </button>
 
       {/* Verification Badge */}
-      <Card className="overflow-hidden border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+      <Card className="overflow-hidden border-emerald-200 bg-linear-to-br from-emerald-50 to-white">
         <CardContent className="p-4">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100">
@@ -420,7 +420,7 @@ const Identity = () => {
                   className="flex items-center gap-2 text-xs text-emerald-600 hover:text-emerald-700"
                   onClick={() => handleCopy(profile.idHash || "", "hash")}
                 >
-                  <code className="bg-emerald-100 px-2 py-1 rounded font-mono truncate max-w-[200px]">
+                  <code className="bg-emerald-100 px-2 py-1 rounded font-mono truncate max-w-50">
                     {profile.idHash}
                   </code>
                   {copied === "hash" ? (
@@ -477,7 +477,7 @@ const Identity = () => {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-white text-xs font-medium">
                 Scan to Verify
               </div>
-              <div className="h-56 w-56 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl flex items-center justify-center">
+              <div className="h-56 w-56 bg-linear-to-br from-slate-50 to-slate-100 rounded-2xl flex items-center justify-center">
                 <div className="relative">
                   <QrCode className="h-32 w-32 text-slate-800" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -498,7 +498,7 @@ const Identity = () => {
                   Verified Identity
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground max-w-[280px]">
+              <p className="text-xs text-muted-foreground max-w-70">
                 Authorities can scan this code to instantly verify your identity
               </p>
             </div>

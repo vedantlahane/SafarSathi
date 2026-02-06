@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export interface ITourist extends Document {
+export interface ITourist {
   _id: string;
   name: string;
   email: string;
