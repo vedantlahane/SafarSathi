@@ -64,7 +64,7 @@ export async function registerTourist(
     currentLng: payload.currentLng,
   });
 
-  await issueDigitalID(tourist._id, tourist.idHash);
+  await issueDigitalID(tourist._id, tourist.idHash!);
   return { ok: true, tourist };
 }
 

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export interface IPoliceDepartment extends Document {
+export interface IPoliceDepartment {
   _id: string;
   name: string;
   email: string;

@@ -8,6 +8,20 @@ import {
   updateAlert as updateAlertDoc,
   type IAlert,
 } from "./mongoStore.js";
+import type { Alert } from "../models/Alert.js";
+
+function mapToAlert(alert: IAlert): Alert {
+  return {
+    id: alert.alertId,
+    touristId: alert.touristId,
+    alertType: alert.alertType,
+    lat: alert.latitude,
+    lng: alert.longitude,
+    status: alert.status,
+    message: alert.message,
+    createdTime: alert.createdAt ? new Date(alert.createdAt).toISOString() : new Date().toISOString(),
+  };
+}
 
 export async function createAlert(
   alert: Partial<IAlert>
@@ -16,7 +30,7 @@ export async function createAlert(
     ...alert,
     status: alert.status ?? "OPEN",
   });
-  broadcastAlert(saved);
+  broadcastAlert(mapToAlert(saved));
   return saved;
 }
 
@@ -59,7 +73,7 @@ export async function updateAlertStatus(alertId: number, newStatus: string) {
   }
   const updated = await updateAlertDoc(alertId, { status: newStatus });
   if (updated) {
-    broadcastAlert(updated);
+    broadcastAlert(mapToAlert(updated));
   }
   return updated;
 }
