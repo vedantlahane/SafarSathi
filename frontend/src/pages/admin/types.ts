@@ -1,8 +1,26 @@
-import type { Alert } from "@/lib/api/alerts";
-import type { Tourist } from "@/lib/api/tourists";
-import type { RiskZone } from "@/lib/api/riskZones";
-import type { PoliceDepartment } from "@/lib/api/police";
-import type { DashboardStats } from "@/lib/api/admin";
+import type { TouristProfile as Tourist, RiskZone as RiskZoneType, PoliceDepartment, AdminDashboardState as DashboardStats } from "@/lib/api";
+
+export type Alert = {
+  id: number | string;
+  touristId?: string | null;
+  touristName?: string | null;
+  type?: string;
+  status: "ACTIVE" | "PENDING" | "RESOLVED" | string;
+  timestamp?: string;
+  message?: string | null;
+  location?: { coordinates: [number, number] } | null;
+};
+
+// Normalize RiskZone shape to expected fields used in admin
+export type RiskZone = {
+  id: number | string;
+  name: string;
+  description?: string | null;
+  center?: { type: "Point"; coordinates: [number, number] };
+  severity?: "low" | "medium" | "high" | "critical" | string;
+  radius?: number;
+  isActive?: boolean;
+} | RiskZoneType;
 
 export interface AdminLayoutProps {
   activeSection: string;

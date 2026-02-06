@@ -1,9 +1,18 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { getDashboard } from "@/lib/api/admin";
-import { getAlerts, resolveAlert, Alert } from "@/lib/api/alerts";
-import { getTourists } from "@/lib/api/tourists";
-import { getRiskZones, createRiskZone, updateRiskZone, deleteRiskZone, RiskZone } from "@/lib/api/riskZones";
-import { getPoliceDepartments, createPoliceDepartment, updatePoliceDepartment, deletePoliceDepartment, PoliceDepartment } from "@/lib/api/police";
+import {
+  fetchAdminDashboard as getDashboard,
+  fetchAdminAlerts as getAlerts,
+  resolveAlert,
+  fetchAdminTourists as getTourists,
+  fetchAdminRiskZones as getRiskZones,
+  createAdminRiskZone as createRiskZone,
+  updateAdminRiskZone as updateRiskZone,
+  deleteAdminRiskZone as deleteRiskZone,
+  fetchPoliceDepartments as getPoliceDepartments,
+  createPoliceDepartment,
+  updatePoliceDepartment,
+  deletePoliceDepartment,
+} from "@/lib/api";
 import type { AdminData, AlertFilter, TouristFilter, ZoneFilter, ZoneFormData, PoliceFormData } from "../types";
 
 export function useAdminData(isAuthenticated: boolean) {

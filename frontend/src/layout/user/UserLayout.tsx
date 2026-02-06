@@ -7,9 +7,9 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Home from "@/pages/home/Home";
+import Home from "@/pages/user/home/Home";
 import Map from "@/pages/Map";
-import Identity from "@/pages/Identity";
+import Identity from "@/pages/user/ID/Identity";
 import Settings from "@/pages/Settings";
 import { useSession } from "@/lib/session";
 

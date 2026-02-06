@@ -24,8 +24,8 @@ async function checkInactivity(tourist: ITourist) {
     await createAlert({
       touristId: tourist._id,
       alertType: "INACTIVITY",
-      lat: tourist.currentLat,
-      lng: tourist.currentLng,
+      latitude: tourist.currentLat,
+      longitude: tourist.currentLng,
       message: `Tourist has not sent a location update in ${Math.floor(minutesSinceLastSeen)} minutes.`
     });
   }
@@ -37,8 +37,8 @@ async function checkRouteDeviation(tourist: ITourist) {
     await createAlert({
       touristId: tourist._id,
       alertType: "DEVIATION",
-      lat: tourist.currentLat,
-      lng: tourist.currentLng,
+      latitude: tourist.currentLat,
+      longitude: tourist.currentLng,
       message: `Route deviation detected: ${deviationKm.toFixed(2)} km off planned route.`
     });
   }
@@ -87,8 +87,8 @@ async function checkGeoFence(tourist: ITourist) {
     await createAlert({
       touristId: tourist._id,
       alertType: "RISK_ZONE",
-      lat,
-      lng,
+      latitude: lat,
+      longitude: lng,
       message: `Tourist entered risk zone '${zone.name}' [${zone.riskLevel}]`
     });
   }
