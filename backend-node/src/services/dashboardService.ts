@@ -129,8 +129,8 @@ function toAlertView(alert: IAlert, tourist?: ITourist) {
     status: alert.status,
     description,
     timestamp: alert.createdAt?.toISOString() ?? new Date().toISOString(),
-    lat: alert.lat ?? null,
-    lng: alert.lng ?? null,
+    lat: alert.latitude ?? null,
+    lng: alert.longitude ?? null,
     assignedUnit: null
   };
 }

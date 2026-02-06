@@ -6,12 +6,15 @@ import {
   PoliceDepartmentModel,
   AlertModel,
   BlockchainLogModel,
-  type ITourist,
-  type IRiskZone,
-  type IPoliceDepartment,
-  type IAlert,
-  type IBlockchainLog,
+  ITourist,
+  IRiskZone,
+  IPoliceDepartment,
+  IAlert,
+  IBlockchainLog,
 } from "../schemas/index.js";
+
+// Re-export the types for use by other services
+export type { ITourist, IRiskZone, IPoliceDepartment, IAlert, IBlockchainLog };
 
 // Counter collection for auto-increment IDs
 import mongoose from "mongoose";

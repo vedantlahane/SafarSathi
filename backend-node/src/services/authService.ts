@@ -17,11 +17,11 @@ type TouristRegistration = {
   email: string;
   phone: string;
   passportNumber: string;
-  dateOfBirth: string;
-  address: string;
-  gender: string;
-  nationality: string;
-  emergencyContact: string;
+  dateOfBirth?: string;
+  address?: string;
+  gender?: string;
+  nationality?: string;
+  emergencyContact?: string;
   passwordHash: string; // Actually raw password from frontend
   currentLat?: number;
   currentLng?: number;

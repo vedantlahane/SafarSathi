@@ -141,11 +141,11 @@ const Identity = () => {
         </div>
 
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Digital Identity</h1>
-        <p className="text-muted-foreground max-w-[300px] leading-relaxed">
+        <p className="text-muted-foreground max-w-75 leading-relaxed">
           Sign in to access your blockchain-verified tourist safety card
         </p>
 
-        <div className="mt-8 flex flex-col gap-3 w-full max-w-[280px]">
+        <div className="mt-8 flex flex-col gap-3 w-full max-w-70">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
               <Shield className="h-5 w-5 text-emerald-600" />
