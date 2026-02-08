@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import MobileLayout from "./layout/user/UserLayout"
-import AdminLayout from "./layout/AdminLayout"
+import UserLayout from "../src/layout/user/UserLayout"
+import AdminLayout from "../src/layout/admin/AdminLayout"
 
 function App() {
   const [route, setRoute] = useState<string>(() => window.location.pathname);
@@ -15,7 +15,7 @@ function App() {
   
   return (
     <>
-      {isAdmin ? <AdminLayout /> : <MobileLayout />}
+      {isAdmin ? <AdminLayout /> : <UserLayout />}
     </>
   );
 }
