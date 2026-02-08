@@ -46,8 +46,8 @@ import {
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/store";
 
-import assamData from "../../../dataSets/assamRistrictedAreas.json";
-import policeData from "../../../dataSets/assamPoliceStations.json";
+import assamData from "../../../../../dataSets/assamRistrictedAreas.json";
+import policeData from "../../../../../dataSets/assamPoliceStations.json";
 import { fetchPoliceDepartments, fetchPublicRiskZones, postLocation, postSOS } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
