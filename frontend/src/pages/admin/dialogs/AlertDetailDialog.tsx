@@ -2,7 +2,6 @@ import { format } from "date-fns";
 import {
   AlertTriangle,
   MapPin,
-  Phone,
   User,
   Clock,
   CheckCircle,
@@ -23,8 +22,8 @@ interface AlertDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   alert: Alert | null;
-  onResolve?: (alertId: string) => void;
-  onDispatchPolice?: (alertId: string) => void;
+  onResolve?: (alertId: string | number) => void;
+  onDispatchPolice?: (alertId: string | number) => void;
 }
 
 const statusConfig = {
@@ -87,7 +86,7 @@ export function AlertDetailDialog({
               </div>
               <div>
                 <span className="text-slate-500">Phone</span>
-                <p className="font-medium">{alert.touristPhone || "N/A"}</p>
+                <p className="font-medium">N/A</p>
               </div>
             </div>
           </div>
@@ -100,7 +99,7 @@ export function AlertDetailDialog({
             {alert.location ? (
               <div className="text-sm">
                 <p className="font-mono text-slate-600">
-                  {alert.location.coordinates[1].toFixed(6)}, {alert.location.coordinates[0].toFixed(6)}
+                  {alert.location.lat.toFixed(6)}, {alert.location.lng.toFixed(6)}
                 </p>
               </div>
             ) : (

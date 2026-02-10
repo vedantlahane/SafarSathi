@@ -80,8 +80,8 @@ export function InteractiveMap({
       >
         {/* Risk Zones */}
         {zones.map((zone) => {
-          const pos = toPixel(zone.center.coordinates[1], zone.center.coordinates[0]);
-          const color = severityColors[zone.severity as keyof typeof severityColors] || severityColors.medium;
+          const pos = toPixel(zone.center.lat, zone.center.lng);
+          const color = severityColors[zone.severity] || severityColors.medium;
           const isSelected = selectedZone?.id === zone.id;
 
           return (
@@ -108,7 +108,7 @@ export function InteractiveMap({
 
         {/* Police Stations */}
         {showPolice && policeUnits?.map((police, idx) => {
-          const pos = toPixel(police.latitude || MAP_CENTER.lat, police.longitude || MAP_CENTER.lng);
+          const pos = toPixel(police.location.lat, police.location.lng);
           return (
             <div
               key={police.id || idx}
@@ -125,8 +125,9 @@ export function InteractiveMap({
 
         {/* Tourists */}
         {showTourists && tourists.slice(0, 30).map((tourist, idx) => {
-          const lat = tourist.lastLocation?.coordinates?.[1] || MAP_CENTER.lat + (Math.random() - 0.5) * 0.5;
-          const lng = tourist.lastLocation?.coordinates?.[0] || MAP_CENTER.lng + (Math.random() - 0.5) * 0.5;
+          const hasLocation = tourist.location && tourist.location.lat && tourist.location.lng;
+          const lat = hasLocation ? tourist.location!.lat : MAP_CENTER.lat + (Math.random() - 0.5) * 0.5;
+          const lng = hasLocation ? tourist.location!.lng : MAP_CENTER.lng + (Math.random() - 0.5) * 0.5;
           const pos = toPixel(lat, lng);
 
           return (
@@ -143,8 +144,9 @@ export function InteractiveMap({
 
         {/* Active Alerts */}
         {showAlerts && alerts.filter((a) => a.status === "ACTIVE").map((alert, idx) => {
-          const lat = alert.location?.coordinates?.[1] || MAP_CENTER.lat + (Math.random() - 0.5) * 0.3;
-          const lng = alert.location?.coordinates?.[0] || MAP_CENTER.lng + (Math.random() - 0.5) * 0.3;
+          const hasLocation = alert.location && alert.location.lat && alert.location.lng;
+          const lat = hasLocation ? alert.location!.lat : MAP_CENTER.lat + (Math.random() - 0.5) * 0.3;
+          const lng = hasLocation ? alert.location!.lng : MAP_CENTER.lng + (Math.random() - 0.5) * 0.3;
           const pos = toPixel(lat, lng);
 
           return (

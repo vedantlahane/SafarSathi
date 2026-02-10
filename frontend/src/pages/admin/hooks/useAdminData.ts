@@ -13,7 +13,67 @@ import {
   updatePoliceDepartment,
   deletePoliceDepartment,
 } from "@/lib/api";
-import type { AdminData, AlertFilter, TouristFilter, ZoneFilter, ZoneFormData, PoliceFormData } from "../types";
+import type {
+  AdminData,
+  Alert,
+  Tourist,
+  RiskZone,
+  PoliceDepartment,
+  AlertFilter,
+  TouristFilter,
+  ZoneFilter,
+  ZoneFormData,
+  PoliceFormData
+} from "../types";
+
+// Normalizers
+const normalizeTourist = (t: any): Tourist => ({
+  id: t.id || t._id,
+  name: t.name || "Unknown",
+  email: t.email || "",
+  phoneNumber: t.phone || t.phoneNumber || "",
+  passportNumber: t.passportNumber || "",
+  isActive: Boolean(t.active || (t.lastSeen && (Date.now() - new Date(t.lastSeen).getTime() < 300000))),
+  lastSeen: t.lastSeen || new Date().toISOString(),
+  riskScore: typeof t.safetyScore === 'number' ? (100 - t.safetyScore) : 0,
+  riskLevel: (100 - (t.safetyScore || 0)) > 80 ? "critical" : (100 - (t.safetyScore || 0)) > 60 ? "high" : (100 - (t.safetyScore || 0)) > 40 ? "medium" : "low",
+  location: (t.currentLat && t.currentLng) ? { lat: t.currentLat, lng: t.currentLng } : null,
+  address: t.address,
+  emergencyContact: typeof t.emergencyContact === 'string' ? JSON.parse(t.emergencyContact) : t.emergencyContact,
+  status: t.status
+});
+
+const normalizeRiskZone = (z: any): RiskZone => ({
+  id: z.zoneId || z.id,
+  name: z.name,
+  description: z.description || "",
+  center: { lat: z.centerLat || z.latitude || 0, lng: z.centerLng || z.longitude || 0 },
+  radius: z.radiusMeters || z.radius || 0,
+  severity: (z.riskLevel || "LOW").toLowerCase() as any,
+  isActive: Boolean(z.active)
+});
+
+const normalizeAlert = (a: any): Alert => ({
+  id: a.alertId || a.id,
+  touristId: a.touristId,
+  touristName: a.touristName,
+  type: a.type || a.alertType,
+  status: a.status,
+  timestamp: a.createdAt || a.timestamp || new Date().toISOString(),
+  message: a.message,
+  location: (a.locationLat && a.locationLng) ? { lat: a.locationLat, lng: a.locationLng } : null
+});
+
+const normalizePolice = (p: any): PoliceDepartment => ({
+  id: p.id || p._id,
+  name: p.name,
+  email: p.email,
+  departmentCode: p.departmentCode,
+  city: p.city,
+  contactNumber: p.contactNumber,
+  location: { lat: p.latitude || 0, lng: p.longitude || 0 },
+  isActive: Boolean(p.isActive)
+});
 
 export function useAdminData(isAuthenticated: boolean) {
   const [data, setData] = useState<AdminData>({
@@ -27,7 +87,7 @@ export function useAdminData(isAuthenticated: boolean) {
 
   const fetchAllData = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     setRefreshing(true);
     try {
       const [dashData, alertsData, touristsData, zonesData, policeData] = await Promise.all([
@@ -43,11 +103,11 @@ export function useAdminData(isAuthenticated: boolean) {
           ...dashData,
           riskZones: zonesData?.length || 0,
           responseUnits: policeData?.length || 0,
-        } : null,
-        alerts: alertsData || [],
-        tourists: touristsData || [],
-        zones: zonesData || [],
-        policeUnits: policeData || [],
+        } as any : null,
+        alerts: (alertsData || []).map(normalizeAlert),
+        tourists: (touristsData || []).map(normalizeTourist),
+        zones: (zonesData || []).map(normalizeRiskZone),
+        policeUnits: (policeData || []).map(normalizePolice),
       });
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -81,9 +141,9 @@ export function useFilteredData(
     }
     if (globalSearch) {
       const search = globalSearch.toLowerCase();
-      result = result.filter((a) => 
-        a.type.toLowerCase().includes(search) || 
-        a.touristId?.toLowerCase().includes(search)
+      result = result.filter((a) =>
+        (a.type || "").toLowerCase().includes(search) ||
+        (a.touristId || "").toLowerCase().includes(search)
       );
     }
     return result;
@@ -93,12 +153,15 @@ export function useFilteredData(
     let result = data.tourists;
     if (touristFilter === "online") result = result.filter((t) => t.isActive);
     else if (touristFilter === "offline") result = result.filter((t) => !t.isActive);
-    else if (touristFilter === "highrisk") result = result.filter((t) => t.riskScore > 70);
+    else if (touristFilter === "highrisk" || touristFilter === "high-risk") result = result.filter((t) => t.riskScore > 70);
+    else if (touristFilter === "medium-risk") result = result.filter((t) => t.riskScore > 40 && t.riskScore <= 70);
+    else if (touristFilter === "low-risk") result = result.filter((t) => t.riskScore <= 40);
+
     if (globalSearch) {
       const search = globalSearch.toLowerCase();
-      result = result.filter((t) => 
-        t.name?.toLowerCase().includes(search) || 
-        t.email?.toLowerCase().includes(search)
+      result = result.filter((t) =>
+        t.name.toLowerCase().includes(search) ||
+        t.email.toLowerCase().includes(search)
       );
     }
     return result;
@@ -108,11 +171,15 @@ export function useFilteredData(
     let result = data.zones;
     if (zoneFilter === "active") result = result.filter((z) => z.isActive);
     else if (zoneFilter === "inactive") result = result.filter((z) => !z.isActive);
+    else if (["critical", "high", "medium", "low"].includes(zoneFilter)) {
+      result = result.filter((z) => z.severity === zoneFilter);
+    }
+
     if (globalSearch) {
       const search = globalSearch.toLowerCase();
-      result = result.filter((z) => 
-        z.name.toLowerCase().includes(search) || 
-        z.description?.toLowerCase().includes(search)
+      result = result.filter((z) =>
+        z.name.toLowerCase().includes(search) ||
+        (z.description || "").toLowerCase().includes(search)
       );
     }
     return result;
@@ -122,8 +189,8 @@ export function useFilteredData(
     let result = data.policeUnits;
     if (globalSearch) {
       const search = globalSearch.toLowerCase();
-      result = result.filter((p) => 
-        p.name.toLowerCase().includes(search) || 
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(search) ||
         p.city.toLowerCase().includes(search)
       );
     }
@@ -133,86 +200,68 @@ export function useFilteredData(
   return { filteredAlerts, filteredTourists, filteredZones, filteredPolice };
 }
 
-export function useAlertActions(setData: React.Dispatch<React.SetStateAction<AdminData>>) {
-  const handleResolveAlert = useCallback(async (alert: Alert) => {
+export function useAlertActions(refetch: () => Promise<void>) {
+  const handleResolveAlert = useCallback(async (alertId: string | number) => {
     try {
-      await resolveAlert(alert.id, "RESOLVED");
-      setData((prev) => ({
-        ...prev,
-        alerts: prev.alerts.map((a) => (a.id === alert.id ? { ...a, status: "RESOLVED" } : a)),
-      }));
+      await resolveAlert(Number(alertId), "RESOLVED");
+      await refetch();
     } catch (err) {
       console.error("Failed to resolve alert", err);
     }
-  }, [setData]);
+  }, [refetch]);
 
-  const handleBulkResolve = useCallback(async (selectedIds: Set<string>, alerts: Alert[]) => {
+  const handleBulkResolve = useCallback(async (selectedIds: string[]) => {
     for (const id of selectedIds) {
-      const alert = alerts.find((a) => a.id === id);
-      if (alert && alert.status !== "RESOLVED") {
-        await handleResolveAlert(alert);
-      }
+      await handleResolveAlert(id);
     }
   }, [handleResolveAlert]);
 
-  return { handleResolveAlert, handleBulkResolve };
+  return { resolve: handleResolveAlert, bulkResolve: handleBulkResolve };
 }
 
-export function useZoneActions(setData: React.Dispatch<React.SetStateAction<AdminData>>) {
-  const handleSaveZone = useCallback(async (formData: ZoneFormData, editingZone: RiskZone | null) => {
-    const payload = {
+export function useZoneActions(refetch: () => Promise<void>) {
+  const handleSaveZone = useCallback(async (formData: ZoneFormData, editingZoneId?: string | number) => {
+    const payload: any = {
       name: formData.name,
       description: formData.description,
-      severity: formData.severity,
-      radius: Number(formData.radius),
-      center: {
-        type: "Point" as const,
-        coordinates: [Number(formData.lng), Number(formData.lat)] as [number, number],
-      },
-      isActive: formData.isActive,
+      riskLevel: formData.severity.toUpperCase(),
+      radiusMeters: Number(formData.radius),
+      centerLat: Number(formData.lat),
+      centerLng: Number(formData.lng),
+      active: formData.isActive,
     };
 
     try {
-      if (editingZone) {
-        const updated = await updateRiskZone(editingZone.id, payload);
-        setData((prev) => ({
-          ...prev,
-          zones: prev.zones.map((z) => (z.id === editingZone.id ? updated : z)),
-        }));
+      if (editingZoneId) {
+        await updateRiskZone(Number(editingZoneId), payload);
       } else {
-        const created = await createRiskZone(payload);
-        setData((prev) => ({
-          ...prev,
-          zones: [...prev.zones, created],
-        }));
+        await createRiskZone(payload);
       }
+      await refetch();
       return true;
     } catch (e) {
       console.error("Failed to save zone", e);
       return false;
     }
-  }, [setData]);
+  }, [refetch]);
 
-  const handleDeleteZone = useCallback(async (zoneId: string) => {
+  const handleDeleteZone = useCallback(async (zoneId: string | number) => {
     try {
-      await deleteRiskZone(zoneId);
-      setData((prev) => ({
-        ...prev,
-        zones: prev.zones.filter((z) => z.id !== zoneId),
-      }));
+      await deleteRiskZone(Number(zoneId));
+      await refetch();
       return true;
     } catch (e) {
       console.error("Failed to delete zone", e);
       return false;
     }
-  }, [setData]);
+  }, [refetch]);
 
-  return { handleSaveZone, handleDeleteZone };
+  return { save: handleSaveZone, delete: handleDeleteZone };
 }
 
-export function usePoliceActions(setData: React.Dispatch<React.SetStateAction<AdminData>>) {
-  const handleSavePolice = useCallback(async (formData: PoliceFormData, editingPolice: PoliceDepartment | null) => {
-    const payload = {
+export function usePoliceActions(refetch: () => Promise<void>) {
+  const handleSavePolice = useCallback(async (formData: PoliceFormData, editingPoliceId?: string) => {
+    const payload: any = {
       name: formData.name,
       email: formData.email,
       departmentCode: formData.departmentCode,
@@ -224,46 +273,36 @@ export function usePoliceActions(setData: React.Dispatch<React.SetStateAction<Ad
     };
 
     try {
-      if (editingPolice) {
-        const updated = await updatePoliceDepartment(editingPolice.id, payload);
-        setData((prev) => ({
-          ...prev,
-          policeUnits: prev.policeUnits.map((p) => (p.id === editingPolice.id ? updated : p)),
-        }));
+      if (editingPoliceId) {
+        await updatePoliceDepartment(editingPoliceId, payload);
       } else {
-        const created = await createPoliceDepartment({
+        await createPoliceDepartment({
           ...payload,
-          passwordHash: "admin123",
-          district: "",
-          state: "Assam",
+          passwordHash: "admin123", // Default password
+          district: "", // Should be added to form if needed/required
+          state: "Assam", // Should be added to form if needed
         });
-        setData((prev) => ({
-          ...prev,
-          policeUnits: [...prev.policeUnits, created],
-        }));
       }
+      await refetch();
       return true;
     } catch (e) {
       console.error("Failed to save police", e);
       return false;
     }
-  }, [setData]);
+  }, [refetch]);
 
   const handleDeletePolice = useCallback(async (policeId: string) => {
     try {
       await deletePoliceDepartment(policeId);
-      setData((prev) => ({
-        ...prev,
-        policeUnits: prev.policeUnits.filter((p) => p.id !== policeId),
-      }));
+      await refetch();
       return true;
     } catch (e) {
       console.error("Failed to delete police", e);
       return false;
     }
-  }, [setData]);
+  }, [refetch]);
 
-  return { handleSavePolice, handleDeletePolice };
+  return { save: handleSavePolice, delete: handleDeletePolice };
 }
 
 export function useQuickStats(data: AdminData) {

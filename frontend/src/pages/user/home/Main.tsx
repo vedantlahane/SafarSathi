@@ -266,6 +266,29 @@ export default function Main() {
           </div>
         )}
 
+        <header className="flex justify-between items-center px-6 py-4">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <img
+                      alt="User Profile Avatar"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-primary"
+                      data-alt="User profile photo avatar"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuABrBgOpQFyhtA9-MOgbj8jcuAFvlat_0DLZQ6iQexwwjLsZTu7TXSI-BXcwF6evUXlwtIoKgyZuCjIfEsfEVoJCxXNgDt6fOql7dMGnzH6G6vCfdrZo62mrw2iw1YJz_u7aFBgJLDM0NvEeOlr0TfxHT2lQ9wzvtja24YBPCdj3ltmrYEcIxmFrrr-3D06gmC3H0eV3wUHUiMSoRZPzeTH5lT5YH45-WyB_NGTo8G3vkvMx_30WMV3QwiTZcd3rlKoxfTA1m9h"
+                    />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-primary rounded-full border-2 border-background-dark"></div>
+                  </div>
+                  <div>
+                    <h1 className="text-sm text-gray-400">Welcome back,</h1>
+                    <p className="font-bold text-lg leading-none">Alex Johnson</p>
+                  </div>
+                </div>
+                <button className="p-2 rounded-full bg-surface-dark hover:bg-white/10 transition">
+                  <Bell />
+                </button>
+              </header>
+        
+
+
         {/* Hero Safety Card */}
         <Card className="overflow-hidden border-0 shadow-xl">
           <div className={cn("bg-gradient-to-br p-5 text-white", getStatusGradient())}>

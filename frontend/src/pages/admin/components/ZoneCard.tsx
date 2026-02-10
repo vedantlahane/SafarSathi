@@ -11,9 +11,9 @@ import type { RiskZone } from "../types";
 
 interface ZoneCardProps {
   zone: RiskZone;
-  onEdit: () => void;
-  onDelete: () => void;
-  onViewOnMap: () => void;
+  onEdit: (zone: RiskZone) => void;
+  onDelete: (zone: RiskZone) => void;
+  onViewOnMap: (zone: RiskZone) => void;
   isSelected?: boolean;
 }
 
@@ -41,14 +41,14 @@ export function ZoneCard({ zone, onEdit, onDelete, onViewOnMap, isSelected }: Zo
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={onViewOnMap}>
+            <DropdownMenuItem onClick={() => onViewOnMap(zone)}>
               <Map className="h-4 w-4 mr-2" /> View on Map
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit}>
+            <DropdownMenuItem onClick={() => onEdit(zone)}>
               <Pencil className="h-4 w-4 mr-2" /> Edit Zone
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-red-600">
+            <DropdownMenuItem onClick={() => onDelete(zone)} className="text-red-600">
               <Trash2 className="h-4 w-4 mr-2" /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -64,7 +64,7 @@ export function ZoneCard({ zone, onEdit, onDelete, onViewOnMap, isSelected }: Zo
           </span>
           <span className="flex items-center gap-1">
             <Globe className="h-3 w-3" />
-            {zone.center.coordinates[1].toFixed(4)}
+            {zone.center.lat.toFixed(4)}
           </span>
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${zone.isActive ? "bg-emerald-200 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
