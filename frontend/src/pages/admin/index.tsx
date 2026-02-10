@@ -51,7 +51,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const [authError, setAuthError] = useState("");
 
   // Data hooks
-  const { data, isLoading, refresh } = useAdminData(isAuthenticated);
+  const { data, refreshing: isLoading, refetch: refresh } = useAdminData(isAuthenticated);
   const alertActions = useAlertActions(refresh);
   const zoneActions = useZoneActions(refresh);
   const policeActions = usePoliceActions(refresh);
@@ -62,8 +62,8 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const [alertDetailOpen, setAlertDetailOpen] = useState(false);
   const [touristDetailOpen, setTouristDetailOpen] = useState(false);
   const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [reportsDialogOpen, setReportsDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false); // Unused but keeping for future
+  const [reportsDialogOpen, setReportsDialogOpen] = useState(false); // Unused but keeping for future
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Selected items
@@ -108,15 +108,16 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
     setAlertDetailOpen(true);
   }, []);
 
-  const handleResolveAlert = useCallback(async (alertId: string) => {
+  const handleResolveAlert = useCallback(async (alertId: string | number) => {
     await alertActions.resolve(alertId);
     toast.success("Alert resolved");
-  }, [alertActions]);
+    if (selectedAlert?.id === alertId) {
+      setAlertDetailOpen(false);
+    }
+  }, [alertActions, selectedAlert]);
 
   const handleBulkResolve = useCallback(async (alertIds: string[]) => {
-    for (const id of alertIds) {
-      await alertActions.resolve(id);
-    }
+    await alertActions.bulkResolve(alertIds);
     toast.success(`${alertIds.length} alerts resolved`);
   }, [alertActions]);
 
@@ -128,12 +129,14 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
 
   const handleContactTourist = useCallback((tourist: Tourist) => {
     toast.info(`Contacting ${tourist.name}...`);
-    // Implement contact logic
+    // Implement contact logic (e.g. open mailto or tel)
+    window.location.href = `tel:${tourist.phoneNumber}`;
   }, []);
 
   const handleTrackTourist = useCallback((tourist: Tourist) => {
     onTabChange("zones");
     toast.info(`Tracking ${tourist.name} on map`);
+    // Logic to focus map on tourist would go here
   }, [onTabChange]);
 
   // Zone handlers
@@ -150,31 +153,40 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const handleDeleteZone = useCallback((zone: RiskZone) => {
     setDeleteConfirmation({
       type: "zone",
-      id: zone.id,
+      id: String(zone.id),
       name: zone.name,
     });
     setConfirmDeleteOpen(true);
   }, []);
 
   const handleSaveZone = useCallback(async (formData: ZoneFormData) => {
-    await zoneActions.save(formData, selectedZone?.id);
-    setZoneDialogOpen(false);
-    setSelectedZone(null);
-    setIsAddingZone(false);
-    setNewZonePosition(null);
-    toast.success(selectedZone ? "Zone updated" : "Zone created");
+    const success = await zoneActions.save(formData, selectedZone?.id ? String(selectedZone.id) : undefined);
+    if (success) {
+      setZoneDialogOpen(false);
+      setSelectedZone(null);
+      setIsAddingZone(false);
+      setNewZonePosition(null);
+      toast.success(selectedZone ? "Zone updated" : "Zone created");
+    } else {
+      toast.error("Failed to save zone");
+    }
   }, [zoneActions, selectedZone]);
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (isAddingZone) {
       setNewZonePosition({ lat, lng });
+      setZoneDialogOpen(true); // Open dialog immediately after picking point? Or just set point? 
+      // Based on UI flow, usually selecting point then filling form.
+      // Let's open dialog if they click while adding.
+      // Actually usually user clicks "Add Zone", then clicks map.
     }
   }, [isAddingZone]);
 
   const handleToggleAddMode = useCallback(() => {
     setIsAddingZone((prev) => !prev);
-    if (isAddingZone) {
+    if (!isAddingZone) { // transitioning to true
       setNewZonePosition(null);
+      toast.info("Click on map to place new zone");
     }
   }, [isAddingZone]);
 
@@ -200,13 +212,18 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
 
   const handleContactPolice = useCallback((police: PoliceDepartment) => {
     toast.info(`Dispatching to ${police.name}...`);
+    window.location.href = `tel:${police.contactNumber}`;
   }, []);
 
   const handleSavePolice = useCallback(async (formData: PoliceFormData) => {
-    await policeActions.save(formData, selectedPolice?.id);
-    setPoliceDialogOpen(false);
-    setSelectedPolice(null);
-    toast.success(selectedPolice ? "Station updated" : "Station added");
+    const success = await policeActions.save(formData, selectedPolice?.id);
+    if (success) {
+      setPoliceDialogOpen(false);
+      setSelectedPolice(null);
+      toast.success(selectedPolice ? "Station updated" : "Station added");
+    } else {
+      toast.error("Failed to save station");
+    }
   }, [policeActions, selectedPolice]);
 
   // Delete confirmation handler
@@ -226,12 +243,14 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
     }
 
     setDeleteConfirmation(null);
+    setConfirmDeleteOpen(false);
   }, [deleteConfirmation, zoneActions, policeActions]);
 
   // Broadcast handler
   const handleBroadcast = useCallback(async (type: BroadcastType, message: string) => {
-    toast.success(`Broadcast sent to ${type === "all" ? "all tourists" : type}`);
-    // Implement broadcast logic
+    toast.success(`Broadcast sent to ${type === "all" ? "all tourists" : type}: ${message}`);
+    // Implement actual broadcast logic if API supports it
+    setBroadcastDialogOpen(false);
   }, []);
 
   // Render login screen if not authenticated
@@ -246,7 +265,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
         return (
           <DashboardSection
             data={data}
-            isLoading={isLoading}
+
             onNavigate={onTabChange}
             onAlertClick={handleViewAlert}
             onZoneClick={handleEditZone}
@@ -282,7 +301,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
             zones={data.zones}
             alerts={data.alerts}
             tourists={data.tourists}
-            police={data.police}
+            police={data.policeUnits}
             isLoading={isLoading}
             onAddZone={handleAddZone}
             onEditZone={handleEditZone}
@@ -297,7 +316,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
       case "police":
         return (
           <PoliceSection
-            police={data.police}
+            police={data.policeUnits}
             zones={data.zones}
             alerts={data.alerts}
             tourists={data.tourists}
@@ -313,7 +332,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
         return (
           <DashboardSection
             data={data}
-            isLoading={isLoading}
+
             onNavigate={onTabChange}
             onAlertClick={handleViewAlert}
             onZoneClick={handleEditZone}

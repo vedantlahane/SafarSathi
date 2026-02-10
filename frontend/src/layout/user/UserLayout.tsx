@@ -4,7 +4,7 @@ import {
   Map as MapIcon,
   User,
   Settings as SettingsIcon,
-  Shield,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Home from "@/pages/user/home/Home";
@@ -52,9 +52,9 @@ const UserLayout = () => {
     <div className="fixed inset-0 flex flex-col bg-slate-50">
       {/* Status Bar */}
       <div className="safe-area-top bg-primary" />
-      
+
       {/* App Header */}
-      <header className="sticky top-0 z-40 glass border-b border-slate-200/50">
+      {/* <header className="sticky top-0 z-40 glass border-b border-slate-200/50">
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
@@ -74,13 +74,11 @@ const UserLayout = () => {
             </div>
           </div>
         </div>
-      </header>
-
+      </header> */}
+      
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 no-scrollbar">
-        <div className="transition-page min-h-full">
-          {renderContent()}
-        </div>
+        <div className="transition-page min-h-full">{renderContent()}</div>
       </main>
 
       {/* Bottom Navigation */}
@@ -100,20 +98,24 @@ const UserLayout = () => {
                     "relative flex flex-col items-center gap-1 rounded-xl px-5 py-2.5 transition-all duration-200 touch-action",
                     isActive
                       ? "text-primary"
-                      : "text-slate-400 hover:text-slate-600 active:scale-95"
+                      : "text-slate-400 hover:text-slate-600 active:scale-95",
                   )}
                 >
                   {isActive && (
                     <span className="absolute inset-0 bg-primary/10 rounded-xl" />
                   )}
-                  <item.icon className={cn(
-                    "relative h-5 w-5 transition-transform duration-200",
-                    isActive && "scale-110"
-                  )} />
-                  <span className={cn(
-                    "relative text-[10px] font-semibold transition-all",
-                    isActive ? "text-primary" : "text-slate-500"
-                  )}>
+                  <item.icon
+                    className={cn(
+                      "relative h-5 w-5 transition-transform duration-200",
+                      isActive && "scale-110",
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "relative text-[10px] font-semibold transition-all",
+                      isActive ? "text-primary" : "text-slate-500",
+                    )}
+                  >
                     {item.label}
                   </span>
                   {isActive && (

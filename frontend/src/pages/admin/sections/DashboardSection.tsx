@@ -9,15 +9,15 @@ import {
   Clock,
   Radio,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StatCard, InteractiveMap, ActivityItem } from "../components";
-import type { AdminData, Alert, Tourist, RiskZone, PoliceDepartment } from "../types";
+import type { AdminData, Alert, RiskZone } from "../types";
 
 interface DashboardSectionProps {
+
   data: AdminData;
-  isLoading: boolean;
   onNavigate: (tab: string) => void;
   onAlertClick?: (alert: Alert) => void;
   onZoneClick?: (zone: RiskZone) => void;
@@ -26,13 +26,12 @@ interface DashboardSectionProps {
 
 export function DashboardSection({
   data,
-  isLoading,
   onNavigate,
   onAlertClick,
   onZoneClick,
   onBroadcast,
 }: DashboardSectionProps) {
-  const { stats, alerts, tourists, zones, police } = data;
+  const { stats, alerts = [], tourists = [], zones = [], policeUnits: police = [] } = data || {};
 
   const quickStats = useMemo(() => ({
     activeAlerts: alerts.filter((a) => a.status === "ACTIVE").length,
@@ -44,7 +43,7 @@ export function DashboardSection({
     activePolice: police.filter((p) => p.isActive).length,
   }), [alerts, tourists, zones, police]);
 
-  const recentAlerts = useMemo(() => 
+  const recentAlerts = useMemo(() =>
     [...alerts]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 5),
@@ -53,7 +52,7 @@ export function DashboardSection({
 
   const recentActivity = useMemo(() => {
     const activities: { type: "alert" | "tourist" | "zone" | "police"; title: string; description: string; timestamp: Date; severity: string }[] = [];
-    
+
     recentAlerts.forEach((alert) => {
       activities.push({
         type: "alert",
@@ -72,56 +71,56 @@ export function DashboardSection({
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         <StatCard
-          icon={<AlertTriangle className="w-5 h-5" />}
+          icon={AlertTriangle}
           label="Active Alerts"
           value={quickStats.activeAlerts}
           color="red"
           onClick={() => onNavigate("alerts")}
         />
         <StatCard
-          icon={<Clock className="w-5 h-5" />}
+          icon={Clock}
           label="Pending"
           value={quickStats.pendingAlerts}
           color="amber"
           onClick={() => onNavigate("alerts")}
         />
         <StatCard
-          icon={<Users className="w-5 h-5" />}
+          icon={Users}
           label="Online Tourists"
           value={quickStats.onlineTourists}
           color="blue"
           onClick={() => onNavigate("tourists")}
         />
         <StatCard
-          icon={<Activity className="w-5 h-5" />}
+          icon={Activity}
           label="High Risk"
           value={quickStats.highRiskTourists}
           color="red"
           onClick={() => onNavigate("tourists")}
         />
         <StatCard
-          icon={<MapPin className="w-5 h-5" />}
+          icon={MapPin}
           label="Active Zones"
           value={quickStats.activeZones}
           color="purple"
           onClick={() => onNavigate("zones")}
         />
         <StatCard
-          icon={<AlertTriangle className="w-5 h-5" />}
+          icon={AlertTriangle}
           label="Critical Zones"
           value={quickStats.criticalZones}
           color="red"
           onClick={() => onNavigate("zones")}
         />
         <StatCard
-          icon={<Shield className="w-5 h-5" />}
+          icon={Shield}
           label="Police Active"
           value={quickStats.activePolice}
           color="green"
           onClick={() => onNavigate("police")}
         />
         <StatCard
-          icon={<TrendingUp className="w-5 h-5" />}
+          icon={TrendingUp}
           label="Total Tourists"
           value={stats?.totalTourists || tourists.length}
           color="cyan"

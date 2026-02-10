@@ -11,13 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { PoliceDepartment, PoliceFormData } from "../types";
 
 interface PoliceDialogProps {
@@ -29,13 +22,12 @@ interface PoliceDialogProps {
 
 const defaultFormData: PoliceFormData = {
   name: "",
-  code: "",
+  departmentCode: "",
   contactNumber: "",
   email: "",
-  address: "",
-  latitude: 26.1445,
-  longitude: 91.7362,
-  isActive: true,
+  city: "Guwahati",
+  lat: "26.1445",
+  lng: "91.7362",
 };
 
 export function PoliceDialog({
@@ -50,13 +42,12 @@ export function PoliceDialog({
     if (police) {
       setFormData({
         name: police.name,
-        code: police.code || "",
+        departmentCode: police.departmentCode || "",
         contactNumber: police.contactNumber || "",
         email: police.email || "",
-        address: police.address || "",
-        latitude: police.latitude || 26.1445,
-        longitude: police.longitude || 91.7362,
-        isActive: police.isActive ?? true,
+        city: police.city || "Guwahati",
+        lat: String(police.location?.lat || 26.1445),
+        lng: String(police.location?.lng || 91.7362),
       });
     } else {
       setFormData(defaultFormData);
@@ -99,8 +90,8 @@ export function PoliceDialog({
                 <Label htmlFor="policeCode">Station Code</Label>
                 <Input
                   id="policeCode"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  value={formData.departmentCode}
+                  onChange={(e) => setFormData({ ...formData, departmentCode: e.target.value })}
                   placeholder="e.g., GC-001"
                   required
                 />
@@ -132,24 +123,24 @@ export function PoliceDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="policeAddress">Address</Label>
+              <Label htmlFor="policeCity">City</Label>
               <Input
-                id="policeAddress"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Full address of the station"
+                id="policeCity"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="City"
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="policeLat">Latitude</Label>
                 <Input
                   id="policeLat"
                   type="number"
                   step="any"
-                  value={formData.latitude}
-                  onChange={(e) => setFormData({ ...formData, latitude: Number(e.target.value) })}
+                  value={formData.lat}
+                  onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -158,32 +149,9 @@ export function PoliceDialog({
                   id="policeLng"
                   type="number"
                   step="any"
-                  value={formData.longitude}
-                  onChange={(e) => setFormData({ ...formData, longitude: Number(e.target.value) })}
+                  value={formData.lng}
+                  onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="policeStatus">Status</Label>
-                <Select
-                  value={formData.isActive ? "active" : "inactive"}
-                  onValueChange={(val) => setFormData({ ...formData, isActive: val === "active" })}
-                >
-                  <SelectTrigger id="policeStatus">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" /> On Duty
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="inactive">
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-slate-400" /> Off Duty
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 

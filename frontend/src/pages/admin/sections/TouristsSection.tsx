@@ -147,11 +147,11 @@ export function TouristsSection({
                   <TouristTableRow
                     key={tourist.id}
                     tourist={tourist}
-                    onView={onViewTourist}
-                    onContact={onContactTourist}
-                    onTrack={onTrackTourist}
+                    onView={() => onViewTourist(tourist)}
+                    onContact={() => onContactTourist(tourist)}
+                    onTrack={() => onTrackTourist(tourist)}
                     isSelected={selectedIds.has(tourist.id)}
-                    onSelect={handleSelect}
+                    onSelect={() => handleSelect(tourist.id)}
                   />
                 ))}
               </div>

@@ -4,11 +4,11 @@ import type { Tourist } from "../types";
 
 interface TouristTableRowProps {
   tourist: Tourist;
-  onView: () => void;
-  onContact: () => void;
-  onTrack: () => void;
+  onView: (tourist: Tourist) => void;
+  onContact: (tourist: Tourist) => void;
+  onTrack: (tourist: Tourist) => void;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (id: string) => void;
 }
 
 const riskColors = {
@@ -26,7 +26,7 @@ export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelecte
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={onSelect}
+          onChange={() => onSelect(tourist.id)}
           className="rounded border-slate-300"
         />
       </td>
@@ -55,16 +55,16 @@ export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelecte
           {tourist.riskScore}
         </span>
       </td>
-      <td className="py-3 px-4 text-sm text-slate-500">{tourist.phone || "—"}</td>
+      <td className="py-3 px-4 text-sm text-slate-500">{tourist.phoneNumber || "—"}</td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onView}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(tourist)}>
             <Eye className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onTrack}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onTrack(tourist)}>
             <Navigation className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-600" onClick={onContact}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-600" onClick={() => onContact(tourist)}>
             <MessageSquare className="h-3.5 w-3.5" />
           </Button>
         </div>

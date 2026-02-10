@@ -1,26 +1,59 @@
-import type { TouristProfile as Tourist, RiskZone as RiskZoneType, PoliceDepartment, AdminDashboardState as DashboardStats } from "@/lib/api";
+export interface Tourist {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  passportNumber: string;
+  isActive: boolean;
+  lastSeen: string;
+  riskScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  location: { lat: number; lng: number } | null;
+  address?: string;
+  emergencyContact?: { name: string; phone: string };
+  status?: string;
+}
 
-export type Alert = {
+export interface RiskZone {
+  id: number | string;
+  name: string;
+  description: string;
+  center: { lat: number; lng: number };
+  radius: number;
+  severity: "low" | "medium" | "high" | "critical";
+  isActive: boolean;
+}
+
+export interface Alert {
   id: number | string;
   touristId?: string | null;
   touristName?: string | null;
-  type?: string;
+  type: string;
   status: "ACTIVE" | "PENDING" | "RESOLVED" | string;
-  timestamp?: string;
+  timestamp: string;
   message?: string | null;
-  location?: { coordinates: [number, number] } | null;
-};
+  location: { lat: number; lng: number } | null;
+}
 
-// Normalize RiskZone shape to expected fields used in admin
-export type RiskZone = {
-  id: number | string;
+export interface PoliceDepartment {
+  id: string;
   name: string;
-  description?: string | null;
-  center?: { type: "Point"; coordinates: [number, number] };
-  severity?: "low" | "medium" | "high" | "critical" | string;
-  radius?: number;
-  isActive?: boolean;
-} | RiskZoneType;
+  email: string;
+  departmentCode: string;
+  city: string;
+  contactNumber: string;
+  location: { lat: number; lng: number };
+  isActive: boolean;
+}
+
+export interface DashboardStats {
+  criticalAlerts: number;
+  activeAlerts: number;
+  monitoredTourists: number;
+  totalTourists: number;
+  riskZones: number;
+  responseUnits: number;
+}
 
 export interface AdminLayoutProps {
   activeSection: string;
@@ -62,9 +95,8 @@ export interface DeleteConfirmation {
   name: string;
 }
 
-export type AlertFilter = "all" | "active" | "pending" | "resolved";
-export type TouristFilter = "all" | "online" | "offline" | "highrisk";
-export type ZoneFilter = "all" | "active" | "inactive";
-export type BroadcastType = "all" | "zone" | "tourists";
+export type AlertFilter = "all" | "active" | "pending" | "resolved" | "sos" | "geofence";
+export type TouristFilter = "all" | "online" | "offline" | "highrisk" | "high-risk" | "medium-risk" | "low-risk";
+export type ZoneFilter = "all" | "active" | "inactive" | "critical" | "high" | "medium" | "low";
+export type BroadcastType = "all" | "zone" | "emergency";
 
-export { Alert, Tourist, RiskZone, PoliceDepartment, DashboardStats };

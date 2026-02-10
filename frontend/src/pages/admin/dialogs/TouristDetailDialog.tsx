@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import {
-  User,
   Phone,
   Mail,
   MapPin,
@@ -26,10 +25,11 @@ interface TouristDetailDialogProps {
   tourist: Tourist | null;
   onContact?: (tourist: Tourist) => void;
   onTrack?: (tourist: Tourist) => void;
-  onSendAlert?: (tourist: Tourist) => void;
+
 }
 
 const riskColors = {
+  critical: "bg-red-200 text-red-800 border-red-300",
   high: "bg-red-100 text-red-700 border-red-200",
   medium: "bg-amber-100 text-amber-700 border-amber-200",
   low: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -41,7 +41,6 @@ export function TouristDetailDialog({
   tourist,
   onContact,
   onTrack,
-  onSendAlert,
 }: TouristDetailDialogProps) {
   if (!tourist) return null;
 
@@ -90,9 +89,9 @@ export function TouristDetailDialog({
             <h4 className="font-medium text-slate-700 flex items-center gap-2">
               <MapPin className="w-4 h-4" /> Current Location
             </h4>
-            {tourist.lastLocation ? (
+            {tourist.location ? (
               <p className="text-sm font-mono text-slate-600">
-                {tourist.lastLocation.coordinates[1].toFixed(6)}, {tourist.lastLocation.coordinates[0].toFixed(6)}
+                {tourist.location.lat.toFixed(6)}, {tourist.location.lng.toFixed(6)}
               </p>
             ) : (
               <p className="text-sm text-slate-500">Location not available</p>

@@ -39,14 +39,14 @@ export function PoliceSection({
 }: PoliceSectionProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [selectedPolice, setSelectedPolice] = useState<PoliceDepartment | null>(null);
+
 
   const filteredPolice = useMemo(() => {
     return police.filter((station) => {
       const matchesSearch = !search ||
         station.name.toLowerCase().includes(search.toLowerCase()) ||
-        station.code?.toLowerCase().includes(search.toLowerCase()) ||
-        station.address?.toLowerCase().includes(search.toLowerCase());
+        station.departmentCode.toLowerCase().includes(search.toLowerCase()) ||
+        station.city.toLowerCase().includes(search.toLowerCase());
 
       let matchesFilter = true;
       if (filter === "active") matchesFilter = station.isActive === true;
@@ -137,9 +137,9 @@ export function PoliceSection({
                   <PoliceCard
                     key={station.id}
                     police={station}
-                    onEdit={onEditPolice}
-                    onDelete={onDeletePolice}
-                    onContact={onContactPolice}
+                    onEdit={() => onEditPolice(station)}
+                    onDelete={() => onDeletePolice(station)}
+                    onContact={() => onContactPolice(station)}
                   />
                 ))
               ) : (

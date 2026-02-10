@@ -32,9 +32,10 @@ const defaultFormData: ZoneFormData = {
   name: "",
   description: "",
   severity: "medium",
-  radius: 500,
-  latitude: 0,
-  longitude: 0,
+  radius: "500",
+  lat: "0",
+  lng: "0",
+  isActive: true,
 };
 
 export function ZoneDialog({
@@ -52,15 +53,16 @@ export function ZoneDialog({
         name: zone.name,
         description: zone.description || "",
         severity: zone.severity,
-        radius: zone.radius,
-        latitude: zone.center.coordinates[1],
-        longitude: zone.center.coordinates[0],
+        radius: String(zone.radius),
+        lat: String(zone.center.lat),
+        lng: String(zone.center.lng),
+        isActive: zone.isActive,
       });
     } else if (initialPosition) {
       setFormData({
         ...defaultFormData,
-        latitude: initialPosition.lat,
-        longitude: initialPosition.lng,
+        lat: String(initialPosition.lat),
+        lng: String(initialPosition.lng),
       });
     } else {
       setFormData(defaultFormData);
@@ -152,7 +154,7 @@ export function ZoneDialog({
                   min={100}
                   max={10000}
                   value={formData.radius}
-                  onChange={(e) => setFormData({ ...formData, radius: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, radius: e.target.value })}
                   required
                 />
               </div>
@@ -165,8 +167,8 @@ export function ZoneDialog({
                   id="zoneLat"
                   type="number"
                   step="any"
-                  value={formData.latitude}
-                  onChange={(e) => setFormData({ ...formData, latitude: Number(e.target.value) })}
+                  value={formData.lat}
+                  onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
                   required
                 />
               </div>
@@ -176,11 +178,24 @@ export function ZoneDialog({
                   id="zoneLng"
                   type="number"
                   step="any"
-                  value={formData.longitude}
-                  onChange={(e) => setFormData({ ...formData, longitude: Number(e.target.value) })}
+                  value={formData.lng}
+                  onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Label htmlFor="zoneActive" className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="zoneActive"
+                  className="rounded border-gray-300"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                />
+                Active Zone
+              </Label>
             </div>
 
             {initialPosition && (

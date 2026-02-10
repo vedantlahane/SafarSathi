@@ -163,9 +163,9 @@ export function ZonesSection({
                   <ZoneCard
                     key={zone.id}
                     zone={zone}
-                    onEdit={onEditZone}
-                    onDelete={onDeleteZone}
-                    onViewOnMap={handleZoneClick}
+                    onEdit={() => onEditZone(zone)}
+                    onDelete={() => onDeleteZone(zone)}
+                    onViewOnMap={() => handleZoneClick(zone)}
                     isSelected={selectedZone?.id === zone.id}
                   />
                 ))

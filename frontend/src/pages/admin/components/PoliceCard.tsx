@@ -11,9 +11,9 @@ import type { PoliceDepartment } from "../types";
 
 interface PoliceCardProps {
   police: PoliceDepartment;
-  onEdit: () => void;
-  onDelete: () => void;
-  onContact: () => void;
+  onEdit: (police: PoliceDepartment) => void;
+  onDelete: (police: PoliceDepartment) => void;
+  onContact: (police: PoliceDepartment) => void;
 }
 
 export function PoliceCard({ police, onEdit, onDelete, onContact }: PoliceCardProps) {
@@ -35,14 +35,14 @@ export function PoliceCard({ police, onEdit, onDelete, onContact }: PoliceCardPr
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={onContact}>
+            <DropdownMenuItem onClick={() => onContact(police)}>
               <Phone className="h-4 w-4 mr-2" /> Contact
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit}>
+            <DropdownMenuItem onClick={() => onEdit(police)}>
               <Pencil className="h-4 w-4 mr-2" /> Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-red-600">
+            <DropdownMenuItem onClick={() => onDelete(police)} className="text-red-600">
               <Trash2 className="h-4 w-4 mr-2" /> Remove
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -53,7 +53,7 @@ export function PoliceCard({ police, onEdit, onDelete, onContact }: PoliceCardPr
       <div className="grid grid-cols-1 gap-1.5 text-xs">
         <div className="flex items-center gap-2 text-slate-600">
           <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-          <span className="truncate">{police.city}, {police.state || "Assam"}</span>
+          <span className="truncate">{police.city}</span>
         </div>
         <div className="flex items-center gap-2 text-slate-600">
           <Phone className="h-3 w-3 text-slate-400 shrink-0" />

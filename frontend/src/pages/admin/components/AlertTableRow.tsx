@@ -4,10 +4,10 @@ import type { Alert } from "../types";
 
 interface AlertTableRowProps {
   alert: Alert;
-  onResolve: () => void;
-  onView: () => void;
+  onResolve: (id: string) => void;
+  onView: (alert: Alert) => void;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (id: string) => void;
 }
 
 const statusConfig = {
@@ -32,7 +32,7 @@ export function AlertTableRow({ alert, onResolve, onView, isSelected, onSelect }
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={onSelect}
+          onChange={() => onSelect(String(alert.id))}
           className="rounded border-slate-300"
         />
       </td>
@@ -52,11 +52,11 @@ export function AlertTableRow({ alert, onResolve, onView, isSelected, onSelect }
       <td className="py-3 px-4 text-sm text-slate-500">{new Date(alert.timestamp).toLocaleString()}</td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onView}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(alert)}>
             <Eye className="h-3.5 w-3.5" />
           </Button>
           {alert.status !== "RESOLVED" && (
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-600" onClick={onResolve}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-600" onClick={() => onResolve(String(alert.id))}>
               <CheckCircle2 className="h-3.5 w-3.5" />
             </Button>
           )}

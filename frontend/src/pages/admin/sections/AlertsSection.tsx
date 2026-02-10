@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ActionBar, AlertTableRow } from "../components";
@@ -39,10 +39,10 @@ export function AlertsSection({
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) => {
       // Search filter
-      const matchesSearch = !search || 
+      const matchesSearch = !search ||
         alert.touristName?.toLowerCase().includes(search.toLowerCase()) ||
         alert.type.toLowerCase().includes(search.toLowerCase()) ||
-        alert.id.toLowerCase().includes(search.toLowerCase());
+        String(alert.id).toLowerCase().includes(search.toLowerCase());
 
       // Status/type filter
       let matchesFilter = true;
@@ -60,7 +60,7 @@ export function AlertsSection({
     if (selectedIds.size === filteredAlerts.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredAlerts.map((a) => a.id)));
+      setSelectedIds(new Set(filteredAlerts.map((a) => String(a.id))));
     }
   };
 
@@ -161,7 +161,7 @@ export function AlertsSection({
                     alert={alert}
                     onResolve={onResolve}
                     onView={onViewAlert}
-                    isSelected={selectedIds.has(alert.id)}
+                    isSelected={selectedIds.has(String(alert.id))}
                     onSelect={handleSelect}
                   />
                 ))}
