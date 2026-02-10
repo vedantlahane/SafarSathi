@@ -4,14 +4,12 @@ import {
   Map as MapIcon,
   User,
   Settings as SettingsIcon,
-  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Home from "@/pages/user/home/Home";
 import Map from "@/pages/user/map/Map";
 import Identity from "@/pages/user/ID/Identity";
 import Settings from "@/pages/user/settings/Settings";
-import { useSession } from "@/lib/session";
 
 type TabValue = "home" | "map" | "identity" | "settings";
 
@@ -24,7 +22,6 @@ const NAV_ITEMS: { value: TabValue; label: string; icon: typeof HomeIcon }[] = [
 
 const UserLayout = () => {
   const [activeTab, setActiveTab] = useState<TabValue>("home");
-  const session = useSession();
 
   useEffect(() => {
     const hash = window.location.hash.replace("#/", "");
