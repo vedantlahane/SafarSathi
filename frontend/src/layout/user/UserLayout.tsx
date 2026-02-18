@@ -49,30 +49,6 @@ const UserLayout = () => {
     <div className="fixed inset-0 flex flex-col bg-slate-50">
       {/* Status Bar */}
       <div className="safe-area-top bg-primary" />
-
-      {/* App Header */}
-      {/* <header className="sticky top-0 z-40 glass border-b border-slate-200/50">
-        <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
-              <Shield className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-900">SafarSathi</h1>
-              <p className="text-[10px] text-slate-500 font-medium -mt-0.5">
-                {session?.name ? `Hi, ${session.name.split(' ')[0]}` : 'Tourist Safety'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-semibold text-emerald-700">LIVE</span>
-            </div>
-          </div>
-        </div>
-      </header> */}
-      
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 no-scrollbar">
         <div className="transition-page min-h-full">{renderContent()}</div>
