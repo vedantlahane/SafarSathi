@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { Clock } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { ALERT_PRIORITY_COLORS, type AlertView } from "../types";
 
