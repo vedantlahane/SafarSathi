@@ -7,6 +7,7 @@ export interface AnimatedNumberProps {
     /** Animation duration in ms */
     duration?: number;
     className?: string;
+    style?: React.CSSProperties;
     /** Custom formatter, e.g. (n) => `${n}%` */
     format?: (n: number) => string;
 }
@@ -25,6 +26,7 @@ function AnimatedNumberInner({
     value,
     duration = 1000,
     className,
+    style,
     format = (n) => String(Math.round(n)),
 }: AnimatedNumberProps) {
     const [display, setDisplay] = useState(value);
@@ -65,7 +67,7 @@ function AnimatedNumberInner({
     }, [value, duration]);
 
     return (
-        <span className={cn("tabular-nums", className)} aria-live="polite">
+        <span className={cn("tabular-nums", className)} style={style} aria-live="polite">
             {format(display)}
         </span>
     );

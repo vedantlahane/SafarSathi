@@ -15,7 +15,7 @@ interface SafetyScoreHeroProps {
     loading: boolean;
 }
 
-function SafetyScoreHeroInner({ score, status, factors, loading }: SafetyScoreHeroProps) {
+function SafetyScoreHeroInner({ score, status: _status, factors, loading }: SafetyScoreHeroProps) {
     const { colors } = useThemeColors();
 
     // SVG ring calculations
