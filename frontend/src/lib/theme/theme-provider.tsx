@@ -18,7 +18,7 @@ function getStoredMode(): ThemeMode {
 
 function isNightTime(): boolean {
     const hour = new Date().getHours();
-    return hour >= 18 || hour < 6;
+    return hour >= 18 || hour < 1;
 }
 
 function resolveIsDark(mode: ThemeMode): boolean {
