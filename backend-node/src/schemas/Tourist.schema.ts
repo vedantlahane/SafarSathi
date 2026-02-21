@@ -40,7 +40,7 @@ const TouristSchema = new Schema<ITourist>(
     currentLat: Number,
     currentLng: Number,
     lastSeen: String,
-    safetyScore: { type: Number, default: 100 },
+    safetyScore: { type: Number, default: 100},
   },
   { timestamps: true, _id: false }
 );

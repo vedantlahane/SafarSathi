@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Copy, QrCode, Share2, Download, CheckCircle2 } from "lucide-react";
+import { Copy, QrCode, Share2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/store";
 

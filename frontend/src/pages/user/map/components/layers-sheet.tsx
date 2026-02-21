@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/store";
-import type { RiskFilter, LayerVisibility, RiskZone } from "../types";
+import type { RiskFilter, LayerVisibility } from "../types";
 
 interface LayersSheetProps {
     open: boolean;
