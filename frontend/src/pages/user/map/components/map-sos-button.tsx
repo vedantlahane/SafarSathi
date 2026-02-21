@@ -1,3 +1,4 @@
+// src/pages/user/map/components/map-sos-button.tsx
 import { memo, useState } from "react";
 import { Siren, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
