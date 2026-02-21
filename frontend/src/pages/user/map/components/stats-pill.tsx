@@ -1,3 +1,4 @@
+// src/pages/user/map/components/stats-pill.tsx
 import { memo } from "react";
 import { AlertTriangle, Shield, Layers, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";

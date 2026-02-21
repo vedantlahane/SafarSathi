@@ -1,3 +1,4 @@
+// src/pages/user/map/types.ts
 export interface RiskZone {
     id: number | string;
     name: string;

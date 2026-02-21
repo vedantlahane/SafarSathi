@@ -1,3 +1,4 @@
+// src/pages/user/map/components/zone-dialog.tsx
 import { memo } from "react";
 import { AlertTriangle, MapPin, Navigation } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

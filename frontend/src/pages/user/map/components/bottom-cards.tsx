@@ -1,3 +1,4 @@
+// src/pages/user/map/components/bottom-cards.tsx
 import { memo } from "react";
 import { Target, Shield, Phone, ExternalLink, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

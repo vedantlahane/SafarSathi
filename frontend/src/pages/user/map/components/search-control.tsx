@@ -1,3 +1,4 @@
+// src/pages/user/map/components/search-control.tsx
 import { useState, useRef, useEffect, memo } from "react";
 import { useMap } from "react-leaflet";
 import { Search, Loader2, X, MapPin, ChevronUp } from "lucide-react";
