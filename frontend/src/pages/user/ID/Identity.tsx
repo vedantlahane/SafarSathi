@@ -1,4 +1,4 @@
-import { Wifi, WifiOff, Activity, Star, User, ChevronRight, Lock, Link, Copy, CheckCircle2, Verified } from "lucide-react";
+import { Wifi, WifiOff, Activity, Star, User, ChevronRight, Lock, Link, Copy, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

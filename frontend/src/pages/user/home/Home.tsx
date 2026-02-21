@@ -13,23 +13,25 @@ import { OfflineBanner } from "./components/offline-banner";
 /**
  * Home page — pure composition root.
  * All logic lives in hooks. All UI lives in sub-components.
+ * Max 40 lines. Zero logic.
  */
 export default function Home() {
   const { data, loading, refresh, hasSession } = useDashboard();
   const locationShare = useLocationShare();
-  const appState = useAppState();
+  const { isOnline } = useAppState();
 
   return (
     <PullToRefresh
       onRefresh={refresh}
       className="flex-1 overflow-y-auto no-scrollbar"
     >
-      <div className="flex flex-col gap-4 px-4 pt-2 pb-8">
-        {!appState.isOnline && <OfflineBanner />}
+      <div className="stagger-children flex flex-col gap-5 px-4 pt-3 pb-8">
+        {!isOnline && <OfflineBanner />}
         <HomeHeader alertCount={data.openAlerts} />
         <SafetyScoreHero
           score={data.safetyScore}
           status={data.status}
+          recommendation={data.recommendation}
           factors={data.factors}
           loading={loading}
         />
