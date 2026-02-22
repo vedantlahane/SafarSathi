@@ -349,3 +349,122 @@ body {
     animation: none;
   }
 }
+
+
+/* ─── Map Dark Mode Tile Filter ──────────────────────── */
+.dark .leaflet-tile-pane {
+  filter: brightness(0.95) contrast(1.05);
+}
+
+/* ─── Leaflet Popup Override for Glassmorphism ────────── */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: hsl(210 40% 98%) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.dark .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.92) !important;
+}
+
+.leaflet-popup-close-button {
+  color: hsl(215 16% 47%) !important;
+  font-size: 20px !important;
+  padding: 6px 8px !important;
+}
+
+.dark .leaflet-popup-close-button {
+  color: hsl(215 20% 55%) !important;
+}
+
+/* ─── Leaflet Attribution Minimal ────────────────────── */
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(4px) !important;
+  border-radius: 8px !important;
+  padding: 2px 6px !important;
+}
+
+.dark .leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.7) !important;
+  color: hsl(215 20% 55%) !important;
+}
+
+.dark .leaflet-control-attribution a {
+  color: hsl(215 20% 65%) !important;
+}
+
+/* ─── Leaflet Tooltip Glassmorphism ──────────────────── */
+.leaflet-tooltip {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+}
+
+.dark .leaflet-tooltip {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: hsl(210 40% 98%) !important;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.dark .leaflet-tooltip-top::before {
+  border-top-color: rgba(15, 23, 42, 0.92) !important;
+}
+
+/* ─── User Marker Ping Animation ─────────────────────── */
+@keyframes marker-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  75%,
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.leaflet-marker-icon .animate-ping {
+  animation: marker-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ─── Accuracy Ring Dash Animation ───────────────────── */
+@keyframes accuracy-dash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 16;
+  }
+}
+
+/* ─── Print: Hide map controls ───────────────────────── */
+@media print {
+  .leaflet-control-container,
+  .leaflet-popup-pane {
+    display: none !important;
+  }
+}
