@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   fetchPublicRiskZones,
   fetchPoliceDepartments,
+  fetchHospitals,
   postLocation,
 } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -260,9 +261,10 @@ export function useMapData() {
     let active = true;
     (async () => {
       try {
-        const [rz, pd] = await Promise.all([
+        const [rz, pd, hosp] = await Promise.all([
           fetchPublicRiskZones(),
           fetchPoliceDepartments(),
+          fetchHospitals(),
         ]);
         if (!active) return;
         setBackendZones(
@@ -275,6 +277,16 @@ export function useMapData() {
             name: d.name,
             contact: d.contactNumber,
             available: d.isActive ?? true,
+          }))
+        );
+        setHospitals(
+          hosp.map((h) => ({
+            id: h.hospitalId,
+            position: [h.latitude, h.longitude] as [number, number],
+            name: h.name,
+            contact: h.contact,
+            type: h.type,
+            emergency: h.emergency,
           }))
         );
       } catch {
@@ -313,10 +325,10 @@ export function useMapData() {
           postLocation(session.touristId, {
             lat: p[0],
             lng: p[1],
-          }).catch(() => {});
+          }).catch(() => { });
         }
       },
-      () => {},
+      () => { },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
 
