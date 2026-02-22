@@ -217,7 +217,25 @@ export async function fetchPublicRiskZones() {
 }
 
 export async function fetchPoliceDepartments() {
-  return request<PoliceDepartment[]>("/api/admin/police");
+  return request<PoliceDepartment[]>("/api/police-stations");
+}
+
+export type HospitalResponse = {
+  hospitalId: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  contact: string;
+  type: "hospital" | "clinic" | "pharmacy";
+  emergency: boolean;
+  city: string;
+  district: string;
+  state: string;
+  isActive: boolean;
+};
+
+export async function fetchHospitals() {
+  return request<HospitalResponse[]>("/api/hospitals");
 }
 
 export async function createPoliceDepartment(payload: Omit<PoliceDepartment, "id">) {
