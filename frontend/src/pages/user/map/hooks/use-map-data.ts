@@ -14,7 +14,6 @@ import assamData from "./../../../../../../dataSets/assamRistrictedAreas.json";
 import policeData from "./../../../../../../dataSets/assamPoliceStations.json";
 import { MAP_DEFAULTS, LOCATION_POST_INTERVAL_MS } from "../constants";
 import {
-  formatDistance,
   formatETA,
   type RiskZone,
   type PoliceStation,

@@ -83,12 +83,7 @@ const UserLayout = () => {
         >
           <StatusBar />
 
-          <div className={cn(
-            "flex-1 overflow-x-hidden no-scrollbar relative z-10",
-            activeTab === "map"
-              ? "overflow-hidden"
-              : "overflow-y-auto pb-28"
-          )}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden pb-28 no-scrollbar relative z-10">
             {(Object.entries(PAGES) as [TabValue, React.ComponentType][]).map(
               ([value, Page]) => (
                 <TabsContent
