@@ -2,7 +2,6 @@
 import { memo } from "react";
 import {
   Shield,
-  Clock,
   MapPin,
   AlertTriangle,
   CheckCircle,
@@ -37,13 +36,13 @@ function RouteInfoPanelInner({ routeInfo, visible }: RouteInfoPanelProps) {
                 className={cn(
                   "flex items-center gap-2 p-2 rounded-lg text-xs",
                   route.isSafest &&
-                    "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800",
+                  "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800",
                   route.isFastest &&
-                    !route.isSafest &&
-                    "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800",
                   !route.isSafest &&
-                    !route.isFastest &&
-                    "bg-muted/30 border border-transparent"
+                  "bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800",
+                  !route.isSafest &&
+                  !route.isFastest &&
+                  "bg-muted/30 border border-transparent"
                 )}
               >
                 {route.isSafest && (
@@ -70,12 +69,12 @@ function RouteInfoPanelInner({ routeInfo, visible }: RouteInfoPanelProps) {
                     className={cn(
                       "text-[9px] h-4 px-1.5",
                       route.safetyScore >= 80 &&
-                        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
                       route.safetyScore >= 50 &&
-                        route.safetyScore < 80 &&
-                        "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+                      route.safetyScore < 80 &&
+                      "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
                       route.safetyScore < 50 &&
-                        "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                      "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
                     )}
                   >
                     <Shield className="h-2.5 w-2.5 mr-0.5" />

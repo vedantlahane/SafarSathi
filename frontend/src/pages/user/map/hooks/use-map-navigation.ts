@@ -13,7 +13,6 @@ import {
   type PoliceStation,
   type SafeRoute,
   type RouteInfo,
-  getZoneRiskWeight,
 } from "../types";
 
 function interpolateRoute(
@@ -109,10 +108,10 @@ function scoreRoute(
     Math.min(
       100,
       SAFE_ROUTE_WEIGHTS.baseScore -
-        intersections.high * SAFE_ROUTE_WEIGHTS.highRiskPenalty -
-        intersections.medium * SAFE_ROUTE_WEIGHTS.mediumRiskPenalty -
-        intersections.low * SAFE_ROUTE_WEIGHTS.lowRiskPenalty +
-        policeNearby * SAFE_ROUTE_WEIGHTS.policeBonus
+      intersections.high * SAFE_ROUTE_WEIGHTS.highRiskPenalty -
+      intersections.medium * SAFE_ROUTE_WEIGHTS.mediumRiskPenalty -
+      intersections.low * SAFE_ROUTE_WEIGHTS.lowRiskPenalty +
+      policeNearby * SAFE_ROUTE_WEIGHTS.policeBonus
     )
   );
 
