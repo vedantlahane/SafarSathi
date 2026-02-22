@@ -35,7 +35,7 @@ const Map = () => {
   const tileAttr = data.isDarkMode ? TILE_ATTRIBUTIONS.dark : TILE_ATTRIBUTIONS.light;
 
   return (
-    <div className="fixed inset-0 flex flex-col">
+    <div className="relative w-full" style={{ height: "calc(100vh - 3.5rem - 5rem)" }}>
       <Suspense fallback={<MapLoading />}>
         <div className="flex-1 relative">
           <MapContainer

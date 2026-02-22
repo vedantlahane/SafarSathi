@@ -6,15 +6,17 @@ import {
   PoliceDepartmentModel,
   AlertModel,
   BlockchainLogModel,
+  HospitalModel,
   ITourist,
   IRiskZone,
   IPoliceDepartment,
   IAlert,
   IBlockchainLog,
+  IHospital,
 } from "../schemas/index.js";
 
 // Re-export the types for use by other services
-export type { ITourist, IRiskZone, IPoliceDepartment, IAlert, IBlockchainLog };
+export type { ITourist, IRiskZone, IPoliceDepartment, IAlert, IBlockchainLog, IHospital };
 
 // Counter collection for auto-increment IDs
 import mongoose from "mongoose";
@@ -153,6 +155,16 @@ export async function updateAlert(alertId: number, data: Partial<IAlert>): Promi
   return AlertModel.findOneAndUpdate({ alertId }, data, { new: true }).lean();
 }
 
+// ==================== HOSPITALS ====================
+
+export async function getAllHospitals(): Promise<IHospital[]> {
+  return HospitalModel.find().lean();
+}
+
+export async function getActiveHospitals(): Promise<IHospital[]> {
+  return HospitalModel.find({ isActive: true }).lean();
+}
+
 // ==================== BLOCKCHAIN LOGS ====================
 
 export async function getAllBlockchainLogs(): Promise<IBlockchainLog[]> {
@@ -262,10 +274,67 @@ export async function seedDatabase() {
     },
   ]);
 
+  // Seed hospitals
+  await HospitalModel.insertMany([
+    {
+      hospitalId: 1,
+      name: "Gauhati Medical College & Hospital",
+      latitude: 26.1840,
+      longitude: 91.7456,
+      contact: "+91-361-2529457",
+      type: "hospital",
+      emergency: true,
+      city: "Guwahati",
+      district: "Kamrup Metropolitan",
+      state: "Assam",
+      isActive: true,
+    },
+    {
+      hospitalId: 2,
+      name: "Down Town Hospital",
+      latitude: 26.1330,
+      longitude: 91.7890,
+      contact: "+91-361-2331003",
+      type: "hospital",
+      emergency: true,
+      city: "Guwahati",
+      district: "Kamrup Metropolitan",
+      state: "Assam",
+      isActive: true,
+    },
+    {
+      hospitalId: 3,
+      name: "Nemcare Hospital",
+      latitude: 26.1480,
+      longitude: 91.7700,
+      contact: "+91-361-2463003",
+      type: "hospital",
+      emergency: true,
+      city: "Guwahati",
+      district: "Kamrup Metropolitan",
+      state: "Assam",
+      isActive: true,
+    },
+    {
+      hospitalId: 4,
+      name: "Dispur Polyclinic & Nursing Home",
+      latitude: 26.1425,
+      longitude: 91.7880,
+      contact: "+91-361-2260373",
+      type: "clinic",
+      emergency: false,
+      city: "Guwahati",
+      district: "Kamrup Metropolitan",
+      state: "Assam",
+      isActive: true,
+    },
+  ]);
+
   // Initialize counters
   await CounterModel.findByIdAndUpdate("riskZoneId", { seq: 2 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("alertId", { seq: 0 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("blockchainLogId", { seq: 0 }, { upsert: true });
+  await CounterModel.findByIdAndUpdate("hospitalId", { seq: 4 }, { upsert: true });
 
   console.log("✅ Database seeded successfully");
 }
