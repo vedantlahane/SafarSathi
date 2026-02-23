@@ -35,8 +35,8 @@ import type {
   DeleteConfirmation,
 } from "./types";
 
-// API base URL
-const API_BASE = "http://localhost:8081/api";
+import { useAdminSession, saveAdminSession } from "../../lib/session";
+import { adminLogin } from "../../lib/api/admin";
 
 interface AdminIndexProps {
   activeTab: string;
@@ -45,9 +45,8 @@ interface AdminIndexProps {
 
 export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   // Auth state
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem("adminToken") !== null;
-  });
+  const session = useAdminSession();
+  const isAuthenticated = !!session?.token;
   const [authError, setAuthError] = useState("");
 
   // Data hooks
@@ -80,20 +79,22 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   // Auth handlers
   const handleLogin = async (email: string, password: string) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await adminLogin({ email, password });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: "Login failed" }));
-        throw new Error(err.message || "Invalid credentials");
+      if (!res.success) {
+        throw new Error("Invalid credentials");
       }
 
-      const { token } = await res.json();
-      localStorage.setItem("adminToken", token);
-      setIsAuthenticated(true);
+      saveAdminSession({
+        adminId: res.admin.id,
+        token: res.token,
+        name: res.admin.name,
+        email: res.admin.email,
+        departmentCode: res.admin.departmentCode,
+        city: res.admin.city,
+        district: res.admin.district,
+        state: res.admin.state
+      });
       setAuthError("");
       toast.success("Welcome to SafarSathi Admin");
     } catch (err: any) {

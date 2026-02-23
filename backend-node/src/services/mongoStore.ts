@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { sha256 } from "../utils/hash.js";
+import { sha256, hashPassword } from "../utils/hash.js";
 import {
   TouristModel,
   RiskZoneModel,
@@ -209,7 +209,7 @@ export async function seedDatabase() {
     gender: "Male",
     nationality: "Indian",
     emergencyContact: JSON.stringify({ name: "Riya Sharma", relationship: "Sibling", phone: "+91-9876543210" }),
-    passwordHash: sha256("password123"),
+    passwordHash: await hashPassword("password123"),
     idHash: sha256("IND1234567+91-9876543211"),
     idExpiry: idExpiry.toISOString(),
     currentLat: 26.2006,
@@ -248,7 +248,7 @@ export async function seedDatabase() {
       _id: randomUUID(),
       name: "SafarSathi Control Center",
       email: "admin@safarsathi.in",
-      passwordHash: sha256("admin123"),
+      passwordHash: await hashPassword("admin123"),
       departmentCode: "SS-CONTROL",
       latitude: 26.1445,
       longitude: 91.7362,
@@ -262,7 +262,7 @@ export async function seedDatabase() {
       _id: randomUUID(),
       name: "Dispur Police Station",
       email: "dispur@police.assam.gov.in",
-      passwordHash: sha256("admin123"),
+      passwordHash: await hashPassword("admin123"),
       departmentCode: "PS-DISPUR",
       latitude: 26.1433,
       longitude: 91.7898,

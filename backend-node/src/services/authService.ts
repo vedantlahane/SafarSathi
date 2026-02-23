@@ -83,7 +83,7 @@ export async function validateTouristLoginByEmail(email: string, rawPassword: st
 }
 
 export function login(touristId: string) {
-  return jwt.sign({ sub: touristId, role: "tourist" }, env.jwtSecret, { expiresIn: env.jwtExpiry });
+  return jwt.sign({ sub: touristId, role: "tourist" }, env.jwtSecret, { expiresIn: env.jwtExpiry as any });
 }
 
 export async function getProfile(touristId: string) {
