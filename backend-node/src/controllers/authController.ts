@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { normalizeParam } from "../utils/params.js";
 import {
   getProfile,
   login as issueLoginToken,
@@ -37,7 +38,7 @@ export async function register(req: Request, res: Response) {
     return res.status(400).json({ message: result.message });
   }
 
-  const token = issueLoginToken(result.tourist.phone);
+  const token = issueLoginToken(result.tourist._id.toString());
   const user = buildUserResponse(result.tourist);
   return res.status(201).json({
     touristId: result.tourist._id,
@@ -57,7 +58,7 @@ export async function login(req: Request, res: Response) {
     return res.status(401).json({ message: "Invalid email or password." });
   }
 
-  const token = issueLoginToken(tourist.phone);
+  const token = issueLoginToken(tourist._id.toString());
   const user = buildUserResponse(tourist);
   return res.json({
     touristId: tourist._id,
@@ -135,11 +136,4 @@ function isValidUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
   );
-}
-
-function normalizeParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
 }

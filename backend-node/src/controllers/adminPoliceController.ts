@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { normalizeParam } from "../utils/params.js";
 import {
   createPoliceDepartment,
   deletePoliceDepartment,
@@ -56,11 +57,4 @@ export async function deletePolice(req: Request, res: Response) {
 function stripPassword(dept: { passwordHash?: string }) {
   const { passwordHash, ...rest } = dept;
   return rest;
-}
-
-function normalizeParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
 }

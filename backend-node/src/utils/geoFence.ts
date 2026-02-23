@@ -2,7 +2,7 @@ export function calculateDeviation(lat?: number, lng?: number) {
   if (typeof lat !== "number" || typeof lng !== "number") {
     return 0;
   }
-  return Math.random() * 7;
+  return 0.0;
 }
 
 export function isPointWithinRadius(

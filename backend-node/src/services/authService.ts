@@ -1,4 +1,6 @@
-import { sha256 } from "../utils/hash.js";
+import { sha256, hashPassword, comparePassword } from "../utils/hash.js";
+import jwt from "jsonwebtoken";
+import { env } from "../config/env.js";
 import { issueDigitalID } from "./BlockchainService.js";
 import { randomUUID } from "crypto";
 import { processLocation } from "./AnomalyService.js";
@@ -36,7 +38,7 @@ export async function registerTourist(
   }
 
   const rawPassword = payload.passwordHash;
-  const hashedPassword = sha256(rawPassword);
+  const hashedPassword = await hashPassword(rawPassword);
   const idHashInput = `${payload.passportNumber}${payload.phone}${new Date().toISOString()}`;
   const idHash = sha256(idHashInput);
 
@@ -73,15 +75,15 @@ export async function validateTouristLoginByEmail(email: string, rawPassword: st
   if (!tourist) {
     return null;
   }
-  const hashedInputPassword = sha256(rawPassword);
-  if (hashedInputPassword !== tourist.passwordHash) {
+  const isValid = await comparePassword(rawPassword, tourist.passwordHash);
+  if (!isValid) {
     return null;
   }
   return tourist;
 }
 
-export function login(phone: string) {
-  return `MOCK_JWT_TOKEN_${sha256(phone).substring(0, 10)}`;
+export function login(touristId: string) {
+  return jwt.sign({ sub: touristId, role: "tourist" }, env.jwtSecret, { expiresIn: env.jwtExpiry });
 }
 
 export async function getProfile(touristId: string) {

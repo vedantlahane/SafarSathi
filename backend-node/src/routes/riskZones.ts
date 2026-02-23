@@ -7,14 +7,15 @@ import {
   toggleZone,
   updateZone
 } from "../controllers/riskZoneController.js";
+import { requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.get("/", listZones);
-router.get("/active", listActiveZones);
-router.post("/", createZone);
-router.put("/:zoneId", updateZone);
-router.patch("/:zoneId/status", toggleZone);
-router.delete("/:zoneId", deleteZone);
+router.get("/", requireAdmin, listZones);
+router.get("/active", requireAdmin, listActiveZones);
+router.post("/", requireAdmin, createZone);
+router.put("/:zoneId", requireAdmin, updateZone);
+router.patch("/:zoneId/status", requireAdmin, toggleZone);
+router.delete("/:zoneId", requireAdmin, deleteZone);
 
 export default router;
