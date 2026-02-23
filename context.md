@@ -567,3 +567,1565 @@ Each card:
 #### 6. Alert List (Compact List Rows — NOT Cards)
 Section title: "Recent Alerts" (text-sm font-semibold mb-3)
 Maximum 3 visible. "View All" button opens shadcn Sheet
+*(Continuing from Section 13: Home Page — Alert List)*
+
+Each alert row layout:
+- Full width button (for tap interaction)
+- flex items-start gap-3 py-3 text-left
+- hover:bg-muted/30 rounded-lg transition-colors
+
+Alert row contents:
+- Left: colored dot (h-2 w-2 rounded-full mt-1.5 shrink-0). High severity: bg-red-500. Medium: bg-amber-500. Low: bg-emerald-500.
+- Center: flex-1 min-w-0. Title (text-sm font-medium truncate). Message (text-xs text-muted-foreground truncate, single line).
+- Right: relative time (text-[10px] text-muted-foreground whitespace-nowrap). Examples: "2m ago", "15m ago", "1h ago", "3h ago"
+
+Between rows: shadcn Separator component (thin horizontal line)
+After 3rd row: no separator
+
+"View All" button:
+- Only shows if alerts.length > 3
+- w-full mt-2 py-2 text-sm text-primary font-medium hover:underline
+- Opens shadcn Sheet from bottom showing full alert list with scroll
+- Sheet header: "All Alerts ({count})" with filter chips for severity
+- Sheet content: same row format but scrollable, all alerts shown
+
+Empty state (no alerts):
+- Centered content: CheckCircle icon (48px, text-emerald-500)
+- "No Active Alerts" heading (text-sm font-semibold)
+- "Your area is currently clear" description (text-xs text-muted-foreground)
+
+#### 7. Daily Tip (Glass Level 3)
+Single card, static content. Random tip selected on component mount using seeded random (based on date so it changes daily but not on every render). NOT rotating, NOT auto-advancing.
+
+Layout:
+- Glass Level 3 card (bg-white/30 backdrop-blur-12 rounded-xl)
+- p-4
+- flex items-start gap-3
+- Left: icon container h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/40, Lightbulb icon h-5 w-5 text-amber-600
+- Right: flex-1
+  - Title: "Safety Tip" (text-sm font-semibold mb-1)
+  - Tip text: text-xs text-muted-foreground leading-relaxed
+
+Tip pool (at least 10 tips):
+1. "Always inform someone of your travel plans and expected return time."
+2. "Keep emergency contacts saved and accessible even without internet."
+3. "Trust your instincts — if something feels wrong, seek help immediately."
+4. "Download offline maps before traveling to remote areas."
+5. "Carry a portable charger to ensure your phone stays powered."
+6. "Register with local tourist offices when visiting new regions."
+7. "Keep copies of important documents separate from originals."
+8. "Learn basic phrases in the local language for emergencies."
+9. "Avoid displaying expensive jewelry or electronics in crowded areas."
+10. "Stay on marked trails when exploring natural areas."
+
+Bottom padding: pb-24 (to clear tab nav plus safe area)
+
+### Home Page File Structure
+
+```
+src/pages/user/home/
+├── Home.tsx                    ← Composition root (≤40 lines, zero logic)
+├── types.ts                    ← DashboardData, Alert, Factor, SafetyStatus types
+├── hooks/
+│   ├── use-dashboard.ts        ← Fetch dashboard data, score animation, WebSocket alerts
+│   └── use-location-share.ts   ← Web Share API logic with clipboard fallback
+└── components/
+    ├── home-header.tsx         ← Avatar + greeting + notification bell
+    ├── safety-score-hero.tsx   ← Score ring + badge + progress + factors + description
+    ├── safety-factor-pills.tsx ← Horizontal scrollable factor badges with trends
+    ├── quick-actions.tsx       ← 2-col grid (Share Location, View Map)
+    ├── emergency-strip.tsx     ← Horizontal scroll emergency contacts (always visible)
+    ├── alert-list.tsx          ← Container with max 3 rows + View All
+    ├── alert-list-item.tsx     ← Single alert row (memo'd for list performance)
+    ├── daily-tip.tsx           ← Random tip glass card
+    ├── empty-states.tsx        ← No alerts state, no score state
+    └── offline-banner.tsx      ← Network lost banner
+```
+
+---
+
+## SECTION 14: MAP PAGE — Interactive Safety Map
+
+Full-screen Leaflet map with extensive safety intelligence overlays. Every feature must work flawlessly on mobile touch interactions. NO local SOS button on this page (removed per spec — global floating SOS ball handles emergency).
+
+### Visual Hierarchy (Layers from Back to Front)
+
+Layer 0 (z-0): Leaflet map container with tile layer (OpenStreetMap light or CartoDB Dark Matter)
+Layer 1 (z-auto via Leaflet): Risk zone circles, route polylines, markers
+Layer 2 (z-999): Route info panel overlay
+Layer 3 (z-1000): Search bar, stats pill, map controls, compass, bottom cards, offline banner
+Layer 4 (z-1001): Offline banner (above everything on map)
+
+### Map Container Configuration
+- Center: [26.1445, 91.7362] (Guwahati, Assam)
+- Default zoom: 13
+- Min zoom: 8
+- Max zoom: 18
+- scrollWheelZoom: enabled
+- zoomControl: false (custom controls)
+- Full height and width of parent container
+
+### Tile Layers
+Light mode: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png with OSM attribution
+Dark mode: https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png with CARTO + OSM attribution
+Switching: Automatic based on dark mode class on html element, detected via MutationObserver
+
+### Feature 1: Search Bar
+Position: Absolute, top 16px, left 16px, right 16px, z-1000
+Height: 56px (h-14)
+Style: bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl rounded-2xl border-0
+Input: pl-12 (space for search icon) pr-12 (space for clear/loader) text-base
+Search icon: absolute left-4, centered vertically, h-5 w-5, text-muted-foreground
+Clear button: absolute right-4, centered vertically, p-1 rounded-full hover:bg-slate-100, X icon h-5 w-5, only shows when query non-empty and not loading
+Loading spinner: absolute right-4, centered vertically, Loader2 h-5 w-5 animate-spin text-primary, only shows during API call
+Aria-label: "Search map locations"
+
+Search behavior:
+- 400ms debounce before API call (previous timer cleared on each keystroke)
+- AbortController cancels in-flight requests when new search starts
+- Minimum 2 characters before searching
+- Nominatim API with query suffixed ", Assam, India" for regional relevance
+- Limit: 6 results
+- Results parsed: display_name split by comma taking first 3 parts, plus lat/lon/type
+
+Results dropdown:
+- Card below search bar, mt-2, shadow-xl border-0 rounded-2xl
+- bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl
+- max-h-[300px] overflow-auto
+- No padding on CardContent (p-0)
+
+Each result item:
+- Full width button, flex items-center gap-3 p-4
+- hover:bg-slate-50 dark:hover:bg-slate-800
+- active:bg-slate-100 dark:active:bg-slate-700
+- text-left
+- border-b border-slate-100 dark:border-slate-800 last:border-0
+- Left: icon container 40x40 rounded-xl bg-primary/10, MapPin icon h-5 w-5 text-primary
+- Center: flex-1 min-w-0, name (text-sm font-medium truncate), address if available (text-xs text-muted-foreground truncate)
+- Right: ChevronRight h-4 w-4 text-muted-foreground shrink-0
+
+On result selection:
+- Haptic feedback (light)
+- Map flies to selected coordinates at zoom 15 with 1.5s duration
+- Destination is set (triggers route calculation)
+- Results close, query clears
+- Outside click closes results (mousedown event listener on document)
+- Cleanup: debounce timer and AbortController cleared on unmount
+
+### Feature 2: Stats Pill
+Position: Absolute, top 76px (below search), horizontally centered (left-1/2 -translate-x-1/2), z-1000
+Style: pill-shaped flex row, px-4 py-2.5 rounded-full shadow-lg
+Background: bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-100 dark:border-slate-800
+Active state: active:scale-95 transition-all
+
+Contents (left to right):
+- If user in zone: red section with AlertCircle icon h-4 w-4 text-red-600, zone name truncated max-w-24 text-xs font-semibold, bordered right (border-r border-red-200)
+- Zone count: AlertTriangle h-4 w-4 text-amber-500, number text-xs font-medium
+- Station count: Shield h-4 w-4 text-blue-500, number text-xs font-medium
+- Hospital count: Cross h-4 w-4 text-rose-500, number text-xs font-medium
+- Layers icon: Layers h-4 w-4 text-muted-foreground (indicates tappable)
+
+In-zone state: bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800
+Tap: Opens Layers Sheet from bottom
+Aria-label: "Open map layers and filters"
+
+### Feature 3: Map Controls (Right Column)
+Position: Absolute, bottom 144px, right 16px, z-1000
+Layout: flex flex-col gap-2 (stacked vertically)
+
+Four buttons from top to bottom:
+
+Compass button:
+- h-11 w-11 rounded-xl shadow-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-0
+- Navigation icon h-5 w-5
+- Icon color: text-slate-600 dark:text-slate-300 normally, text-primary when bearing ≠ 0
+- Icon rotated via inline style transform rotate({bearing}deg)
+- transition-transform duration-300 on icon
+- Tap: Resets map bearing to 0 (north), haptic feedback
+- Aria-label: "Reset map north"
+
+Zoom in button:
+- Same dimensions and style as compass
+- ZoomIn icon h-5 w-5
+- Tap: map.zoomIn()
+- Aria-label: "Zoom in"
+
+Zoom out button:
+- Same dimensions and style
+- ZoomOut icon h-5 w-5
+- Tap: map.zoomOut()
+- Aria-label: "Zoom out"
+
+Locate button:
+- Same dimensions and style
+- Normal state: LocateFixed icon h-5 w-5 text-primary
+- Loading state: Loader2 icon h-5 w-5 animate-spin text-primary
+- Disabled while locating
+- Tap: Gets current position, flies map to it, posts location to backend
+- Aria-label: "Center on my location"
+
+### Feature 4: Risk Zone Circles
+Each zone from data rendered as Leaflet Circle component.
+Center: [zone.centerLat, zone.centerLng]
+Radius: zone.radiusMeters
+
+Path options by risk level:
+- High: color #dc2626, fillColor #dc2626, fillOpacity 0.12, weight 2
+- Medium: color #ea580c, fillColor #ea580c, fillOpacity 0.12, weight 2
+- Low: color #ca8a04, fillColor #ca8a04, fillOpacity 0.12, weight 2
+
+Tooltip: Leaflet Tooltip component, direction "center", not permanent. Shows "{name} · {level} Risk" in text-xs font-medium.
+Click handler: Opens Zone Dialog with that zone's data.
+
+### Feature 5: Police Station Markers
+Leaflet Marker with custom DivIcon.
+Icon design: bg-blue-600 p-1.5 rounded-full border-2 border-white shadow-lg, white shield SVG inside (14x14). Total icon size 28x28, anchor at center (14,14).
+
+Popup content (glassmorphism styled via CSS overrides on .leaflet-popup-content-wrapper):
+- p-2 min-w-[200px]
+- Row 1: Shield icon h-4 w-4 text-blue-600 + station name h3 font-bold text-sm
+- Row 2: Phone icon h-3 w-3 + contact number, text-xs text-muted-foreground
+- Row 3 (if ETA available): Clock icon h-3 w-3 + ETA string, text-xs text-muted-foreground
+- Row 4 (if distance available): MapPin icon h-3 w-3 + formatted distance, text-xs text-muted-foreground
+- Row 5: Badge showing Active/Inactive status (text-[10px] h-5)
+- Row 6: flex gap-2 with Call button (tel: link, primary, full width flex-1) and Route button (outline, opens Google Maps external)
+
+### Feature 6: Hospital Markers
+Leaflet Marker with custom DivIcon.
+Icon design: bg-rose-600 p-1.5 rounded-full border-2 border-white shadow-lg, white cross SVG inside. Total 28x28, anchor center.
+
+Popup: Same layout as police station plus:
+- Hospital type badge (hospital/clinic/pharmacy) in secondary variant, capitalize, text-[10px] h-5
+- Emergency badge in destructive variant if hospital.emergency is true
+
+### Feature 7: User Location Marker
+Custom DivIcon with multiple visual layers:
+- Outermost: ping animation ring, absolute -inset-3, bg-blue-500 rounded-full animate-ping opacity-20
+- Middle: static glow ring, absolute -inset-1.5, bg-blue-400 rounded-full opacity-30
+- Core: bg-blue-600 p-2 rounded-full border-[3px] border-white shadow-xl
+- Inner dot: w-3 h-3 bg-white rounded-full centered in core
+- Heading arrow (conditional, only when heading is not null): small triangle above core, rotated to heading degrees. Triangle: border-left 5px transparent, border-right 5px transparent, border-bottom 8px blue-600.
+
+Total icon size: 36x36, anchor center (18,18).
+Icon is recreated via useMemo when heading changes (new DivIcon instance).
+
+Accuracy ring (conditional):
+- Shows only when accuracy > 15 meters
+- Leaflet Circle component at user position
+- Radius equals accuracy value in meters
+- Style: color #3b82f6, fillColor #3b82f6, fillOpacity 0.06, weight 1, dashArray "4 4"
+- Disappears automatically when GPS accuracy improves below threshold
+
+Popup content:
+- p-3 text-center min-w-[160px]
+- Navigation icon h-5 w-5 text-blue-600 + "Your Location" text-sm font-semibold
+- Coordinates: {lat.toFixed(5)}, {lng.toFixed(5)} text-xs text-muted-foreground
+- If accuracy available: ±{rounded accuracy}m accuracy, text-[10px]
+- If speed available and > 0: {speed * 3.6 toFixed(1)} km/h, text-[10px]
+
+### Feature 8: Destination Marker
+Custom DivIcon.
+Icon design: bg-emerald-500 p-2 rounded-full border-2 border-white shadow-lg, white map pin SVG inside (16x16).
+Total: 32x32, anchor at bottom center (16,32) so pin points to exact location.
+
+Popup content:
+- p-3 min-w-[180px]
+- Target icon h-5 w-5 text-emerald-600 + "Destination" text-sm font-semibold
+- Destination name text-xs text-muted-foreground mb-3
+- flex gap-2: Navigate button (Car icon, primary, flex-1) opens Google Maps. Clear button (X icon, outline) removes destination.
+
+### Feature 9: Safe Route Lines
+Three polylines rendered when destination is set and routes are calculated.
+
+Safest route:
+- Color: #10b981 (emerald-500)
+- Weight: 5px
+- Opacity: 0.8
+- No dash (solid line)
+- lineCap: round, lineJoin: round
+- Tooltip: "Safest · {score}/100 · {distance}"
+
+Fastest route (only if different from safest):
+- Color: #3b82f6 (blue-500)
+- Weight: 4px
+- Opacity: 0.6
+- dashArray: "10 10"
+- Tooltip: "Fastest · {distance}"
+
+Alternative route:
+- Color: #94a3b8 (slate-400)
+- Weight: 3px
+- Opacity: 0.4
+- dashArray: "8 8"
+- Tooltip: "Alt · Score {score} · {distance}"
+
+Tooltips: Leaflet Tooltip component, sticky (follows cursor), direction "top", offset [0, -10], text-xs font-medium.
+
+### Feature 10: Route Info Panel
+Position: Absolute, top 120px, left 16px, right 16px, z-999
+Condition: Only visible when destination is set AND routes are calculated AND not loading AND layer visibility for routes is on
+Style: Card shadow-lg border-0 bg-white/85 dark:bg-slate-900/85 backdrop-blur-lg overflow-hidden
+
+Contents:
+- Header: "ROUTE COMPARISON" text-[10px] font-semibold text-muted-foreground uppercase tracking-wider
+- List of route rows (one per route)
+
+Each route row:
+- flex items-center gap-2 p-2 rounded-lg text-xs
+- Safest: bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800
+- Fastest (not safest): bg-blue-50 dark:bg-blue-950/30 border border-blue-200
+- Alternative: bg-muted/30 border border-transparent
+- Left icon: CheckCircle for safest (emerald), Zap for fastest (blue), MapPin for alternative (muted)
+- Label: "Safest", "Fastest", or "Alternative" (font-medium truncate)
+- Right cluster (ml-auto shrink-0): Safety score badge (color-coded), distance, duration in minutes, warning triangle if high-risk intersections > 0
+
+Safety badge colors in route rows:
+- Score >= 80: bg-emerald-100 text-emerald-700
+- Score 50-79: bg-amber-100 text-amber-700
+- Score < 50: bg-red-100 text-red-700
+
+### Feature 11: Destination Bar (Bottom Card)
+Position: Absolute, bottom 144px, left 16px, right 16px, z-1000
+Condition: Shows when destination is selected (mutually exclusive with nearest station bar)
+Style: Card shadow-xl border-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl
+
+Contents:
+- Top row: flex items-center gap-3
+  - Emerald icon container 40x40 rounded-xl bg-emerald-100 dark:bg-emerald-900/40, Target icon
+  - Destination name (text-sm font-medium truncate) and "Destination" label (text-xs muted)
+  - Navigate button: h-9 bg-emerald-500 hover:bg-emerald-600, ExternalLink icon + "Navigate" text, opens Google Maps
+  - Clear button: size-icon ghost h-9 w-9, X icon
+
+- Bottom row (when routes calculated): flex items-center gap-2 flex-wrap
+  - Safety badge: CheckCircle + "Safety: {score}/100" in emerald
+  - Distance badge: MapPin + formatted distance
+  - Duration badge: Clock + minutes
+  - Risk warning badge (if high intersections > 0): AlertTriangle + "{count} high risk" in destructive
+
+- Loading state: Loader2 animate-spin + "Calculating safe routes..." text-xs text-muted-foreground
+
+### Feature 12: Nearest Station Bar (Bottom Card)
+Position: Same as destination bar (mutually exclusive)
+Condition: Shows when NO destination set AND user position exists AND nearest station calculated
+Style: Same glassmorphism card
+
+Contents: flex items-center gap-3 p-3
+- Blue icon container 40x40 rounded-xl bg-blue-100 dark:bg-blue-900/40, Shield icon
+- "Nearest Police Station" label (text-xs muted)
+- Station name (text-sm font-medium truncate)
+- ETA (text-[10px] muted, Clock icon) and distance (text-[10px] muted, MapPin icon) row below name
+- Call button: a href tel:, Button size-sm variant-outline h-9 gap-1.5, Phone icon
+
+### Feature 13: Nearest Hospital Bar
+Position: Above the station/destination bar (bottom 208px approximately), left 16px, right 16px, z-999
+Condition: Shows when user position exists AND hospital layer visible AND no destination set
+Style: Slightly less prominent — Card shadow-lg bg-white/85 dark:bg-slate-900/85 backdrop-blur-lg
+
+Contents: flex items-center gap-2.5 p-2.5
+- Rose icon container 36x36 rounded-lg bg-rose-100 dark:bg-rose-900/40, Cross icon h-4 w-4
+- "Nearest Hospital" label (text-[10px] muted)
+- Hospital name (text-xs font-medium truncate)
+- ETA (driving, text-[10px]) and distance (text-[10px]) row
+- Call button: h-8 text-[10px], Phone icon
+
+### Feature 14: Layers Sheet
+Trigger: Tapping stats pill
+Type: shadcn Sheet, side "bottom"
+Style: rounded-t-3xl h-auto max-h-[70vh] pb-8
+Has SheetHeader with SheetTitle and SheetDescription
+
+Sections from top to bottom:
+
+Zone Warning (conditional — only when user is in a risk zone):
+- flex items-start gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900
+- AlertCircle icon h-5 w-5 text-red-600 shrink-0
+- "You're in a Risk Zone" heading font-semibold text-red-900
+- Zone name if available: "Currently in: {name}" text-sm text-red-700
+
+Separator between sections
+
+Risk Level Filter:
+- Label: "Risk Level Filter" text-sm font-semibold mb-3
+- Flex wrap gap-2 of pill buttons
+- Options: "All Zones ({count})", "High Risk", "Medium Risk", "Low Risk"
+- Active button: colored background matching risk (red/amber/yellow) with white text
+- Inactive: outline variant
+- All buttons: rounded-full capitalize h-10 px-4
+- Haptic feedback on tap
+
+Separator
+
+Show on Map (Layer Toggles):
+- Label: "Show on Map" text-sm font-semibold mb-3
+- 3-column grid, gap-3
+- Zones button: h-14 rounded-xl gap-1 flex-col text-xs. Active: bg-amber-500 text-white. AlertTriangle icon + "Zones"
+- Police button: Active: bg-blue-500. Shield icon + "Police"
+- Hospitals button: Active: bg-rose-500. Cross icon + "Hospitals"
+
+Route Display:
+- Label: "Route Display" text-sm font-semibold mb-3
+- Single full-width button: w-full h-12 rounded-xl gap-2
+- Active: bg-emerald-500 text-white. MapIcon + "Show Safe Routes"
+
+Separator
+
+Map Style (read-only info):
+- Label: "Map Style" text-sm font-semibold mb-3
+- Info row: p-3 rounded-xl bg-muted/50
+- Sun or Moon icon based on dark mode
+- "Light (OpenStreetMap)" or "Dark (CartoDB Dark Matter)"
+- "Follows app theme" text-xs text-muted-foreground ml-auto
+
+Separator
+
+Legend:
+- Label: "Legend" text-sm font-semibold mb-3
+- 2-column grid, gap-3
+- Each item: flex items-center gap-2 p-3 rounded-xl bg-muted/50
+- Items: High Risk (red circle), Medium Risk (amber circle), Low Risk (yellow circle), Police with count (Shield icon blue), Hospital with count (Cross icon rose), Safest Route (solid emerald line), Fastest Route (dashed blue line), You (blue dot with white border)
+
+### Feature 15: Zone Dialog
+Trigger: Clicking any risk zone circle
+Type: shadcn Dialog (centered modal)
+Style: rounded-3xl max-w-sm mx-4
+
+Contents:
+- DialogHeader with DialogTitle: AlertTriangle icon (colored by risk level) + zone name
+- DialogDescription: "Risk zone details and safety information"
+- Badge: "{level} Risk Zone" colored by level (emerald/amber/red backgrounds with matching text)
+- Description text: zone.description or default "Stay alert and exercise caution in this area. Keep emergency contacts accessible."
+- Info rows:
+  - MapPin icon + "Radius: {km} km"
+  - Navigation icon + "{distance} from you · {ETA}" (only if user position available)
+  - Shield icon text-blue-500 + "Nearest: {station name}" with Clock icon and ETA (only if nearest station available)
+- Action buttons: flex gap-2
+  - "View on Map" button: primary, flex-1, Navigation icon. Flies map to zone center then closes dialog.
+  - "Close" button: outline variant
+
+### Feature 16: Offline Map Banner
+Position: Absolute, top 80px (below search, overlapping stats area), left 16px, right 16px, z-1001
+Condition: navigator.onLine is false
+Style: flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/90 dark:bg-amber-600/90 backdrop-blur-lg shadow-lg
+
+Contents: WifiOff icon h-4 w-4 text-white + "You're offline — Map data may be outdated. SOS still available." text-xs font-medium text-white
+
+### Feature 17: Map Loading Skeleton
+Condition: Shows during initial map and data loading
+Style: fixed inset-0, flex items-center justify-center, bg-background/80 backdrop-blur-sm, z-50
+
+Contents: centered glass card (bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-2xl rounded-3xl p-8)
+- Map icon h-12 w-12 text-primary/30 with Loader2 h-6 w-6 text-primary animate-spin overlaid at center
+- "Loading Map" text-sm font-semibold
+- "Fetching safety data..." text-xs text-muted-foreground
+
+### Feature 18: Geofence Alert System
+Runs on every GPS position update from watchPosition.
+
+Logic:
+- Maintain a Set of zone IDs the user is currently inside (prevZonesRef)
+- On each position update, calculate distance from user to each zone center
+- If distance <= zone.radiusMeters, add zone ID to current set
+- Compare current set with previous set:
+  - Zone ID in current but NOT in previous = ENTERED zone
+    - Heavy haptic feedback
+    - Toast warning: "Entered risk zone: {name}" with description "{level} risk — Stay alert", duration 5000ms
+  - Zone ID in previous but NOT in current = LEFT zone
+    - Light haptic feedback  
+    - Toast success: "You've left the risk zone", duration 3000ms
+- Update previous set to current set
+
+### Feature 19: Continuous GPS Tracking
+Uses navigator.geolocation.watchPosition instead of one-shot getCurrentPosition.
+Options: enableHighAccuracy true, maximumAge 5000ms (accept 5-second-old position), timeout 15000ms
+
+Updates on each position callback:
+- userPosition state
+- accuracy state (pos.coords.accuracy)
+- heading state (pos.coords.heading, may be null)
+- speed state (pos.coords.speed, may be null)
+
+Throttled backend post: Every 15 seconds maximum, POST location to /api/tourist/{id}/location with lat, lng. Uses Date.now() comparison with last post timestamp.
+
+Cleanup: clearWatch on component unmount via useEffect return.
+
+### Feature 20: Dark Mode Detection for Map
+MutationObserver watches document.documentElement for class attribute changes.
+When .dark class is added or removed, isDarkMode state updates.
+This drives tile URL selection between OpenStreetMap and CartoDB Dark Matter.
+
+### Safe Route Algorithm (Current Implementation)
+
+Step 1 — Generate 3 alternative routes:
+Since Google Directions API is not yet integrated, routes are generated locally:
+- Direct route: 30 interpolated points between start and end
+- North variant: 15 points from start to midpoint offset north, then 15 points to end
+- South variant: 15 points from start to midpoint offset south, then 15 points to end
+- Offset magnitude: 15% of the greater of latitude or longitude delta
+
+Step 2 — Score each route:
+For each point on each route:
+- Calculate distance to every risk zone center
+- If point is inside zone (distance <= radius): increment counter for that zone's risk level
+- Calculate distance to every police station
+- If station is within 500m: increment police counter
+
+Score formula:
+```
+score = 100
+      - (highRiskIntersections × 30)
+      - (mediumRiskIntersections × 15)
+      - (lowRiskIntersections × 5)
+      + (policeNearby × 10)
+Clamped to [0, 100]
+```
+
+Step 3 — Calculate distance and duration:
+- Distance: sum of Leaflet distanceTo between consecutive points
+- Duration: distance / walking speed (1.39 m/s = 5 km/h)
+
+Step 4 — Rank:
+- Highest safety score: isSafest = true
+- Shortest distance: isFastest = true
+- (May be same route for both)
+
+Future: Replace route generation with Google Directions API returning real road polylines with alternatives:true. Decode encoded polylines to lat/lng arrays. Apply same scoring algorithm to real road points.
+
+### Distance and ETA Utilities
+
+formatDistance(meters):
+- Under 1000m: "{rounded}m" (e.g., "650m")
+- 1000m and above: "{km.toFixed(1)}km" (e.g., "1.2km")
+
+formatETA(meters, mode):
+- Walking: 5 km/h
+- Driving: 30 km/h
+- Under 1 minute: "< 1 min"
+- Under 60 minutes: "{minutes} min {mode}" (e.g., "12 min walk")
+- 60+ minutes: "{hours}h {minutes}m {mode}" (e.g., "1h 15m drive")
+
+### Leaflet CSS Overrides (Added to index.css)
+
+Popup glassmorphism:
+- .leaflet-popup-content-wrapper: bg white/92, backdrop-blur 16px, rounded 1rem, shadow, subtle border
+- .dark variant: bg slate-950/92, white/6 border, white text
+- .leaflet-popup-tip: matching background color
+- .leaflet-popup-close-button: muted foreground color, 20px font size, 6px 8px padding
+
+Tooltip glassmorphism:
+- .leaflet-tooltip: bg white/92, backdrop-blur 12px, rounded 0.75rem, subtle border and shadow, 12px font, 6px 12px padding
+- .dark variant: dark background and border
+- .leaflet-tooltip-top::before: matching border color
+
+Attribution minimal:
+- .leaflet-control-attribution: 9px font, bg white/70, backdrop-blur 4px, rounded 8px, 2px 6px padding
+- .dark variant: dark background, muted text and link colors
+
+Dark mode tile filter:
+- .dark .leaflet-tile-pane: filter brightness(0.95) contrast(1.05)
+
+User marker ping animation:
+- @keyframes marker-ping matching the animation used in the UserIcon DivIcon
+
+Print styles:
+- .leaflet-control-container and .leaflet-popup-pane: display none
+
+### Map File Structure
+
+```
+src/pages/user/map/
+├── Map.tsx                     ← Composition root (≤60 lines, zero logic)
+├── types.ts                    ← RiskZone, PoliceStation, Hospital, Destination,
+│                                  SearchResult, SafeRoute, RouteInfo, RiskFilter,
+│                                  LayerVisibility, MapViewState, getZoneColor,
+│                                  formatDistance, formatETA, getZoneRiskWeight
+├── constants.ts                ← MAP_DEFAULTS, TILE_URLS, TILE_ATTRIBUTIONS,
+│                                  SEARCH_DEBOUNCE_MS, LOCATION_POST_INTERVAL_MS,
+│                                  SAFE_ROUTE_WEIGHTS, WALKING_SPEED_MS,
+│                                  DRIVING_SPEED_MS, ROUTE_INTERPOLATION_STEPS,
+│                                  POLICE_PROXIMITY_RADIUS_M
+├── hooks/
+│   ├── use-map-data.ts         ← GPS tracking, zones, stations, hospitals,
+│   │                              geofence alerts, dark mode, online/offline,
+│   │                              nearest station/hospital, layer state,
+│   │                              backend data fetch, locate handler
+│   └── use-map-navigation.ts   ← Destination state, route generation,
+│                                  safe route scoring, route ranking
+└── components/
+    ├── map-icons.ts            ← DefaultIcon, PoliceIcon, HospitalIcon,
+    │                              createUserIcon(heading), DestinationIcon
+    ├── fly-to-location.tsx     ← useMap().flyTo on position change
+    ├── search-control.tsx      ← Debounced search with abort, results dropdown
+    ├── stats-pill.tsx          ← Zone/station/hospital/inZone indicator
+    ├── map-controls.tsx        ← Compass, zoom in, zoom out, locate
+    ├── zone-overlay.tsx        ← Risk zone Circle components with tooltips
+    ├── station-markers.tsx     ← Police Marker components with rich popups
+    ├── hospital-markers.tsx    ← Hospital Marker components with rich popups
+    ├── user-marker.tsx         ← GPS dot + accuracy Circle + heading arrow
+    ├── destination-marker.tsx  ← Destination pin with navigate/clear popup
+    ├── route-lines.tsx         ← Safest/fastest/alternative Polylines
+    ├── route-info-panel.tsx    ← Route comparison overlay card
+    ├── bottom-cards.tsx        ← DestinationBar, NearestStationBar,
+    │                              NearestHospitalBar (3 exported components)
+    ├── layers-sheet.tsx        ← Full layer control Sheet from bottom
+    ├── zone-dialog.tsx         ← Zone detail Dialog with distance info
+    ├── offline-map-banner.tsx  ← Offline warning strip
+    └── map-loading.tsx         ← Loading skeleton overlay
+```
+
+---
+
+## SECTION 15: IDENTITY PAGE — Digital Tourist ID
+
+### Visual Concept
+Premium digital ID card that looks and feels like a real government-issued identity document. Credit card aesthetic meets Apple Wallet meets passport.
+
+### Card Design Specifications
+
+Aspect ratio: 1.586:1 (credit card standard — 85.6mm × 53.98mm)
+Width: Full screen width minus 32px (16px padding each side)
+Height: Calculated from aspect ratio (padding-bottom: 63.1%)
+Corner radius: 16px (rounded-2xl)
+3D perspective: 1000px
+Flip animation: rotateY(180deg), 600ms cubic-bezier(0.4, 0, 0.2, 1)
+Tap to flip between front (info) and back (QR code)
+Both sides use backface-visibility: hidden
+
+Holographic shimmer overlay on both sides:
+- Absolute positioned covering entire card
+- Linear gradient at 135deg with transparent bands and white/10-15 bands
+- background-size 200% 200%
+- Animated: holo-shift keyframe, 6s ease-in-out infinite
+- pointer-events: none, z-index 10, border-radius: inherit
+
+Light mode card background: Theme-colored gradient (emerald to teal)
+Dark mode card background: Premium black finish (slate-950 to slate-900, subtle dark gradient)
+Danger state: Card border glows red subtly (box-shadow with red theme-glow)
+
+### Card Front Layout
+
+Top row: "YatraX" logo text (left) + country flag emoji (right)
+Below logo: "TOURIST IDENTITY CARD" in text-[10px] uppercase tracking-wider, white/70
+
+Main content area:
+- Left: Photo (64x64 rounded-lg, border 2px white/20). If no photo: initials avatar with themed background.
+- Right of photo:
+  - Name: text-lg font-bold text-white
+  - Tourist ID: text-xs text-white/70 (format: YTX-{YEAR}-{STATE_CODE}-{6_DIGIT_NUMBER})
+  - Country with flag: text-sm text-white/80
+
+Bottom area:
+- Two columns:
+  - "VALID FROM" label (text-[9px] uppercase white/50) + date (text-sm white)
+  - "VALID UNTIL" label + date
+- Verified badge (bottom-left): Small green dot (h-2 w-2 rounded-full bg-emerald-400) + "VERIFIED" text-[10px] uppercase. Only shown if profile is complete.
+
+### Card Back Layout
+
+Top: "EMERGENCY INFORMATION" in text-[10px] uppercase tracking-wider
+
+Center: QR Code
+- 160x160px centered
+- White background with 8px padding, rounded-lg
+- Generated with qrcode.react QRCodeSVG component
+- Center logo overlay: small YatraX icon 32x32
+- QR data: https://yatrax.app/id/{touristId}?emergency=true
+- This URL shows emergency info to anyone who scans without authentication
+
+Below QR:
+- "EMERGENCY CONTACT" label + phone number
+- Two columns: "BLOOD TYPE" + value, "ALLERGIES" + value
+- Bottom: "Scan QR for full emergency profile" text-[9px] text-white/50
+
+### Quick Actions Below Card
+
+Three buttons below the card (outside the flip container):
+- Row 1 (2-col grid): "Share ID" (Share2 icon) + "Download PDF" (Download icon)
+- Row 2 (full width): "View Full Details" (ClipboardList icon)
+
+Share ID: Uses navigator.share() Web Share API, falls back to clipboard.writeText()
+Download PDF: Future feature — generates printable A4 PDF with card front/back
+View Full Details: Opens shadcn Sheet from bottom showing all profile fields in labeled rows
+
+### Empty State (No ID Created)
+Centered in page:
+- Large CreditCard icon (64px, text-muted-foreground/30)
+- "Create Your Digital Tourist ID" heading (text-lg font-semibold)
+- "Your digital identity card for safe travel in Assam. It helps emergency services identify and assist you." description (text-sm text-muted-foreground, max-w-xs, text-center)
+- "Get Started" primary button (full width, h-12)
+
+### Identity File Structure
+
+```
+src/pages/user/ID/
+├── Identity.tsx                ← Composition root
+├── types.ts                    ← TouristProfile, IDCardData interfaces
+├── hooks/
+│   └── use-identity.ts         ← Profile fetch, flip state, share logic
+└── components/
+    ├── id-card.tsx             ← Outer container with flip state
+    ├── id-card-front.tsx       ← Front face layout
+    ├── id-card-back.tsx        ← Back face with QR
+    ├── id-card-flip.tsx        ← CSS 3D transform wrapper
+    ├── qr-code-display.tsx     ← QR generation with center logo
+    ├── id-details-sheet.tsx    ← Full profile bottom sheet
+    ├── id-skeleton.tsx         ← Loading skeleton matching card aspect ratio
+    └── id-empty-state.tsx      ← CTA for creating ID
+```
+
+---
+
+## SECTION 16: SETTINGS PAGE
+
+### Visual Structure
+Full scrollable page with grouped sections separated by subtle separators. Each section has a heading and contains settings items.
+
+### Layout (Top to Bottom)
+
+#### 1. Profile Header
+- flex items-center gap-4 p-4
+- Avatar: h-16 w-16 (64px), border-2 border-primary/20, AvatarFallback text-xl
+- Name: text-lg font-semibold truncate
+- Email: text-sm text-muted-foreground truncate
+- Edit button: ghost variant, size-sm, "Edit" text + ChevronRight icon
+
+#### 2. Theme Selector
+Section heading: "APPEARANCE" text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3
+
+shadcn ToggleGroup, type "single", value bound to theme preference:
+- Light option: Sun icon h-4 w-4 + "Light" label, flex-1
+- Dark option: Moon icon + "Dark", flex-1
+- Auto option: Monitor icon + "Auto", flex-1
+
+Below toggle group: "Switches automatically at 6 PM (dark) and 6 AM (light)" text-xs text-muted-foreground
+
+#### 3. Notification Settings
+Section heading: "NOTIFICATIONS"
+
+4 toggle rows using Settings Item pattern:
+- Push Notifications: Bell icon, blue icon bg. Switch control.
+- Alert Sounds: Volume2 icon. Switch control.
+- Vibration Feedback: Vibrate icon. Switch control.
+- Quiet Hours (10PM-7AM): Moon icon. Switch control.
+
+#### 4. Privacy Settings
+Section heading: "PRIVACY & DATA"
+
+3 toggle rows:
+- Location Sharing: MapPin icon, emerald bg. Switch control. Description: "Share your location for safety monitoring"
+- High Accuracy GPS: Target icon. Switch control. Description: "Uses more battery but improves safety"
+- Anonymous Data Collection: BarChart icon. Switch control. Description: "Help improve safety data for all tourists"
+
+#### 5. Emergency Profile
+Section heading: "EMERGENCY INFO"
+
+4 tap-to-edit rows:
+- Emergency Contact: Phone icon, rose bg. Value shows phone number or "Not set". ChevronRight. Opens edit sheet.
+- Blood Type: Droplets icon. Value shows type or "Not set". ChevronRight.
+- Allergies: AlertTriangle icon. Value shows list or "None". ChevronRight.
+- Medical Conditions: Heart icon. Value shows list or "None". ChevronRight.
+
+#### 6. About
+Section heading: "ABOUT"
+
+4 rows:
+- Version: Info icon. Value shows version string (e.g., "2.1.0"). No interaction.
+- Terms of Service: FileText icon. ChevronRight. Opens external link.
+- Privacy Policy: Lock icon. ChevronRight. Opens external link.
+- Support: HelpCircle icon. ChevronRight. Opens email compose.
+
+#### 7. Danger Zone
+Separate visual section with danger styling:
+- mx-4 p-4 rounded-2xl border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20 space-y-3
+- Section label: "Danger Zone" text-sm font-semibold text-red-900 dark:text-red-200
+
+Two buttons:
+- Sign Out: w-full, outline variant, border-red-300 text-red-600 hover:bg-red-50. LogOut icon.
+- Delete Account: w-full, destructive variant. Trash2 icon. Tap opens confirmation dialog requiring typed confirmation.
+
+### Settings Item Pattern (Reusable Component)
+
+```
+┌────────────────────────────────────────┐
+│ [🔵] Label                      [═══] │  ← Switch variant
+│      Description text                  │
+├────────────────────────────────────────┤
+│ [🔵] Label                   Value  > │  ← Navigate variant
+│      Description text                  │
+└────────────────────────────────────────┘
+```
+
+Each item: flex items-center justify-between py-4 px-4
+Left: flex items-center gap-3 flex-1 min-w-0
+- Icon container: h-10 w-10 rounded-xl bg-primary/10 shrink-0, icon h-5 w-5 text-primary
+- Text: name (text-sm font-medium), description if exists (text-xs text-muted-foreground truncate)
+Right: Switch component, or ChevronRight icon, or value text (text-sm text-muted-foreground)
+
+### Settings File Structure
+
+```
+src/pages/user/settings/
+├── Settings.tsx                    ← Composition root
+├── types.ts                        ← SettingsState, NotificationPrefs, PrivacyPrefs
+├── hooks/
+│   └── use-settings.ts             ← Settings fetch/save, theme logic, profile data
+└── components/
+    ├── settings-header.tsx         ← Profile card with avatar
+    ├── settings-group.tsx          ← Section wrapper (heading + children)
+    ├── settings-item.tsx           ← Reusable row (icon, label, switch/nav/value)
+    ├── theme-selector.tsx          ← ToggleGroup for light/dark/auto
+    ├── language-selector.tsx       ← Language picker (future, placeholder)
+    ├── notification-settings.tsx   ← Push, sounds, vibration, quiet hours
+    ├── privacy-settings.tsx        ← Location, accuracy, data collection
+    ├── emergency-profile.tsx       ← Emergency contact, blood type, allergies, medical
+    ├── about-section.tsx           ← Version, terms, privacy, support
+    ├── danger-zone.tsx             ← Sign out, delete account with confirmation
+    └── settings-skeleton.tsx       ← Loading skeleton
+```
+
+---
+
+## SECTION 17: SAFETY SCORE — ML Pipeline
+
+### Overview
+The core intelligence of YatraX. A numerical score from 0 to 100, updated every 30 seconds or on significant location change (>100m movement). Higher scores mean safer conditions.
+
+### 153 Total Factors Across 16 Categories
+
+Category 1 — Geographic and Terrain (13 factors):
+Elevation, slope angle, terrain type (flat/hilly/mountainous/wetland), flood zone designation, landslide susceptibility, earthquake zone classification, river/water body proximity, vegetation density, trail condition, international border proximity, distance to nearest paved road, distance to nearest settlement, soil type
+
+Category 2 — Weather and Climate (12 factors):
+Current temperature, rainfall rate, flood warning level, visibility, wind speed, humidity, UV index, lightning probability, cyclone tracking distance, seasonal weather profile, minutes until sunset, feels-like temperature
+
+Category 3 — Wildlife and Nature (9 factors):
+Wildlife sanctuary proximity, known elephant corridor distance, recent animal sighting reports, snake activity season indicator, disease vector density, poisonous plant prevalence, water contamination risk, animal migration patterns, predator risk level
+
+Category 4 — Infrastructure and Accessibility (15 factors):
+Hospital ETA, hospital capability level (PHC/CHC/DH/Medical College), police station ETA, police station type (outpost/station/district HQ), road quality index, current road condition, bridge structural status, nearest fuel station, nearest ATM, nearest restroom, street lighting coverage, CCTV surveillance density, emergency shelter availability, helicopter landing access, ferry service status
+
+Category 5 — Communication (7 factors):
+Mobile signal strength, network type (2G/3G/4G/5G), multi-carrier coverage, satellite phone necessity, public WiFi availability, emergency broadcast reach, last known good signal location
+
+Category 6 — Human and Social (16 factors):
+Population density, tourist-to-local ratio, overall crime rate, predominant crime types, tourist-targeted crime rate, scam frequency, alcohol consumption patterns, local unrest level, ethnic tension index, military zone proximity, gender safety index, solo traveler risk multiplier, language barrier severity, community friendliness rating, active festivals, drug trafficking proximity
+
+Category 7 — Health and Medical (10 factors):
+Hospital travel time (driving), pharmacy distance, ambulance coverage area, disease outbreak alerts, malaria zone classification, drinking water safety, altitude sickness risk, anti-venom availability, personal health condition match, vaccination requirement match
+
+Category 8 — Time-Based (9 factors):
+Hour of day, day of week, daylight remaining, moon phase, current season, duration at current location, speed of movement, time since last check-in, public holiday indicator
+
+Category 9 — Transportation (8 factors):
+Accident hotspot proximity, traffic density, road type, mountain road danger rating, ferry safety rating, vehicle availability, public transit coverage, parking area safety
+
+Category 10 — Behavioral and Personal (12 factors):
+Movement anomaly detection, route deviation from planned, sudden stops in unusual areas, app usage pattern change, device battery level, group size, travel experience level, physical fitness level, preparation level, local contact availability, document status, cash vulnerability
+
+Category 11 — Legal and Regulatory (8 factors):
+Restricted area proximity, AFSPA zone, active curfew status, photography ban areas, foreigner registration requirements, local law awareness, park permit requirements, embassy proximity
+
+Category 12 — Environmental Quality (6 factors):
+Air Quality Index, water quality index, industrial hazard proximity, noise pollution level, active fire proximity (satellite), soil stability index
+
+Category 13 — Digital and Cyber (3 factors):
+Public WiFi safety rating, SIM card scam prevalence, digital payment acceptance
+
+Category 14 — Tourism Infrastructure (10 factors):
+Tourist information center proximity, licensed guide availability, registered accommodation, tourist police patrol frequency, multi-language signage, mountain rescue team proximity, safety equipment rental, review sentiment analysis, visit frequency, cleanliness rating
+
+Category 15 — Historical and Predictive (10 factors):
+Historical incident count, incident type breakdown, trend direction, time-of-day distribution, similar location rates, seasonal patterns, SOS trigger frequency, pre-alert frequency, nearby tourist density, predicted future score
+
+Category 16 — External Intelligence (6 factors):
+Government travel advisories, NDMA alerts, news sentiment, social media signals, community reports, global trends
+
+### Environment Detection
+The app classifies the tourist's current environment:
+- Urban: population density > threshold, many roads, strong signal
+- Suburban: medium density, mixed development
+- Rural: low density, agricultural, limited services
+- Remote: very low density, no paved roads, weak signal
+- Wilderness: no settlement, no roads, survival conditions
+
+Factor weights adjust per environment:
+- Urban: Crime 40%, Services 30%, Infrastructure 20%, Other 10%
+- Rural: Social 30%, Natural 25%, Infrastructure 25%, Other 20%
+- Remote: Infrastructure 30%, Weather 25%, Medical 25%, Other 20%
+- Wilderness: Weather 25%, Medical 25%, Connectivity 20%, Survival 20%, Other 10%
+
+### Phase 1 Implementation (Current — Rule-Based)
+
+15 factors with weighted scoring:
+
+| Factor | Weight | Source |
+|--------|--------|--------|
+| Time of day | 10% | System clock |
+| Day of week | 3% | System clock |
+| Season | 5% | Date calculation |
+| Daylight remaining | 5% | Sunset calculation |
+| Risk zone proximity | 12% | Local data + backend |
+| Police station ETA | 10% | Distance calculation |
+| Hospital ETA | 8% | Distance calculation |
+| Area place density | 8% | Google Places API |
+| Area place types | 7% | Google Places API |
+| Open businesses | 5% | Google Places API |
+| Active alerts | 8% | Backend WebSocket |
+| Historical incidents | 7% | Backend API |
+| Connectivity | 4% | Navigator.connection |
+| Weather conditions | 5% | Weather API |
+| Air quality | 3% | Google Air Quality API |
+
+Hard caps (override calculated score):
+- Inside high risk zone: maximum score 40
+- Inside medium risk zone: maximum score 65
+- Critical alert active: maximum score 30
+- No network connectivity: maximum score 50
+- Active SOS in progress: score forced to 10
+
+Recommendation generator produces natural language advice based on worst factor and current status.
+
+### Implementation Phases
+- Phase 1 (now): Rule-based, 15 factors, implementable immediately
+- Phase 2 (3 months): XGBoost model, ~35 factors
+- Phase 3 (6 months): Ensemble model, ~60 factors
+- Phase 4 (12 months): Deep learning + LSTM behavioral analysis
+- Phase 5 (18 months): Full 153-factor predictive system with 1hr/3hr/6hr predictions
+
+---
+
+## SECTION 18: GOOGLE MAPS API INTEGRATION
+
+### Caching Strategy
+
+| Data Type | Cache Duration | Refresh Trigger |
+|-----------|---------------|-----------------|
+| Places nearby | 15 minutes | 500m movement |
+| Distance Matrix | 5 minutes | 500m movement |
+| Reverse Geocode | 1 hour | 500m movement |
+| Air Quality | 1 hour | 2km movement |
+| Directions | 5 minutes | New destination |
+| Place Details | 24 hours | Explicit request |
+
+Cache implementation: In-memory Map with TTL, backed by localStorage for cross-session persistence. Key format includes location hash for distance-based invalidation.
+
+### Area Safety Profiling via Places
+Positive signals (increase score): police stations, hospitals, hotels, malls, restaurants, tourist attractions
+Negative signals (decrease score): bars at night, very few places (isolation), adult entertainment
+Crowd proxy: Count of open businesses, sum of review counts as traffic estimation
+Emergency response: Real travel time via Distance Matrix API
+
+### Google API File Structure
+
+```
+src/lib/api/google/
+├── google-client.ts        ← Base client (API key, rate limiting, error handling)
+├── places.ts               ← autocomplete, nearbySearch, placeDetails, placePhotos
+├── directions.ts           ← getRoutes, decodePolyline, polyline utilities
+├── distance-matrix.ts      ← getDistanceMatrix, batch calculations
+├── geocoding.ts            ← reverseGeocode, geocode
+├── air-quality.ts          ← getCurrentAQI, getHealthRecommendation
+├── cache.ts                ← Generic cache with TTL and distance-based invalidation
+└── types.ts                ← All Google API response and request type definitions
+```
+
+---
+
+## SECTION 19: API ENDPOINTS
+
+### Tourist Endpoints
+
+GET /api/tourist/{id}/dashboard
+Returns: safetyScore (number), status (safe/caution/danger), openAlerts (number), factors array (id, name, emoji, score, weight, trend), alerts array (id, title, message, severity, timestamp, read), lastUpdated
+
+POST /api/tourist/{id}/location
+Body: lat, lng, accuracy (optional), heading (optional), speed (optional)
+Returns: acknowledged boolean
+
+GET /api/tourist/{id}/profile
+Returns: Full tourist profile (id, name, email, phone, photoUrl, country, touristId, bloodType, allergies array, emergencyContact object, medicalConditions array, validFrom, validUntil, verified)
+
+PUT /api/tourist/{id}/profile
+Body: Partial profile fields
+Returns: updated boolean, full profile object
+
+### SOS Endpoints
+
+POST /api/sos/pre-alert
+Body: touristId, lat, lng, timestamp, type "PROLONGED_HOLD", batteryLevel (optional), networkType (optional)
+Returns: id, acknowledged boolean
+
+POST /api/sos/trigger
+Body: touristId, lat, lng, accuracy (optional), timestamp, type "FULL_SOS", address (optional reverse-geocoded), nearestStation (optional), nearestStationETA (optional)
+Returns: id, status "dispatched", respondingStation, estimatedResponse
+
+POST /api/sos/{id}/cancel
+Body: reason (optional)
+Returns: cancelled boolean
+
+GET /api/sos/{id}/status
+Returns: id, status (pre_alert/triggered/dispatched/responding/resolved/cancelled), respondingStation, estimatedArrival, resolvedAt
+
+### Public Endpoints
+
+GET /api/zones/public
+Returns: Array of RiskZone (id, name, description, centerLat, centerLng, radiusMeters, riskLevel HIGH/MEDIUM/LOW)
+
+GET /api/police-departments
+Returns: Array of station data (id, name, latitude, longitude, contactNumber, isActive, type outpost/station/district_hq)
+
+GET /api/hospitals
+Returns: Array of hospital data (id, name, latitude, longitude, contactNumber, type hospital/clinic/pharmacy, emergency boolean, level PHC/CHC/DH/Medical College)
+
+### WebSocket
+
+WS /ws/alerts
+Authentication: Bearer token in handshake
+Server pushes two message types:
+- ALERT: id, title, message, severity (high/medium/low), timestamp, location object
+- SCORE_UPDATE: score, status, factors array
+
+---
+
+## SECTION 20: COMPLETE FILE STRUCTURE
+
+```
+src/
+├── App.tsx
+├── main.tsx
+├── index.css
+│
+├── layouts/user/
+│   ├── UserLayout.tsx
+│   ├── components/
+│   │   ├── bottom-nav.tsx
+│   │   ├── nav-tab.tsx
+│   │   └── status-bar.tsx
+│   └── types.ts
+│
+├── pages/user/
+│   ├── home/
+│   │   ├── Home.tsx
+│   │   ├── types.ts
+│   │   ├── hooks/
+│   │   │   ├── use-dashboard.ts
+│   │   │   └── use-location-share.ts
+│   │   └── components/
+│   │       ├── home-header.tsx
+│   │       ├── safety-score-hero.tsx
+│   │       ├── safety-factor-pills.tsx
+│   │       ├── quick-actions.tsx
+│   │       ├── emergency-strip.tsx
+│   │       ├── alert-list.tsx
+│   │       ├── alert-list-item.tsx
+│   │       ├── daily-tip.tsx
+│   │       ├── empty-states.tsx
+│   │       └── offline-banner.tsx
+│   │
+│   ├── map/
+│   │   ├── Map.tsx
+│   │   ├── types.ts
+│   │   ├── constants.ts
+│   │   ├── hooks/
+│   │   │   ├── use-map-data.ts
+│   │   │   └── use-map-navigation.ts
+│   │   └── components/
+│   │       ├── map-icons.ts
+│   │       ├── fly-to-location.tsx
+│   │       ├── search-control.tsx
+│   │       ├── stats-pill.tsx
+│   │       ├── map-controls.tsx
+│   │       ├── zone-overlay.tsx
+│   │       ├── station-markers.tsx
+│   │       ├── hospital-markers.tsx
+│   │       ├── user-marker.tsx
+│   │       ├── destination-marker.tsx
+│   │       ├── route-lines.tsx
+│   │       ├── route-info-panel.tsx
+│   │       ├── bottom-cards.tsx
+│   │       ├── layers-sheet.tsx
+│   │       ├── zone-dialog.tsx
+│   │       ├── offline-map-banner.tsx
+│   │       └── map-loading.tsx
+│   │
+│   ├── ID/
+│   │   ├── Identity.tsx
+│   │   ├── types.ts
+│   │   ├── hooks/
+│   │   │   └── use-identity.ts
+│   │   └── components/
+│   │       ├── id-card.tsx
+│   │       ├── id-card-front.tsx
+│   │       ├── id-card-back.tsx
+│   │       ├── id-card-flip.tsx
+│   │       ├── qr-code-display.tsx
+│   │       ├── id-details-sheet.tsx
+│   │       ├── id-skeleton.tsx
+│   │       └── id-empty-state.tsx
+│   │
+│   └── settings/
+│       ├── Settings.tsx
+│       ├── types.ts
+│       ├── hooks/
+│       │   └── use-settings.ts
+│       └── components/
+│           ├── settings-header.tsx
+│           ├── settings-group.tsx
+│           ├── settings-item.tsx
+│           ├── theme-selector.tsx
+│           ├── language-selector.tsx
+│           ├── notification-settings.tsx
+│           ├── privacy-settings.tsx
+│           ├── emergency-profile.tsx
+│           ├── about-section.tsx
+│           ├── danger-zone.tsx
+│           └── settings-skeleton.tsx
+│
+├── components/
+│   ├── ui/                          ← All shadcn/ui components plus custom:
+│   │   ├── glass-card.tsx           ← Glassmorphism wrapper (level 1/2/3)
+│   │   ├── animated-number.tsx      ← rAF-based smooth number morphing
+│   │   └── [all standard shadcn components]
+│   │
+│   ├── sos/
+│   │   ├── sos-ball.tsx             ← Floating ball rendering and drag
+│   │   ├── sos-gesture-handler.ts   ← Pure gesture detection functions
+│   │   ├── sos-confirm-overlay.tsx  ← 3-2-1 countdown full-screen overlay
+│   │   ├── sos-success-screen.tsx   ← "Help is on the way" screen
+│   │   ├── sos-context.tsx          ← React context definition
+│   │   ├── sos-provider.tsx         ← Context provider with state machine
+│   │   └── use-sos.ts              ← Hook consuming SOS context
+│   │
+│   └── shared/
+│       ├── pull-to-refresh.tsx      ← Native pull-to-refresh behavior
+│       ├── offline-banner.tsx       ← Global offline indicator
+│       ├── error-boundary.tsx       ← React error boundary with fallback UI
+│       └── page-transition.tsx      ← Tab switch animation wrapper
+│
+├── lib/
+│   ├── api/
+│   │   ├── client.ts               ← Base fetch wrapper (auth headers, retry,
+│   │   │                               timeout, error handling, toast on failure)
+│   │   ├── endpoints.ts            ← URL constants
+│   │   ├── types.ts                ← Shared API response/request types
+│   │   ├── tourist.ts              ← fetchDashboard, fetchProfile, updateProfile
+│   │   ├── sos.ts                  ← postPreAlert, postSOSTrigger, cancelSOS, getSOSStatus
+│   │   ├── location.ts             ← postLocation
+│   │   ├── alerts.ts               ← fetchAlerts, markAlertRead
+│   │   └── google/
+│   │       ├── google-client.ts
+│   │       ├── places.ts
+│   │       ├── directions.ts
+│   │       ├── distance-matrix.ts
+│   │       ├── geocoding.ts
+│   │       ├── air-quality.ts
+│   │       ├── cache.ts
+│   │       └── types.ts
+│   │
+│   ├── session/
+│   │   ├── session-context.tsx      ← SessionContext definition
+│   │   ├── session-provider.tsx     ← Provider with JWT decode, refresh
+│   │   ├── use-session.ts          ← Hook returning session data
+│   │   └── types.ts                ← Session, User types
+│   │
+│   ├── theme/
+
+
+*(Continuing from Section 20: Complete File Structure — theme config)*
+
+```
+│   │   ├── theme-config.ts         ← Theme state definitions (safe/caution/danger),
+│   │   │                              CSS variable value maps, score thresholds,
+│   │   │                              oklch to hsl conversion utility
+│   │   ├── theme-context.tsx        ← ThemeContext definition with ThemeState type
+│   │   ├── theme-provider.tsx       ← Provider that receives score, determines state,
+│   │   │                              updates :root CSS variables and shadcn --color-primary,
+│   │   │                              manages dark mode auto-switch (6PM/6AM),
+│   │   │                              persists preference to localStorage
+│   │   ├── use-theme-colors.ts      ← Hook returning current theme colors and state
+│   │   └── gradient-mesh.tsx        ← GradientMeshBackground component (pure CSS)
+│   │
+│   ├── safety/
+│   │   ├── score-calculator.ts      ← Main orchestrator: collects factors, runs calculator
+│   │   ├── factor-collector.ts      ← Gathers raw factor data from all sources
+│   │   ├── phase1-calculator.ts     ← Phase 1 weighted scoring with hard caps
+│   │   ├── environment-detector.ts  ← Classifies urban/suburban/rural/remote/wilderness
+│   │   └── types.ts                 ← SafetyResult, Factor, FactorCategory,
+│   │                                   Environment, Phase1Factors, Recommendation
+│   │
+│   ├── store/
+│   │   ├── app-state.ts            ← Lightweight global state utilities
+│   │   └── haptics.ts              ← hapticFeedback("light" | "heavy") wrapper
+│   │                                   using navigator.vibrate with fallback
+│   │
+│   ├── animations/
+│   │   ├── variants.ts             ← Reusable animation variant objects
+│   │   ├── transitions.ts          ← Transition timing presets
+│   │   └── stagger.ts              ← Stagger delay calculator utility
+│   │
+│   └── utils/
+│       ├── cn.ts                   ← clsx + tailwind-merge utility
+│       ├── format.ts               ← formatRelativeTime, formatDate, formatPhone
+│       ├── geo.ts                  ← haversineDistance, isInsideCircle,
+│       │                              degreesToRadians, interpolatePoints
+│       ├── storage.ts              ← Typed localStorage wrapper with
+│       │                              get/set/remove and JSON parse/stringify
+│       └── constants.ts            ← App-wide constants (not page-specific)
+│
+├── data/
+│   ├── assam-restricted-areas.json  ← Fallback risk zone data (used when backend unavailable)
+│   └── assam-police-stations.json   ← Fallback police station data
+│
+└── service-worker/
+    └── sw.ts                        ← Service worker for offline SOS sync,
+                                        push notifications, cache strategies
+```
+
+Total files: approximately 95+
+
+---
+
+## SECTION 21: CSS ARCHITECTURE (index.css — Complete Specification)
+
+The index.css file is the foundation of the entire visual system. It must contain all of the following sections in order.
+
+### Section 1: Tailwind Import
+```css
+@import "tailwindcss";
+```
+
+### Section 2: @theme Block (Tailwind v4 Format)
+Contains all shadcn color tokens, custom animation definitions, and radius values.
+
+Color tokens include: background, foreground, card, card-foreground, popover, popover-foreground, primary, primary-foreground, secondary, secondary-foreground, muted, muted-foreground, accent, accent-foreground, destructive, destructive-foreground, border, input, ring.
+
+Animation definitions in @theme block:
+- --animate-mesh-drift-1: mesh-drift-1 60s ease-in-out infinite
+- --animate-mesh-drift-2: mesh-drift-2 55s ease-in-out infinite
+- --animate-mesh-drift-3: mesh-drift-3 65s ease-in-out infinite
+- --animate-mesh-drift-4: mesh-drift-4 50s ease-in-out infinite
+- --animate-sos-pulse: sos-pulse var(--sos-pulse-speed, 3s) ease-in-out infinite
+- --animate-countdown-pop: countdown-pop 0.4s ease-out
+- --animate-scale-in: scale-in 0.3s ease-out
+- --animate-bounce-left: bounce-left 1s ease-in-out infinite
+- --animate-bounce-right: bounce-right 1s ease-in-out infinite
+- --animate-bounce-up: bounce-up 1s ease-in-out infinite
+- --animate-bounce-down: bounce-down 1s ease-in-out infinite
+- --animate-holo-shift: holo-shift 6s ease-in-out infinite
+- --animate-draw-ring: draw-ring 1s ease-out forwards
+
+Radius: --radius: 1rem
+
+### Section 3: @property Declarations
+Every animatable CSS custom property must have an @property declaration for smooth browser interpolation:
+
+```css
+@property --theme-bg-from { syntax: '<color>'; initial-value: oklch(0.97 0.03 160); inherits: true; }
+@property --theme-bg-to { syntax: '<color>'; initial-value: oklch(0.97 0.02 180); inherits: true; }
+@property --theme-primary { syntax: '<color>'; initial-value: oklch(0.65 0.17 160); inherits: true; }
+@property --theme-primary-foreground { syntax: '<color>'; initial-value: oklch(0.99 0 0); inherits: true; }
+@property --theme-glow { syntax: '<color>'; initial-value: oklch(0.65 0.17 160 / 0.15); inherits: true; }
+@property --theme-card-bg { syntax: '<color>'; initial-value: rgba(255, 255, 255, 0.70); inherits: true; }
+@property --theme-card-border { syntax: '<color>'; initial-value: rgba(16, 185, 129, 0.15); inherits: true; }
+@property --sos-scale { syntax: '<number>'; initial-value: 1; inherits: true; }
+@property --sos-pulse-speed { syntax: '<time>'; initial-value: 3s; inherits: true; }
+```
+
+### Section 4: :root Variables
+All CSS custom properties with default values (safe theme). Includes theme variables, zone colors, route colors, SOS variables, holographic variables.
+
+CRITICAL: The transition declaration on :root uses SPECIFIC property names, NOT "transition: all 2s":
+```css
+:root {
+  --theme-bg-from: oklch(0.97 0.03 160);
+  --theme-bg-to: oklch(0.97 0.02 180);
+  --theme-primary: oklch(0.65 0.17 160);
+  --theme-primary-foreground: oklch(0.99 0 0);
+  --theme-glow: oklch(0.65 0.17 160 / 0.15);
+  --theme-card-bg: rgba(255, 255, 255, 0.70);
+  --theme-card-border: rgba(16, 185, 129, 0.15);
+  --sos-scale: 1;
+  --sos-pulse-speed: 3s;
+  
+  --zone-high: #dc2626;
+  --zone-medium: #ea580c;
+  --zone-low: #ca8a04;
+  
+  --route-safest: #10b981;
+  --route-fastest: #3b82f6;
+  --route-alt: #94a3b8;
+
+  transition-property: --theme-bg-from, --theme-bg-to, --theme-primary,
+                       --theme-primary-foreground, --theme-glow,
+                       --theme-card-bg, --theme-card-border,
+                       --sos-scale, --sos-pulse-speed;
+  transition-duration: 2s;
+  transition-timing-function: ease-in-out;
+}
+```
+
+### Section 5: .dark Overrides
+All dark mode color overrides for both shadcn tokens and custom theme variables. Safety theme glows increase from 15% to 25% opacity in dark mode.
+
+### Section 6: Glass Level Classes
+.glass-1, .glass-2, .glass-3 with their dark mode variants as specified in Section 5 of this context.
+
+### Section 7: Gradient Mesh Background
+.gradient-mesh class with radial gradients, animation, opacity for light/dark.
+
+### Section 8: Keyframe Animations
+All @keyframes declarations:
+
+mesh-drift-1 through mesh-drift-4 (60s/55s/65s/50s loops, translate + scale variations)
+sos-pulse (box-shadow expansion and fade)
+countdown-pop (scale 0.3 to 1.15 overshoot to 1.0)
+scale-in (scale 0.5 to 1.0 with opacity)
+bounce-left, bounce-right, bounce-up, bounce-down (8px directional bounce)
+holo-shift (background-position shift for holographic shimmer)
+draw-ring (stroke-dashoffset animation for SVG ring progress)
+slide-in-from-top, slide-in-from-bottom (100% translate to 0)
+slide-in-up (12px translateY to 0 with opacity, used for stagger)
+fade-in (opacity 0 to 1)
+glow-pulse (box-shadow intensity oscillation)
+float (translateY up and down 6px, 3s loop)
+confirm-zone-expand (scale + opacity for SOS confirm zone)
+ripple (scale + opacity for tap feedback)
+skeleton-shimmer (background-position shift for loading skeletons)
+marker-ping (scale 1 to 2.5 with opacity fade for user marker)
+
+### Section 9: Utility Classes
+
+no-scrollbar: hides webkit scrollbar and sets ms-overflow-style/scrollbar-width
+safe-area-top / safe-area-bottom: env() padding
+touch-action: scale + opacity active state, webkit tap highlight transparent
+scroll-fade-x: CSS mask-image with left/right gradient fades
+holo-overlay: holographic shimmer absolute overlay
+skeleton-shimmer: gradient background animated shimmer
+duration-2000: transition-duration 2000ms
+
+### Section 10: Stagger Animation
+.stagger-children > * with nth-child delays from 0ms to 420ms (60ms increments, 8 children max)
+Uses slide-in-up keyframe
+
+### Section 11: Card Effects
+.card-hover: transform translateY(-2px) + shadow on hover
+Button gradient classes: .btn-gradient-primary, .btn-gradient-danger, .btn-gradient-success
+
+### Section 12: Input Focus
+input:focus and textarea:focus: outline none, 3px ring shadow in primary/20
+
+### Section 13: Interactive Element Rules
+button, a, .touch-action: user-select none
+html: scroll-behavior smooth
+body: webkit-font-smoothing antialiased, moz-osx-font-smoothing grayscale
+
+### Section 14: Leaflet Overrides
+.leaflet-popup-content-wrapper: glassmorphism (bg white/92, backdrop-blur 16px, rounded 1rem, shadow, border)
+.dark .leaflet-popup-content-wrapper: dark glassmorphism
+.leaflet-popup-tip: matching background
+.leaflet-popup-close-button: styled for both modes
+.leaflet-tooltip: glassmorphism
+.dark .leaflet-tooltip: dark variant
+.leaflet-tooltip-top::before: matching border colors
+.leaflet-control-attribution: minimal styling (9px, bg white/70, rounded)
+.dark .leaflet-control-attribution: dark variant
+.dark .leaflet-tile-pane: filter brightness(0.95) contrast(1.05)
+
+### Section 15: Print Styles
+@media print: Hide SOS ball, bottom nav, leaflet controls, popup pane. Force white background.
+
+### Section 16: Reduced Motion
+@media (prefers-reduced-motion: reduce):
+All animations: duration 0.01ms, iteration-count 1
+All transitions: duration 0.01ms
+.gradient-mesh: animation none, static opacity 0.2
+.stagger-children > *: opacity 1, animation none
+.sos-ball: animation none (use static glow shadow instead)
+
+---
+
+## SECTION 22: OFFLINE STRATEGY
+
+### Must Work Offline (Critical Features)
+- SOS trigger: Queued to localStorage, service worker background sync sends when restored
+- Emergency tel: links: Always functional (native phone capability)
+- Digital ID: Cached in localStorage, viewable without network
+- Last safety score: Cached, displayed with "Last updated {time}" notice
+- Emergency contacts strip: Static data, always rendered
+
+### Can Degrade Gracefully
+- Map: Cached tiles show, new tiles show gray. "Offline" banner shown.
+- Search: Shows "Search unavailable offline" message
+- Alerts: Show cached alerts with notice "May not be current"
+- Location sharing: Queue location updates, sync when restored
+- Settings: Changes saved locally, synced to backend when restored
+- Safety score: Show last cached score with stale indicator
+
+### Offline SOS Queue
+```typescript
+interface OfflineSOS {
+  id: string;
+  touristId: string;
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp: number;
+  status: 'queued' | 'sending' | 'sent' | 'failed';
+}
+```
+
+Stored in localStorage under key "sos-offline-queue" as JSON array.
+Service worker registers sync event tag "sync-sos".
+On sync event: reads queue, attempts to POST each, removes successful entries, retries failed on next sync.
+
+Offline SOS success screen shows modified message:
+- "SOS Saved" instead of "SOS Sent"
+- "Will send when connection restored" subtitle
+- Emergency call button still available (tel: works offline)
+- "I'm Safe" dismiss still works (clears from queue)
+
+### Network Detection
+```typescript
+// In hooks and providers
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+useEffect(() => {
+  const handleOnline = () => { setIsOnline(true); toast.success("Back online"); };
+  const handleOffline = () => { setIsOnline(false); toast.warning("You're offline"); };
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+  return () => {
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+  };
+}, []);
+```
+
+---
+
+## SECTION 23: CODING RULES (ENFORCED — NO EXCEPTIONS)
+
+1. MODULARITY: Every component in its own file. No file exceeds 150 lines. If it does, extract sub-components.
+
+2. HOOKS FOR LOGIC: All data fetching, state management, effects, and business logic live in custom hooks. Components only render JSX.
+
+3. PURE FUNCTIONS: Gesture calculations, theme computation, formatting, scoring — all pure functions with no side effects, easily testable.
+
+4. TYPE SAFETY: Every prop, state variable, function parameter, and return value is explicitly typed. No 'any' type anywhere.
+
+5. SHADCN FIRST: Use shadcn/ui components as base for all UI elements. Do not build buttons, inputs, dialogs, sheets, badges, cards, or other standard components from scratch.
+
+6. CSS VARIABLES: Never hardcode colors for theme-dependent elements. Always reference CSS custom properties (--theme-*, --color-*) so the dynamic theme system works.
+
+7. PERFORMANCE: React.memo for list items and repeated components. useCallback for functions passed as props. useMemo for expensive computed values. CSS animations over JS animations. Avoid unnecessary re-renders.
+
+8. ACCESSIBILITY: aria-labels on all interactive elements (buttons, links, inputs). Color is never the ONLY indicator of state (always paired with text/icon). 44px minimum touch targets everywhere. Focus management in modals and sheets.
+
+9. MOBILE-FIRST: active: states over hover: states (hover doesn't exist on mobile). Safe area support. Touch-optimized interactions. No reliance on right-click or hover tooltips for critical functionality.
+
+10. NO DEAD CODE: No commented-out blocks. No unused imports. No TODO comments. No placeholder functions that do nothing. Every line serves a purpose.
+
+11. COMPOSITION ROOTS: Page files (Home.tsx, Map.tsx, Identity.tsx, Settings.tsx) are SHORT composition-only files. Maximum 40-60 lines. They import sub-components and hooks, compose them, and return JSX. Zero business logic.
+
+12. ERROR HANDLING: No silent catch{} blocks. Every error is either shown to the user via toast notification, logged for debugging, or handled with a fallback state. API calls have retry logic, timeout handling, and user-visible error messages.
+
+---
+
+## SECTION 24: KEY DESIGN DECISIONS ALREADY MADE
+
+These decisions are FINAL and should not be revisited:
+
+1. SOS is a GLOBAL floating ball, not a page-specific button. There is NO SOS button on the map page or any other page.
+2. Safety score is the HERO element of the home page — largest visual, top of content.
+3. Emergency contacts are ALWAYS visible as a horizontal strip, never collapsible or hidden.
+4. Alerts are compact LIST ROWS with colored dots, not full-width cards.
+5. Daily tip is STATIC (random on mount per day), not rotating or auto-advancing.
+6. Map uses Leaflet for rendering, Google for data (hybrid approach).
+7. Safe route scoring uses zone intersection analysis with weighted penalties and police bonuses.
+8. Theme transitions are exactly 2 seconds with smooth oklch color interpolation.
+9. Dark mode auto-switches at 6 PM (dark) and 6 AM (light) in auto mode.
+10. Nearest station/hospital shows real calculated travel TIME and distance, not straight-line approximation.
+11. No weather widget on home page — weather data feeds into the safety score silently.
+12. Score factors are shown as horizontal scrollable pills with trend arrows.
+13. Pages are composition roots: maximum 40-60 lines, zero logic.
+14. All previously commented-out code has been removed.
+15. All hardcoded user data has been replaced with session data from context.
+16. Glass card hierarchy is enforced (Level 1 for heroes, Level 2 for actions, Level 3 for info).
+17. Map has no local SOS button — the global floating SOS ball is always accessible.
+18. Map controls are merged into a single right-side column (compass, zoom in, zoom out, locate).
+19. Factor pills use trend icons (arrows up/down/right) not color alone.
+20. The gradient mesh background is pure CSS (no JavaScript animation frames).
+
+---
+
+## SECTION 25: DATA SOURCES
+
+### Free Data Sources
+- OpenStreetMap: Base map tiles, place data via Nominatim
+- India Meteorological Department: Weather data
+- Central Water Commission: Flood data
+- National Disaster Management Authority (NDMA): Disaster alerts
+- National Crime Records Bureau (NCRB): Crime statistics
+- Census of India: Population data, demographic information
+- NASA FIRMS: Active fire detection via satellite
+- VIIRS: Night lights data (proxy for development level)
+- SRTM: Elevation data (30m resolution)
+- Geological Survey of India: Earthquake and landslide data
+- NVBDCP: Malaria and vector-borne disease data
+- TRAI: Telecom coverage data
+- Browser APIs: Geolocation, battery, network information, device orientation
+
+### Paid Data Sources (Google Maps Platform)
+- Places API: Search, details, nearby, photos
+- Directions API: Route calculation with alternatives
+- Distance Matrix API: Travel time calculations
+- Geocoding API: Address lookup and reverse geocode
+- Air Quality API: AQI data
+- Geolocation API: WiFi-based positioning fallback
+
+### Internal Data Sources
+- Risk zones database (backend PostgreSQL + PostGIS)
+- Police stations database
+- Hospital database
+- Incident reports (historical)
+- SOS history
+- Pre-alert history
+- Tourist location tracking
+- Community safety reports
+- Admin-published alerts
+
+### Local Dataset Files (in src/data/)
+- assam-restricted-areas.json: Fallback risk zone definitions with positions, radii, risk levels
+- assam-police-stations.json: Fallback police station list organized by district with positions, contacts, availability
+
+---
+
+## SECTION 26: CURRENT PROJECT STATE
+
+### What Exists (MVP Quality — Needs Refactoring)
+- UserLayout with tab navigation (working but needs SOS ball integration and theme provider)
+- Home page (functional but monolithic, wrong visual hierarchy, not composition pattern)
+- Map page (functional with Leaflet, risk zones, police stations, search via Nominatim, basic straight-line routing — has been significantly upgraded with all 20 features listed in map section)
+- Basic SOS button component (needs replacement with full floating ball system)
+- Basic API layer (needs error handling, retry, Google integration)
+- Basic session management (needs typed context, JWT refresh)
+- CSS file (partially complete, needs @property declarations, missing animations, missing glass levels)
+
+### What Needs Building
+- Dynamic theme engine (complete ThemeProvider system with score-driven transitions)
+- SOS floating ball (complete gesture system with all 6 states)
+- Glassmorphism card system (glass-1, glass-2, glass-3 components)
+- Home page redesign (composition pattern with all sub-components)
+- Map page: Composition root cleanup after feature additions
+- Identity page (complete digital ID card with flip, QR, hologram)
+- Settings page (full settings UI with all sections)
+- Shared infrastructure (typed API client, Google API layer, typed storage, geo utilities)
+- Animation system (all keyframes, stagger, transitions)
+- Phase 1 safety score calculator (client-side rule-based)
+- Dark mode support (complete with auto-switch)
+- Offline SOS queue (localStorage + service worker sync)
+- Gradient mesh background component
+- Animated number component (rAF-based score morphing)
+- Error boundary with fallback UI
+- Service worker for offline capabilities
+
+---
