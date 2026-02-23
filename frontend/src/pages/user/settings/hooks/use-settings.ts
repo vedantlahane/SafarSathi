@@ -31,14 +31,22 @@ export function useSettings() {
     const [profileGender, setProfileGender] = useState("");
     const [showProfileEdit, setShowProfileEdit] = useState(false);
 
-    // Preferences
-    const [notifications, setNotifications] = useState(true);
-    const [darkMode, setDarkMode] = useState(false);
-    const [locationSharing, setLocationSharing] = useState(true);
-    const [haptics, setHaptics] = useState(true);
-    const [soundEffects, setSoundEffects] = useState(true);
+    // Notification preferences
+    const [pushNotifications, setPushNotifications] = useState(true);
+    const [alertSounds, setAlertSounds] = useState(true);
+    const [vibration, setVibration] = useState(true);
+    const [quietHours, setQuietHours] = useState(false);
 
-    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    // Privacy preferences
+    const [locationSharing, setLocationSharing] = useState(true);
+    const [highAccuracyGps, setHighAccuracyGps] = useState(false);
+    const [anonymousData, setAnonymousData] = useState(true);
+
+    // Emergency profile
+    const [emergencyContact, setEmergencyContact] = useState("");
+    const [bloodType, setBloodType] = useState("");
+    const [allergies, setAllergies] = useState("");
+    const [medicalConditions, setMedicalConditions] = useState("");
 
     useEffect(() => {
         if (!session?.touristId) return;
@@ -52,7 +60,9 @@ export function useSettings() {
         })();
     }, [session?.touristId]);
 
-    const showMsg = useCallback((type: "success" | "error", text: string) => { setMessage({ type, text }); setTimeout(() => setMessage(null), 3000); }, []);
+    const showMsg = useCallback((type: "success" | "error", text: string) => {
+        setMessage({ type, text }); setTimeout(() => setMessage(null), 3000);
+    }, []);
 
     const handleLogin = useCallback(async (e: FormEvent) => {
         e.preventDefault();
@@ -95,18 +105,28 @@ export function useSettings() {
         } catch (err) { hapticFeedback("heavy"); showMsg("error", (err as Error).message || "Update failed"); } finally { setLoading(false); }
     }, [session, profileName, profilePhone, profileAddress, profileNationality, profileGender, showMsg]);
 
-    const handleLogout = useCallback(() => { hapticFeedback("medium"); clearSession(); setShowLogoutConfirm(false); showMsg("success", "Logged out"); }, [showMsg]);
+    const handleLogout = useCallback(() => {
+        hapticFeedback("medium"); clearSession(); showMsg("success", "Logged out");
+    }, [showMsg]);
 
     return {
         session, loading, message,
+        // Login
         loginEmail, setLoginEmail, loginPassword, setLoginPassword, showLoginPassword, setShowLoginPassword, handleLogin,
+        // Register
         registerName, setRegisterName, registerEmail, setRegisterEmail, registerPhone, setRegisterPhone,
         registerPassport, setRegisterPassport, registerPassword, setRegisterPassword,
         showRegisterPassword, setShowRegisterPassword, showRegister, setShowRegister, handleRegister,
+        // Profile
         profileName, setProfileName, profilePhone, setProfilePhone, profileAddress, setProfileAddress,
         profileNationality, setProfileNationality, profileGender, setProfileGender, showProfileEdit, setShowProfileEdit, handleProfileUpdate,
-        notifications, setNotifications, darkMode, setDarkMode, locationSharing, setLocationSharing,
-        haptics, setHaptics, soundEffects, setSoundEffects,
-        showLogoutConfirm, setShowLogoutConfirm, handleLogout,
+        // Notifications
+        pushNotifications, setPushNotifications, alertSounds, setAlertSounds, vibration, setVibration, quietHours, setQuietHours,
+        // Privacy
+        locationSharing, setLocationSharing, highAccuracyGps, setHighAccuracyGps, anonymousData, setAnonymousData,
+        // Emergency
+        emergencyContact, setEmergencyContact, bloodType, setBloodType, allergies, setAllergies, medicalConditions, setMedicalConditions,
+        // Actions
+        handleLogout,
     };
 }

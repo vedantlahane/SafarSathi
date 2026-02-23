@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchTouristProfile, getApiBaseUrl, type TouristProfile } from "@/lib/api";
+import { fetchTouristProfile, getApiBaseUrl } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
+import type { TouristProfile } from "../types";
 
 export function useIdentity() {
     const session = useSession();
     const [profile, setProfile] = useState<TouristProfile | null>(null);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
-    const [showQR, setShowQR] = useState(false);
+    const [isFlipped, setIsFlipped] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -27,13 +28,15 @@ export function useIdentity() {
             try {
                 setLoading(true);
                 const data = await fetchTouristProfile(session.touristId);
-                if (active) setProfile(data);
+                if (active) setProfile(data as TouristProfile);
             } catch { /* silent */ } finally { if (active) setLoading(false); }
         })();
         return () => { active = false; };
     }, [session?.touristId]);
 
-    const verificationUrl = profile?.idHash ? `${getApiBaseUrl()}/api/admin/id/verify?hash=${profile.idHash}` : null;
+    const handleFlip = useCallback(() => {
+        setIsFlipped(prev => !prev);
+    }, []);
 
     const handleCopy = useCallback(async (text: string, label: string) => {
         if (!text) return;
@@ -43,21 +46,32 @@ export function useIdentity() {
         setTimeout(() => setCopied(null), 2000);
     }, []);
 
+    const verificationUrl = profile?.idHash
+        ? `${getApiBaseUrl()}/api/admin/id/verify?hash=${profile.idHash}`
+        : null;
+
     const handleShare = useCallback(async () => {
-        if (!profile || !navigator.share) return;
+        if (!profile) return;
         hapticFeedback("light");
+        const shareData = {
+            title: "YatraX Tourist ID",
+            text: `Tourist ID: ${profile.touristId || profile.id}\nName: ${profile.name}\nVerified by YatraX`,
+            url: verificationUrl || undefined,
+        };
         try {
-            await navigator.share({
-                title: "SafarSathi Tourist ID",
-                text: `Tourist ID: ${profile.id}\nName: ${profile.name}\nVerified by SafarSathi`,
-                url: verificationUrl || undefined,
-            });
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareData.text);
+                setCopied("share");
+                setTimeout(() => setCopied(null), 2000);
+            }
         } catch { /* cancelled */ }
     }, [profile, verificationUrl]);
 
     return {
         session, profile, loading, copied, isOnline,
-        showQR, setShowQR, showDetails, setShowDetails,
+        isFlipped, handleFlip, showDetails, setShowDetails,
         verificationUrl, handleCopy, handleShare,
     };
 }

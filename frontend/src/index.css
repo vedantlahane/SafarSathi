@@ -35,6 +35,7 @@
   --animate-bounce-right: bounce-right 1s ease-in-out infinite;
   --animate-bounce-up: bounce-up 1s ease-in-out infinite;
   --animate-bounce-down: bounce-down 1s ease-in-out infinite;
+  --animate-holo-shift: holo-shift 6s ease-in-out infinite;
 }
 
 /* ─── Dynamic Theme CSS Variables ────────────────────── */
@@ -75,6 +76,7 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -84,6 +86,7 @@
 .safe-area-top {
   padding-top: env(safe-area-inset-top);
 }
+
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -105,6 +108,7 @@
   transition: transform 100ms ease-out, opacity 100ms ease-out;
   -webkit-tap-highlight-color: transparent;
 }
+
 .touch-action:active {
   transform: scale(0.97);
   opacity: 0.9;
@@ -112,80 +116,226 @@
 
 /* ─── Animation Keyframes ────────────────────────────── */
 @keyframes slide-in-from-top {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
+
 @keyframes slide-in-from-bottom {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
+
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
+
 @keyframes scale-in {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
+
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 
 /* ─── Gradient Mesh Animations ───────────────────────── */
 @keyframes mesh-drift-1 {
-  0%, 100% { transform: translate(0%, 0%) scale(1); }
-  25% { transform: translate(15%, 10%) scale(1.1); }
-  50% { transform: translate(5%, 20%) scale(0.95); }
-  75% { transform: translate(-10%, 5%) scale(1.05); }
+
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+
+  25% {
+    transform: translate(15%, 10%) scale(1.1);
+  }
+
+  50% {
+    transform: translate(5%, 20%) scale(0.95);
+  }
+
+  75% {
+    transform: translate(-10%, 5%) scale(1.05);
+  }
 }
+
 @keyframes mesh-drift-2 {
-  0%, 100% { transform: translate(0%, 0%) scale(1); }
-  25% { transform: translate(-10%, 15%) scale(1.05); }
-  50% { transform: translate(-20%, 5%) scale(1.1); }
-  75% { transform: translate(5%, -10%) scale(0.95); }
+
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+
+  25% {
+    transform: translate(-10%, 15%) scale(1.05);
+  }
+
+  50% {
+    transform: translate(-20%, 5%) scale(1.1);
+  }
+
+  75% {
+    transform: translate(5%, -10%) scale(0.95);
+  }
 }
+
 @keyframes mesh-drift-3 {
-  0%, 100% { transform: translate(0%, 0%) scale(1); }
-  25% { transform: translate(10%, -15%) scale(0.95); }
-  50% { transform: translate(20%, -5%) scale(1.1); }
-  75% { transform: translate(-5%, 10%) scale(1.05); }
+
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+
+  25% {
+    transform: translate(10%, -15%) scale(0.95);
+  }
+
+  50% {
+    transform: translate(20%, -5%) scale(1.1);
+  }
+
+  75% {
+    transform: translate(-5%, 10%) scale(1.05);
+  }
 }
+
 @keyframes mesh-drift-4 {
-  0%, 100% { transform: translate(0%, 0%) scale(1); }
-  33% { transform: translate(-15%, -10%) scale(1.1); }
-  66% { transform: translate(10%, 15%) scale(0.9); }
+
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+
+  33% {
+    transform: translate(-15%, -10%) scale(1.1);
+  }
+
+  66% {
+    transform: translate(10%, 15%) scale(0.9);
+  }
 }
 
 /* ─── SOS Pulse Animation ────────────────────────────── */
 @keyframes sos-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--theme-glow); }
-  50% { box-shadow: 0 0 0 12px transparent; }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--theme-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px transparent;
+  }
 }
 
 /* ─── Countdown Pop Animation ────────────────────────── */
 @keyframes countdown-pop {
-  0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ─── Directional Bounce Animations (SOS guides) ─────── */
 @keyframes bounce-left {
-  0%, 100% { transform: translateX(0) translateY(-50%); opacity: 0.4; }
-  50% { transform: translateX(-8px) translateY(-50%); opacity: 1; }
+
+  0%,
+  100% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateX(-8px) translateY(-50%);
+    opacity: 1;
+  }
 }
+
 @keyframes bounce-right {
-  0%, 100% { transform: translateX(0) translateY(-50%); opacity: 0.4; }
-  50% { transform: translateX(8px) translateY(-50%); opacity: 1; }
+
+  0%,
+  100% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateX(8px) translateY(-50%);
+    opacity: 1;
+  }
 }
+
 @keyframes bounce-up {
-  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
-  50% { transform: translateX(-50%) translateY(-8px); opacity: 1; }
+
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-8px);
+    opacity: 1;
+  }
 }
+
 @keyframes bounce-down {
-  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
-  50% { transform: translateX(-50%) translateY(8px); opacity: 1; }
+
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(8px);
+    opacity: 1;
+  }
 }
 
 /* ─── Animation Utility Classes ──────────────────────── */
@@ -194,15 +344,28 @@
   animation-fill-mode: both;
   animation-timing-function: ease-out;
 }
-.slide-in-from-top { animation-name: slide-in-from-top; }
-.slide-in-from-bottom { animation-name: slide-in-from-bottom; }
-.fade-in { animation-name: fade-in; }
-.scale-in { animation-name: scale-in; }
+
+.slide-in-from-top {
+  animation-name: slide-in-from-top;
+}
+
+.slide-in-from-bottom {
+  animation-name: slide-in-from-bottom;
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.scale-in {
+  animation-name: scale-in;
+}
 
 /* ─── Card Effects ───────────────────────────────────── */
 .card-hover {
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
+
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
@@ -212,25 +375,31 @@
 .btn-gradient-primary {
   background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(231 91% 55%) 100%);
 }
+
 .btn-gradient-danger {
   background: linear-gradient(135deg, hsl(0 84% 60%) 0%, hsl(0 84% 50%) 100%);
 }
+
 .btn-gradient-success {
   background: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 76% 36%) 100%);
 }
 
 /* ─── Skeleton Loading ───────────────────────────────── */
 @keyframes skeleton-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
+
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsl(210 40% 96.1%) 25%,
-    hsl(210 40% 92%) 50%,
-    hsl(210 40% 96.1%) 75%
-  );
+  background: linear-gradient(90deg,
+      hsl(210 40% 96.1%) 25%,
+      hsl(210 40% 92%) 50%,
+      hsl(210 40% 96.1%) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
@@ -266,25 +435,49 @@ body {
   transition-duration: 2000ms;
 }
 
-.stagger-children > * {
+.stagger-children>* {
   opacity: 0;
   animation: slide-in-up 0.4s ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.stagger-children>*:nth-child(7) {
+  animation-delay: 360ms;
+}
+
+.stagger-children>*:nth-child(8) {
+  animation-delay: 420ms;
+}
 
 @keyframes slide-in-up {
   from {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -292,32 +485,56 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stagger-children > * {
+  .stagger-children>* {
     opacity: 1;
     animation: none;
   }
 }
 
 /* ━━━ Staggered entrance animation ━━━ */
-.stagger-children > * {
+.stagger-children>* {
   opacity: 0;
   animation: slide-in-up 0.4s ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.stagger-children>*:nth-child(7) {
+  animation-delay: 360ms;
+}
+
+.stagger-children>*:nth-child(8) {
+  animation-delay: 420ms;
+}
 
 @keyframes slide-in-up {
   from {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -326,25 +543,21 @@ body {
 
 /* ━━━ Scroll fade edges ━━━ */
 .scroll-fade-x {
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 6%,
-    black 94%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 6%,
-    black 94%,
-    transparent 100%
-  );
+  mask-image: linear-gradient(to right,
+      transparent 0%,
+      black 6%,
+      black 94%,
+      transparent 100%);
+  -webkit-mask-image: linear-gradient(to right,
+      transparent 0%,
+      black 6%,
+      black 94%,
+      transparent 100%);
 }
 
 /* ━━━ Reduced motion ━━━ */
 @media (prefers-reduced-motion: reduce) {
-  .stagger-children > * {
+  .stagger-children>* {
     opacity: 1;
     animation: none;
   }
@@ -440,6 +653,7 @@ body {
     transform: scale(1);
     opacity: 0.3;
   }
+
   75%,
   100% {
     transform: scale(2.5);
@@ -456,6 +670,7 @@ body {
   0% {
     stroke-dashoffset: 0;
   }
+
   100% {
     stroke-dashoffset: 16;
   }
@@ -463,8 +678,26 @@ body {
 
 /* ─── Print: Hide map controls ───────────────────────── */
 @media print {
+
   .leaflet-control-container,
   .leaflet-popup-pane {
     display: none !important;
   }
+}
+
+/* ─── Holographic Shimmer for ID Card ────────────────── */
+@keyframes holo-shift {
+
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+.animate-holo-shift {
+  animation: holo-shift 6s ease-in-out infinite;
 }

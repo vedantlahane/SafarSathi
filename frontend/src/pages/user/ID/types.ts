@@ -1,12 +1,35 @@
-import type { LucideIcon } from "lucide-react";
+/** Tourist profile data returned from the backend */
+export interface TouristProfile {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    photoUrl?: string;
+    country?: string;
+    nationality?: string;
+    touristId?: string;
+    bloodType?: string;
+    allergies?: string[];
+    emergencyContact?: { name?: string; phone?: string };
+    medicalConditions?: string[];
+    validFrom?: string;
+    validUntil?: string;
+    verified?: boolean;
+    address?: string;
+    dateOfBirth?: string;
+    passportNumber?: string;
+    gender?: string;
+    idHash?: string;
+    idExpiry?: string;
+    safetyScore?: number;
+}
 
-export interface ProfileField {
-    icon: LucideIcon;
-    label: string;
-    value: string;
-    copyable?: boolean;
-    badge?: boolean;
-    badgeColor?: "emerald" | "blue" | "amber";
+/** Data needed to render the ID card */
+export interface IDCardData {
+    profile: TouristProfile | null;
+    sessionName?: string;
+    isFlipped: boolean;
+    onFlip: () => void;
 }
 
 export function getSafetyColor(score: number) {
