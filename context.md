@@ -28,32 +28,27 @@ The app's entire visual identity — colors, animation speeds, glow intensities 
 
 ### Styling and UI
 - Tailwind CSS v4 with CSS-first configuration using @theme block
-- shadcn/ui built on Radix UI primitives (all components installed)
-- Lucide React for consistent iconography (300+ icons)
-- CSS animations preferred over JS animations for performance
+## SECTION 3: TECH STACK
 
-### Mapping and Location
-- Leaflet 1.9.4 for map rendering (NOT Google Maps JavaScript API)
-- React-Leaflet 4.2.1 for React bindings
+### Frontend (Tourist Native App Experience)
+- **Framework:** React 19 (concurrent transitions) + TypeScript 5.7 (strict)
+- **Vite 6 Frontend Tooling:** HMR, optimized builds
+- **Styling:** Tailwind CSS v4 (@theme block, no legacy config file)
+- **UI Components:** shadcn/ui + custom glassmorphism components
+- **Icons:** Lucide React
+- **Mapping:** React-Leaflet 4.2.1 + Leaflet 1.9.4
+- **State:** React Context API (Session, Theme, SOS) + localStorage caching
+- **Offline:** Service Worker + IndexedDB (future map tile cache)
 
-### Data and State
-- React Context for global state (session, theme, SOS)
-- localStorage for persistent settings, offline SOS queue, SOS ball position
-- IndexedDB planned for offline map tiles cache
+### Backend (Currently Separate Node Repository)
+- **Runtime:** Node.js
+- **Framework:** Express.js (REST API + Controllers + Middleware)
+- **Database:** MongoDB
+- **ORM:** Mongoose (Schemas, geospatial queries)
+- **Real-time:** WebSocket Server (simple `ws` implementation)
+- **Security:** Standard CORS, Express JSON parser
 
-### Utilities
-- qrcode.react for QR code generation on digital ID
-- date-fns for date/time formatting
-- sonner for toast notifications
-
-### Backend (Separate Repository)
-- Spring Boot or Node.js REST API plus WebSocket server
-- PostgreSQL with PostGIS for spatial database (zones, stations)
-- Redis for real-time data cache
-- Python ML pipeline for safety score calculation (future phases)
-- JWT for authentication
-
-### Google Maps Platform (HYBRID APPROACH)
+### Google Maps Platform (Data Only, No Rendering)
 Critical architectural decision: Google provides DATA, Leaflet provides MAP RENDERING. We never load the Google Maps JavaScript API for tile rendering.
 
 APIs used:
@@ -1389,107 +1384,246 @@ src/pages/user/settings/
 ### Overview
 The core intelligence of YatraX. A numerical score from 0 to 100, updated every 30 seconds or on significant location change (>100m movement). Higher scores mean safer conditions.
 
-### 153 Total Factors Across 16 Categories
+### 17a. Complete Safety Factor Taxonomy
+147-153 Total Factors Across 16 Categories.
 
-Category 1 — Geographic and Terrain (13 factors):
-Elevation, slope angle, terrain type (flat/hilly/mountainous/wetland), flood zone designation, landslide susceptibility, earthquake zone classification, river/water body proximity, vegetation density, trail condition, international border proximity, distance to nearest paved road, distance to nearest settlement, soil type
+#### Category 1: Geographic & Terrain (13 factors, High Feasibility)
+- **Elevation** (Google Elevation API / SRTM | Remote) - Risk: altitude sickness above 2,500m.
+- **Slope/Gradient** (Elevation API | Remote) - Risk: steep terrain = fall risk/landslide.
+- **Terrain Type** (OSM/Land use | Remote) - Unique risk profiles per type.
+- **Distance to nearest road** (Google Places/OSM | Both) - Risk: harder evacuation.
+- **Distance to nearest settlement** (Google Places/OSM | Remote) - Risk: isolation.
+- **Flood zone proximity** (Government/NDMA/PostGIS | Both) - Critical for annual floods (Assam).
+- **Landslide prone area** (Geological Survey of India | Remote) - High risk in NE India.
+- **Earthquake zone** (Seismic zone maps | Both) - NE India is Zone V (highest).
+- **River/water body proximity** (OSM/Google Hydrology | Both) - Drowning/flash floods.
+- **River current season** (Central Water Comm. | Remote) - Deadly monsoon currents.
+- **Vegetation density** (NDVI/GEE | Remote) - Harder to find lost tourists.
+- **Trail condition** (OSM/tourism board | Remote) - Unmarked/abandoned trails.
+- **Border proximity** (Govt maps | Remote) - Restricted zones/military borders.
 
-Category 2 — Weather and Climate (12 factors):
-Current temperature, rainfall rate, flood warning level, visibility, wind speed, humidity, UV index, lightning probability, cyclone tracking distance, seasonal weather profile, minutes until sunset, feels-like temperature
+#### Category 2: Weather & Climate (12 factors, High Feasibility)
+- **Current temperature** (OpenWeather/IMD | Both) - Heatstroke >42°C, Hypothermia <5°C.
+- **Rainfall intensity** (IMD/OpenWeather | Both) - Flash floods, landslides.
+- **Flood warning status** (CWC/NDMA | Both) - Brahmaputra floods.
+- **Visibility** (Weather/METAR | Both) - Fog/smog risks for driving.
+- **Wind speed** (Weather API | Both) - High winds on bridges/passes.
+- **Humidity** (Weather API | Both) - Exhaustion at >90%.
+- **UV index** (Weather API | Remote) - Sunburn/dehydration.
+- **Lightning probability** (Detection networks | Both) - Extremely high death rate in NE.
+- **Cyclone/storm tracking** (IMD | Both) - Bay of Bengal impacts.
+- **Seasonal risk profile** (Historical data | Both) - Monsoon/Fog/Heat.
+- **Sunset/sunrise time** (Computed | Both) - Determines start of night context.
+- **Feels-like temperature** (Computed | Both) - Health risk indicator.
 
-Category 3 — Wildlife and Nature (9 factors):
-Wildlife sanctuary proximity, known elephant corridor distance, recent animal sighting reports, snake activity season indicator, disease vector density, poisonous plant prevalence, water contamination risk, animal migration patterns, predator risk level
+#### Category 3: Wildlife & Nature Hazards (9 factors, Medium Feasibility)
+- **Wildlife sanctuary proximity** (Protected area GIS | Remote) - Rhino/elephant/tiger conflict.
+- **Elephant corridor proximity** (Wildlife Institute | Remote) - High attack rates.
+- **Recent animal sighting reports** (Forest dept/News | Remote) - Dynamic tracking.
+- **Snake density season** (Seasonal data | Remote) - Monsoon peak activity.
+- **Insect/disease vector season** (Health dept/WHO | Remote) - Malaria, Dengue, JE.
+- **Poisonous plant density** (Botanical survey | Remote) - Trekker hazards.
+- **Leech season** (Seasonal data | Remote) - Panic/infection risk.
+- **Water contamination risk** (Water quality tests | Remote) - Parasite risk.
+- **Animal migration pattern** (Tracking data | Remote) - Floods force rhino movement.
 
-Category 4 — Infrastructure and Accessibility (15 factors):
-Hospital ETA, hospital capability level (PHC/CHC/DH/Medical College), police station ETA, police station type (outpost/station/district HQ), road quality index, current road condition, bridge structural status, nearest fuel station, nearest ATM, nearest restroom, street lighting coverage, CCTV surveillance density, emergency shelter availability, helicopter landing access, ferry service status
+#### Category 4: Infrastructure & Accessibility (15 factors, High Feasibility)
+- **Distance to hospital** (Google Distance Matrix | Both) - Travel time.
+- **Hospital level** (Health dept | Both) - PHC vs District capability.
+- **Distance to police station** (Distance Matrix | Both) - Help ETA.
+- **Police station type** (Backend | Both) - Outpost vs Tourist Police.
+- **Road quality/type** (OSM/Google Roads | Both) - Dirt roads impassable in rain.
+- **Road condition** (PWD/Google Traffic | Both) - Washed out/blocked.
+- **Bridge status** (PWD/Local reports | Remote) - Seasonal washouts.
+- **Fuel station proximity** (Google Places | Remote) - Stranded vehicle risk.
+- **ATM/bank proximity** (Google Places | Remote) - Cash isolation.
+- **Public restroom availability** (Google Places/OSM | Both) - Female tourist safety.
+- **Street lighting** (VIIRS/OSM | Both) - Night crime proxy.
+- **CCTV coverage** (Police data | City) - Crime deterrence.
+- **Shelter availability** (Google Places/OSM | Remote) - Storm safety.
+- **Helicopter landing accessibility** (Aviation/Terrain | Remote) - Air rescue capability.
+- **Ferry/boat service availability** (Transport data | Remote) - Isolation (e.g., Majuli).
 
-Category 5 — Communication (7 factors):
-Mobile signal strength, network type (2G/3G/4G/5G), multi-carrier coverage, satellite phone necessity, public WiFi availability, emergency broadcast reach, last known good signal location
+#### Category 5: Communication & Connectivity (7 factors, High Feasibility)
+- **Mobile network coverage** (OpenSignal/TRAI | Both) - Help accessibility.
+- **Network type available** (Device API | Both) - Data (5G/4G) vs Voice (2G).
+- **Multiple carrier coverage** (TRAI | Remote) - Tower failure redundancy.
+- **Satellite phone necessity** (Registration data | Remote) - Zero cell zones.
+- **WiFi availability nearby** (Google Geolocation | Both) - Backup channel.
+- **Emergency broadcast system reach** (Alert coverage | Both) - Warning reception.
+- **Last known signal location** (Device cache | Remote) - Navigation back to connectivity.
 
-Category 6 — Human and Social (16 factors):
-Population density, tourist-to-local ratio, overall crime rate, predominant crime types, tourist-targeted crime rate, scam frequency, alcohol consumption patterns, local unrest level, ethnic tension index, military zone proximity, gender safety index, solo traveler risk multiplier, language barrier severity, community friendliness rating, active festivals, drug trafficking proximity
+#### Category 6: Human & Social Environment (16 factors, Medium Feasibility)
+- **Population density** (Census/Places | Both) - Isolated vs crowded.
+- **Tourist-to-local ratio** (Tourism board | Both) - Scam targeting metrics.
+- **Crime rate** (NCRB/Police | City) - Baseline per 100k.
+- **Crime type distribution** (NCRB/Police | City) - Theft vs Assault.
+- **Tourist-targeted crime history** (Tourist Police | Both) - Specific hazard profiling.
+- **Scam reports in area** (TripAdvisor/App data | Both) - Fraud risk.
+- **Alcohol consumption patterns** (Places/Excise | Both) - Bar density + Time = Risk.
+- **Local unrest/protest activity** (News/Social media | Both) - Bandhs/shutdowns.
+- **Ethnic tension zones** (Govt advisories | Remote) - Complex dynamics.
+- **Military/insurgent activity zones** (MHA advisories | Remote) - AFSPA/disturbed areas.
+- **Gender safety index** (NCRB/Women safety | Both) - Differential risk factor.
+- **Solo traveler risk modifier** (Computed | Both) - Isolation + Crime combo.
+- **Local language barrier** (Profile vs Area | Both) - Communication difficulty.
+- **Local community friendliness** (Reviews | Remote) - Welcoming vs hostile.
+- **Ongoing festival/event** (Cultural calendar | Both) - Crowds (pickpockets + police).
+- **Drug trafficking route proximity** (NCB data | Remote) - Golden Triangle routes.
 
-Category 7 — Health and Medical (10 factors):
-Hospital travel time (driving), pharmacy distance, ambulance coverage area, disease outbreak alerts, malaria zone classification, drinking water safety, altitude sickness risk, anti-venom availability, personal health condition match, vaccination requirement match
+#### Category 7: Health & Medical (10 factors, Medium Feasibility)
+- **Nearest hospital travel time** (Google Distance Matrix | Both)
+- **Nearest pharmacy distance** (Google Places | Both)
+- **Ambulance response coverage** (108 service | Both) - Remote area delays.
+- **Disease outbreak alerts** (IDSP/WHO | Both) - Encephalitis, typhoid.
+- **Malaria endemic zone** (NVBDCP | Remote) - Vector-borne risks.
+- **Water safety** (PHE dept | Remote) - Hydration risk.
+- **Altitude sickness risk** (Computed elevation + ascent | Remote) - AMS probability.
+- **Anti-venom availability** (Hospital inventory | Remote) - Snakebite survival.
+- **Tourist's personal health conditions** (App profile | Both) - E.g. Asthma + Bad AQI.
+- **Vaccination status** (App profile | Remote) - Mismatches with local endemic diseases.
 
-Category 8 — Time-Based (9 factors):
-Hour of day, day of week, daylight remaining, moon phase, current season, duration at current location, speed of movement, time since last check-in, public holiday indicator
+#### Category 8: Time-Based Factors (9 factors, High Feasibility)
+- **Time of day** (Device API | Both) - Peak danger often 12AM-5AM.
+- **Day of week** (Date calc | Both) - Weekend nights = alcohol risks.
+- **Daylight remaining** (Sunset calc | Both) - Dusk in remote areas = panic/danger.
+- **Moon phase** (Astronomical calc | Remote) - Natural visibility without lights.
+- **Season** (Date calc | Both) - Dictates weather/wildlife/terrain hazards.
+- **Duration at location** (App tracking | Both) - Stationary in parks at night = anomaly.
+- **Speed of movement** (GPS delta | Both) - Sudden stops = possible accident.
+- **Time since last check-in** (App data | Both) - Missingness indicator.
+- **Holiday/special date** (Calendar API | Both) - Drunk driving/bandhs.
 
-Category 9 — Transportation (8 factors):
-Accident hotspot proximity, traffic density, road type, mountain road danger rating, ferry safety rating, vehicle availability, public transit coverage, parking area safety
+#### Category 9: Transportation Safety (8 factors, High Feasibility)
+- **Road accident hotspots** (NHAI/Police | Both) - NH37 Kaziranga, deadly curves.
+- **Traffic density** (Google Traffic | City) - Slows emergency response.
+- **Road type currently on** (GPS/OSM | Both) - Highway vs village road.
+- **Hairpin turns/mountain danger** (OSM/Elevation | Remote) - Topographical risks.
+- **Ferry safety** (IWT records | Remote) - Overloading/weather conditions.
+- **Vehicle type available** (Ride-hailing API/Transit | Both) - Cab likelihood.
+- **Public transit availability** (Transit schedules | City) - Last bus timing.
+- **Parking/stopping safety** (OSM/Rules | Both) - Stopping on NH at night risk.
 
-Category 10 — Behavioral and Personal (12 factors):
-Movement anomaly detection, route deviation from planned, sudden stops in unusual areas, app usage pattern change, device battery level, group size, travel experience level, physical fitness level, preparation level, local contact availability, document status, cash vulnerability
+#### Category 10: Behavioral & Personal (12 factors, High Feasibility)
+- **Movement pattern anomaly** (GPS history | Both) - Erratic = chased/lost/drunk.
+- **Deviation from planned route** (Itinerary | Both) - Unexpected remote travel.
+- **Sudden stop after movement** (GPS velocity | Both) - Fast to zero = crash.
+- **App usage pattern change** (App analytics | Both) - Dropped engagement = concern.
+- **Phone battery level** (Battery API | Both) - Approaching 0% in remote = critical.
+- **Group size** (Profile | Both) - Solo female night vs group of 5.
+- **Tourist experience level** (Profile | Both) - First-timer vs veteran.
+- **Physical fitness** (Profile/Pace | Remote) - Unfit on difficult treks.
+- **Preparation level** (App checklists | Remote) - Has flashlight/water/medkit?
+- **Local contact availability** (Profile | Both) - Knowing locals mitigates risk.
+- **Document status** (Profile | Both) - Carrying ID/Permits.
+- **Cash/payment vulnerability** (Proximity/Reports | Both) - Target for robbery.
 
-Category 11 — Legal and Regulatory (8 factors):
-Restricted area proximity, AFSPA zone, active curfew status, photography ban areas, foreigner registration requirements, local law awareness, park permit requirements, embassy proximity
+#### Category 11: Legal & Regulatory (8 factors, Medium Feasibility)
+- **Protected/restricted area status** (MHA advisories | Remote) - ILP/PAP requirements.
+- **AFSPA declared area** (MHA notifications | Remote) - Armed Forces Special Powers.
+- **Curfew status** (District admin | Both) - Legal restrictions.
+- **Photography banned area** (Military maps | Both) - Accidental legal trouble.
+- **Foreigner registration requirement** (FRRO | Both) - 24-hour reporting.
+- **Local laws/customs** (Legal database | Both) - Dress codes, alcohol bans.
+- **National park entry requirements** (Forest dept | Remote) - Mandatory guides/hours.
+- **Embassy/consulate proximity** (MFA | Both) - International tourist aid.
 
-Category 12 — Environmental Quality (6 factors):
-Air Quality Index, water quality index, industrial hazard proximity, noise pollution level, active fire proximity (satellite), soil stability index
+#### Category 12: Environmental Quality (6 factors, High Feasibility)
+- **Air quality index** (Google Air Quality/CPCB | Both) - Health impacts.
+- **Water quality nearby** (Jal Shakti | Remote) - Consumption hazards.
+- **Industrial hazard proximity** (Factories Act/Pollution | Both) - Refineries/chemical leaks.
+- **Noise level proxy** (Place density + Time | City) - Auditory masking of warnings.
+- **Active fire/smoke** (NASA FIRMS/Forest | Remote) - Jhum (slash & burn) fires.
+- **Soil stability** (Geological | Remote) - Rain-induced collapse.
 
-Category 13 — Digital and Cyber (3 factors):
-Public WiFi safety rating, SIM card scam prevalence, digital payment acceptance
+#### Category 13: Digital & Cyber Safety (3 factors, Low Feasibility)
+- **Public WiFi safety** (Scan analysis | City) - Fake hotspots.
+- **SIM scam prevalence** (Police reports | City) - Tourist targeting.
+- **Digital payment acceptance rate** (Aggregators | Both) - Forcing cash carrying.
 
-Category 14 — Tourism Infrastructure (10 factors):
-Tourist information center proximity, licensed guide availability, registered accommodation, tourist police patrol frequency, multi-language signage, mountain rescue team proximity, safety equipment rental, review sentiment analysis, visit frequency, cleanliness rating
+#### Category 14: Tourism Infrastructure (10 factors, Medium Feasibility)
+- **Tourism Info Center proximity** (Govt data | Both) - Direct support.
+- **Licensed guides available** (Registry | Remote) - Verified escorts.
+- **Registered accommodation density** (Hotels API | Both) - Commercial safety standards.
+- **Tourist police patrols** (Dispatch data | Both) - Specialized protection.
+- **Multi-language signage** (OSM/Audits | Remote) - Wayfinding.
+- **Rescue team proximity** (NDRF/SDRF | Remote) - Mountain/wilderness extraction.
+- **Safety equipment availability** (Tourism audits | Remote) - Life jackets, first aid.
+- **Tourist review sentiment** (Places/TripAdvisor | Both) - "Felt unsafe" text analysis.
+- **Visit frequency** (Footfall/Popular times | Both) - Crowds = oversight.
+- **Waste/cleanliness index** (Swachh Bharat/Reviews | Both) - Broken windows theory.
 
-Category 15 — Historical and Predictive (10 factors):
-Historical incident count, incident type breakdown, trend direction, time-of-day distribution, similar location rates, seasonal patterns, SOS trigger frequency, pre-alert frequency, nearby tourist density, predicted future score
+#### Category 15: Historical & Predictive (10 factors, High Feasibility)
+- **Incident count** (Backend | Both) - 30/90/365 day aggregations.
+- **Incident type breakdown** (Backend | Both) - Shapes the precise warning phrasing.
+- **Incident trend** (Time-series | Both) - Improving vs deteriorating.
+- **Time-of-day distribution** (Cross-tab | Both) - Temporal concentration of risk.
+- **Similar location incident rate** (ML clustering | Both) - Extrapolating to unvisited areas.
+- **Seasonal incident patterns** (Decomposition | Both) - Holiday peaks.
+- **SOS trigger frequency** (Backend | Both) - Real panic indicators.
+- **Pre-alert frequency** (Backend | Both) - Uneasiness proxy (2-sec holds).
+- **Nearby tourist density** (App tracking | Both) - Herd safety.
+- **Predicted score** (Forecasting | Both) - 1/3/6 hours into the future.
 
-Category 16 — External Intelligence (6 factors):
-Government travel advisories, NDMA alerts, news sentiment, social media signals, community reports, global trends
+#### Category 16: External Intelligence (6 factors, Medium Feasibility)
+- **Government travel advisories** (MEA/Foreign Ministries | Both) - Official warnings.
+- **NDMA disaster alerts** (API | Both) - Active tectonic/meteorological events.
+- **Local news sentiment** (NLP | Both) - Current events processing.
+- **Social media risk signals** (Twitter API | Both) - Crowd-sourced spontaneous issues.
+- **Community safety reports** (App users | Both) - Waze-style hazard tagging.
+- **Similar event global incidents** (Global databases | Both) - Emerging trend correlation.
 
-### Environment Detection
-The app classifies the tourist's current environment:
-- Urban: population density > threshold, many roads, strong signal
-- Suburban: medium density, mixed development
-- Rural: low density, agricultural, limited services
-- Remote: very low density, no paved roads, weak signal
-- Wilderness: no settlement, no roads, survival conditions
+### 17b. Environment Detection
+Factor weights change drastically based on context.
+- **Urban**: City density, services, high crime metrics.
+- **Suburban**: Moderate density.
+- **Rural**: Agriculture, sparse layout.
+- **Remote**: Few services, bad connectivity, >5km from settlements.
+- **Wilderness**: 0 places, no network, >10km from settlements.
 
-Factor weights adjust per environment:
-- Urban: Crime 40%, Services 30%, Infrastructure 20%, Other 10%
-- Rural: Social 30%, Natural 25%, Infrastructure 25%, Other 20%
-- Remote: Infrastructure 30%, Weather 25%, Medical 25%, Other 20%
-- Wilderness: Weather 25%, Medical 25%, Connectivity 20%, Survival 20%, Other 10%
+*Weight Distribution changes*:
+- **Urban**: Crime + Services + Time dominate (Time: 10%, Police: 12%, Crime: 12%)
+- **Wilderness**: Infrastructure + Weather + Survival dominate (Time: 15%, Daylight: 18%, Connect: 18%, Health: 18%)
 
-### Phase 1 Implementation (Current — Rule-Based)
+### 17c. Phase 1 Implementation (Current)
+Pure rule-based heuristics utilizing Google Maps APIs, device APIs, and basic backend checks. A weighted score out of 100 determines the theme state (`safe`, `caution`, `danger`).
 
-15 factors with weighted scoring:
+**15 Active Factors (Phase 1):**
+1. **Time of day (10%)**: Device clock. 8am-6pm (95), Late Night 2am-5am (10).
+2. **Day of week (3%)**: Weekend night penalty.
+3. **Season (5%)**: Monsoon penalty (Assam).
+4. **Daylight (5%)**: After sunset drastically lowers score.
+5. **Risk Zone (12%)**: Polygon intersections. Score hard-capped based on zone severity.
+6. **Police ETA (10%)**: Google Distance Matrix API.
+7. **Hospital ETA (8%)**: Google Distance Matrix API.
+8. **Area density (8%)**: Google Places nearby search count.
+9. **Area place types (7%)**: Safe vs Risky place clustering.
+10. **Open businesses (5%)**: `openNow` proxy for crowds.
+11. **Active alerts (8%)**: Backend WebSocket alerts count.
+12. **Historical incidents (7%)**: Backend past 30 days.
+13. **Connectivity (4%)**: `navigator.connection` API.
+14. **Weather (5%)**: OpenWeather API.
+15. **Air Quality (3%)**: Google Air Quality API.
 
-| Factor | Weight | Source |
-|--------|--------|--------|
-| Time of day | 10% | System clock |
-| Day of week | 3% | System clock |
-| Season | 5% | Date calculation |
-| Daylight remaining | 5% | Sunset calculation |
-| Risk zone proximity | 12% | Local data + backend |
-| Police station ETA | 10% | Distance calculation |
-| Hospital ETA | 8% | Distance calculation |
-| Area place density | 8% | Google Places API |
-| Area place types | 7% | Google Places API |
-| Open businesses | 5% | Google Places API |
-| Active alerts | 8% | Backend WebSocket |
-| Historical incidents | 7% | Backend API |
-| Connectivity | 4% | Navigator.connection |
-| Weather conditions | 5% | Weather API |
-| Air quality | 3% | Google Air Quality API |
+**Hard Caps**:
+- High Risk Zone: `score <= 40`
+- Medium Risk Zone: `score <= 65`
+- >5 Active Alerts: `score <= 30`
+- Zero Network: `score <= 50`
 
-Hard caps (override calculated score):
-- Inside high risk zone: maximum score 40
-- Inside medium risk zone: maximum score 65
-- Critical alert active: maximum score 30
-- No network connectivity: maximum score 50
-- Active SOS in progress: score forced to 10
+### 17d. Predictive Capabilities (Future)
+The ML pipeline will generate forecasts indicating shifting states before they happen.
+Outputs include:
+- Current Assessment: Score + Primary driving factor.
+- Predictions: Forecasted score at `+1h`, `+3h`, `+6h`.
+- Reasoning: "Sun will set, temperatures drop, no connectivity".
+- Recommendations: Actionable NL prompts comparing alternative actions (Stay vs Leave).
 
-Recommendation generator produces natural language advice based on worst factor and current status.
-
-### Implementation Phases
-- Phase 1 (now): Rule-based, 15 factors, implementable immediately
-- Phase 2 (3 months): XGBoost model, ~35 factors
-- Phase 3 (6 months): Ensemble model, ~60 factors
-- Phase 4 (12 months): Deep learning + LSTM behavioral analysis
-- Phase 5 (18 months): Full 153-factor predictive system with 1hr/3hr/6hr predictions
+### 17e. Data Source Inventory
+- **Free**: OSM, IMD, CWC, NDMA, NCRB, Census, NASA FIRMS, VIIRS, SRTM, GSI, NVBDCP, TRAI, Browser APIs.
+- **Paid (Google Maps)**: Places, Directions, Distance Matrix, Geocoding, Air Quality.
+- **Internal (Backend)**: Risk Zones, Police DB, Hospital DB, SOS/Pre-Alert Analytics, Incident Hist.
+- **Future**: CCTV ML parsing, Ride-hailing APIs, Cell-tower density, Local IoT.
 
 ---
 
@@ -1530,7 +1664,52 @@ src/lib/api/google/
 
 ---
 
-## SECTION 19: API ENDPOINTS
+## SECTION 19: BACKEND INFRASTRUCTURE & DATA MODELS
+
+### Architecture Overview
+The backend is a Node.js + Express.js REST API using MongoDB as the primary database via Mongoose ORM. It currently lacks advanced security infrastructure like rate-limiting, bcrypt hashing, or containerized DevOps (no Docker/CI). 
+
+### Directory Structure (`backend-node/src/`)
+- `config/`: Database connection (`mongoStore.ts`), CORS options, and env parsing.
+- `controllers/`: Request handlers mapping to specific domains (e.g., `authController.ts`, `alertController.ts`).
+- `middleware/`: Custom `requestLogger.ts` and `errorHandler.ts`. Basic `authMiddleware` exists but is inconsistently applied.
+- `models/`: Mongoose model initializations (e.g., `Tourist.ts`, `Alert.ts`).
+- `routes/`: Express routers aggregating controllers (e.g., `api/auth`, `api/sos`).
+- `schemas/`: Mongoose schema definitions and TypeScript interfaces.
+- `services/`: Business logic and external connections (e.g., `websocketHub.ts`).
+
+### Mongoose Schemas (Data Models)
+The system uses standard 2D indexes (`[lat, lng]`) for location queries, not PostGIS.
+
+#### 1. Tourist (`Tourist.schema.ts`)
+Core user profile and location tracking entity.
+- **Fields**: `_id`, `name`, `email` (unique), `phone`, `passportNumber`, `passwordHash` (stored raw/basic hash), `safetyScore` (default 100), `currentLat`, `currentLng`, `lastSeen`.
+- **References**: Profile info (`dateOfBirth`, `address`, `gender`, `emergencyContact`, `idHash`).
+- **Indexes**: Compound index on `{ currentLat: 1, currentLng: 1 }`.
+
+#### 2. RiskZone (`RiskZone.schema.ts`)
+Geospatial hazard areas defined by admins.
+- **Fields**: `zoneId` (unique), `name`, `description`, `centerLat`, `centerLng`, `radiusMeters`, `riskLevel` (enum: LOW/MEDIUM/HIGH), `active` (boolean).
+- **Indexes**: Compound index on `{ centerLat: 1, centerLng: 1 }`, and `{ active: 1 }`.
+
+#### 3. Alert (`Alert.schema.ts`)
+SOS triggers, warnings, and system notifications.
+- **Fields**: `alertId` (unique), `touristId` (refs Tourist), `alertType`, `priority` (LOW/MEDIUM/HIGH/CRITICAL), `status` (OPEN/ACKNOWLEDGED/RESOLVED/DISMISSED), `latitude`, `longitude`.
+- **Indexes**: `{ status: 1 }`, `{ createdAt: -1 }`.
+
+#### 4. PoliceDepartment & Hospital
+Static infrastructure entities.
+- **Police**: `name`, `departmentCode`, `latitude`, `longitude`, `contactNumber`, `type` (outpost/station/district_hq).
+- **Hospital**: `name`, `latitude`, `longitude`, `contactNumber`, `emergency` (boolean), `level` (PHC/CHC/DH/Medical College).
+
+### WebSocket Implementation
+- **Hub (`websocketHub.ts`)**: A simple `WebSocketServer` imported from `ws`.
+- **Pattern**: Basic broadcast model to `/topic/alerts`. 
+- **Limitations**: Currently no advanced room clustering (e.g., grouping users by physical distance to an alert) or namespace management.
+
+---
+
+## SECTION 20: API ENDPOINTS
 
 ### Tourist Endpoints
 
@@ -1578,7 +1757,7 @@ Returns: Array of hospital data (id, name, latitude, longitude, contactNumber, t
 
 ### WebSocket
 
-WS /ws/alerts
+WS /ws-connect
 Authentication: Bearer token in handshake
 Server pushes two message types:
 - ALERT: id, title, message, severity (high/medium/low), timestamp, location object

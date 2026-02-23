@@ -19,5 +19,5 @@ export async function validateAdminLogin(email: string, password: string) {
 }
 
 export function generateAdminToken(policeDepartment: IPoliceDepartment) {
-  return jwt.sign({ sub: policeDepartment._id, role: "admin" }, env.jwtSecret, { expiresIn: env.jwtExpiry });
+  return jwt.sign({ sub: policeDepartment._id, role: "admin" }, env.jwtSecret, { expiresIn: env.jwtExpiry as any });
 }

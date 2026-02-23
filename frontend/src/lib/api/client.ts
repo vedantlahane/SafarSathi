@@ -1,3 +1,5 @@
+import { getSession, getAdminSession } from "../session";
+
 const DEFAULT_BASE_URL = "http://localhost:8081";
 const API_BASE_URL =
     (import.meta.env.VITE_BACKEND_NODE_URL as string | undefined) ??
@@ -13,12 +15,25 @@ export async function request<T>(
     path: string,
     options: RequestInit = {}
 ): Promise<T> {
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+
+    // Check for admin token first, then tourist token
+    const adminSession = getAdminSession();
+    const touristSession = getSession();
+    const token = adminSession?.token || touristSession?.token;
+
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(buildUrl(path), {
-        headers: {
-            "Content-Type": "application/json",
-            ...(options.headers ?? {}),
-        },
         ...options,
+        headers: {
+            ...headers,
+            ...(options.headers as Record<string, string> ?? {}),
+        },
     });
 
     if (!response.ok) {
