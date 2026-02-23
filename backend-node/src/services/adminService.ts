@@ -1,4 +1,6 @@
-import { sha256 } from "../utils/hash.js";
+import { comparePassword, sha256 } from "../utils/hash.js";
+import jwt from "jsonwebtoken";
+import { env } from "../config/env.js";
 import { getPoliceDepartmentByEmail, type IPoliceDepartment } from "./mongoStore.js";
 
 export async function validateAdminLogin(email: string, password: string) {
@@ -9,14 +11,13 @@ export async function validateAdminLogin(email: string, password: string) {
   if (!admin) {
     return null;
   }
-  const hashedPassword = sha256(password);
-  if (hashedPassword !== admin.passwordHash) {
+  const isValid = await comparePassword(password, admin.passwordHash);
+  if (!isValid) {
     return null;
   }
   return admin;
 }
 
 export function generateAdminToken(policeDepartment: IPoliceDepartment) {
-  const tokenData = `${policeDepartment.email}:${Date.now()}`;
-  return Buffer.from(tokenData, "utf8").toString("base64");
+  return jwt.sign({ sub: policeDepartment._id, role: "admin" }, env.jwtSecret, { expiresIn: env.jwtExpiry });
 }

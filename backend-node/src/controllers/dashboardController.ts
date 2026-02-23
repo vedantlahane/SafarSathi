@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { normalizeParam } from "../utils/params.js";
 import { getAdminDashboardState, getTouristDashboard } from "../services/dashboardService.js";
 
 export async function adminDashboard(_req: Request, res: Response) {
@@ -16,11 +17,4 @@ export async function touristDashboard(req: Request, res: Response) {
     return res.status(404).json({ message: "Tourist not found" });
   }
   return res.json(data);
-}
-
-function normalizeParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
 }

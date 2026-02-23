@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { normalizeParam } from "../utils/params.js";
 import { createSOS, recordLocation } from "../services/sosService.js";
 
 export async function postLocation(req: Request, res: Response) {
@@ -30,11 +31,4 @@ export async function postSOS(req: Request, res: Response) {
   const { lat, lng } = req.body as { lat?: number; lng?: number };
   await createSOS(touristId, lat, lng);
   return res.json({ status: "SOS Alert initiated. Emergency response notified." });
-}
-
-function normalizeParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
 }

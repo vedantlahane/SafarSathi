@@ -12,14 +12,18 @@
     "cors": "latest",
     "dotenv": "latest",
     "express": "latest",
+    "bcryptjs": "latest",
+    "jsonwebtoken": "latest",
     "mongoose": "^9.1.5",
     "pino": "latest",
     "pino-http": "latest",
     "ws": "latest"
   },
   "devDependencies": {
+    "@types/bcryptjs": "latest",
     "@types/cors": "latest",
     "@types/express": "latest",
+    "@types/jsonwebtoken": "latest",
     "@types/node": "latest",
     "@types/ws": "latest",
     "tsx": "latest",

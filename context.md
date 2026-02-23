@@ -1584,6 +1584,71 @@ Server pushes two message types:
 - ALERT: id, title, message, severity (high/medium/low), timestamp, location object
 - SCORE_UPDATE: score, status, factors array
 
+### Admin Endpoints
+
+POST /api/admin/login
+Body: email, password
+Returns: success boolean, token, admin object (id, name, email, departmentCode, city, district, state)
+
+GET /api/admin/dashboard/state
+Returns: AdminDashboardState (stats, alerts array, tourists array, responseUnits array)
+
+GET /api/admin/alerts/all
+Returns: Array of alerts (id, touristId, alertType, status, createdTime, message)
+
+POST /api/admin/alerts/{id}/status
+Body: status string
+Returns: updated alert
+
+GET /api/admin/tourists
+Returns: Array of tourist summaries (id, name, status, safetyScore, lastSeen)
+
+GET /api/admin/risk-zones
+Returns: Array of RiskZone
+
+POST /api/admin/risk-zones
+Body: name, description, severity, centerLat, centerLng, radiusMeters, riskLevel, active
+Returns: created RiskZone
+
+PUT /api/admin/risk-zones/{id}
+Body: Partial RiskZone
+Returns: updated RiskZone
+
+PATCH /api/admin/risk-zones/{id}/status?active={boolean}
+Returns: updated RiskZone
+
+DELETE /api/admin/risk-zones/{id}
+
+POST /api/admin/police
+Body: name, email, departmentCode, city, contactNumber, latitude, longitude, passwordHash, district, state
+Returns: created PoliceDepartment
+
+PUT /api/admin/police/{id}
+Body: Partial PoliceDepartment
+Returns: updated PoliceDepartment
+
+DELETE /api/admin/police/{id}
+
+GET /api/admin/id/verify?hash={hash}
+Returns: valid boolean, name, passport_partial, id_expiry, blockchain_status
+
+### Auth Endpoints
+
+POST /api/auth/register
+Body: TouristRegistrationPayload (name, email, phone, passportNumber, passwordHash, dateOfBirth, address, gender, nationality, emergencyContact, currentLat, currentLng)
+Returns: touristId, token, user (TouristProfile), qr_content
+
+POST /api/auth/login
+Body: email, password
+Returns: touristId, token, user (TouristProfile), qr_content
+
+GET /api/auth/profile/{touristId}
+Returns: TouristProfile
+
+PUT /api/auth/profile/{touristId}
+Body: Partial TouristProfile
+Returns: updated TouristProfile
+
 ---
 
 ## SECTION 20: COMPLETE FILE STRUCTURE
@@ -1775,12 +1840,53 @@ src/
 │   ├── assam-restricted-areas.json  ← Fallback risk zone data (used when backend unavailable)
 │   └── assam-police-stations.json   ← Fallback police station data
 │
-└── service-worker/
-    └── sw.ts                        ← Service worker for offline SOS sync,
-                                        push notifications, cache strategies
+├── service-worker/
+│   └── sw.ts                        ← Service worker for offline SOS sync,
+│                                       push notifications, cache strategies
+│
+├── layout/admin/
+│   └── AdminLayout.tsx              ← Admin top nav, branding, mobile nav,
+│                                       user menu dropdown, section routing
+│
+└── pages/admin/
+    ├── index.tsx                     ← AdminPanel composition root (auth + sections + dialogs)
+    ├── types.ts                      ← Admin types (Tourist, RiskZone, Alert, PoliceDepartment,
+    │                                    DashboardStats, AdminData, form data, filters)
+    ├── hooks/
+    │   ├── index.ts
+    │   └── useAdminData.ts           ← Data fetching, normalization, filtering,
+    │                                    CRUD action hooks (alerts, zones, police)
+    ├── sections/
+    │   ├── index.ts
+    │   ├── DashboardSection.tsx      ← Overview stats, recent alerts, activity feed
+    │   ├── AlertsSection.tsx         ← Alert table with filters, bulk resolve
+    │   ├── TouristsSection.tsx       ← Tourist list with risk indicators
+    │   ├── ZonesSection.tsx          ← Risk zone map + list with CRUD
+    │   └── PoliceSection.tsx         ← Police unit management
+    ├── components/
+    │   ├── index.ts
+    │   ├── LoginScreen.tsx           ← Admin login form
+    │   ├── StatCard.tsx              ← Dashboard summary cards
+    │   ├── ActionBar.tsx             ← Section-level action toolbar
+    │   ├── ActivityItem.tsx          ← Dashboard activity feed item
+    │   ├── AlertTableRow.tsx         ← Alert table row component
+    │   ├── TouristTableRow.tsx       ← Tourist table row with risk badge
+    │   ├── ZoneCard.tsx              ← Risk zone display card
+    │   ├── PoliceCard.tsx            ← Police unit display card
+    │   └── InteractiveMap.tsx        ← Leaflet map for zone management
+    └── dialogs/
+        ├── index.ts
+        ├── AlertDetailDialog.tsx     ← Detailed alert view + resolve action
+        ├── TouristDetailDialog.tsx   ← Tourist profile + tracking + contact
+        ├── ZoneDialog.tsx            ← Create/edit risk zone form
+        ├── PoliceDialog.tsx          ← Create/edit police unit form
+        ├── BroadcastDialog.tsx       ← Send broadcast to tourists
+        ├── SettingsDialog.tsx        ← Admin settings (placeholder)
+        ├── ReportsDialog.tsx         ← Generate reports (placeholder)
+        └── ConfirmDeleteDialog.tsx   ← Delete confirmation modal
 ```
 
-Total files: approximately 95+
+Total files: approximately 125+
 
 ---
 
@@ -2101,31 +2207,138 @@ These decisions are FINAL and should not be revisited:
 
 ## SECTION 26: CURRENT PROJECT STATE
 
-### What Exists (MVP Quality — Needs Refactoring)
-- UserLayout with tab navigation (working but needs SOS ball integration and theme provider)
-- Home page (functional but monolithic, wrong visual hierarchy, not composition pattern)
-- Map page (functional with Leaflet, risk zones, police stations, search via Nominatim, basic straight-line routing — has been significantly upgraded with all 20 features listed in map section)
-- Basic SOS button component (needs replacement with full floating ball system)
-- Basic API layer (needs error handling, retry, Google integration)
-- Basic session management (needs typed context, JWT refresh)
-- CSS file (partially complete, needs @property declarations, missing animations, missing glass levels)
+### What Exists (Production-Quality)
+- UserLayout with tab navigation, SOS ball integration, and ThemeProvider
+- Home page (composition root, 45 lines, all sub-components, pull-to-refresh, WebSocket real-time alerts)
+- Map page (composition root, ~70 lines, all 20 features, MapView + MapOverlays extracted)
+- Identity page (card flip animation, QR code, holographic shimmer, extracted skeleton)
+- Settings page (12 components: header, theme selector, notifications, privacy, emergency, about, danger zone, language selector, skeleton)
+- SOS floating ball system (6 states, gesture handler, confirm overlay, success screen)
+- Dynamic theme engine (score-driven oklch transitions, auto dark mode at 6PM/6AM)
+- Glassmorphism card system (glass-1, glass-2, glass-3 via GlassCard component)
+- Modular API layer (lib/api/ with client, types, tourist, public, admin, websocket modules)
+- Modular store (lib/store/ with app-state, haptics, backward-compat barrel)
+- Utility libraries (lib/utils/ with format, geo, storage)
+- Gradient mesh background component
+- Animated number component
+- Error boundary with retry fallback UI
+- Global offline banner component
+- Admin console (29 files: dashboard, alerts, tourists, risk zones, police management)
+- Dual auth system (tourist login/register + admin login with JWT tokens)
+- Pull-to-refresh component
 
 ### What Needs Building
-- Dynamic theme engine (complete ThemeProvider system with score-driven transitions)
-- SOS floating ball (complete gesture system with all 6 states)
-- Glassmorphism card system (glass-1, glass-2, glass-3 components)
-- Home page redesign (composition pattern with all sub-components)
-- Map page: Composition root cleanup after feature additions
-- Identity page (complete digital ID card with flip, QR, hologram)
-- Settings page (full settings UI with all sections)
-- Shared infrastructure (typed API client, Google API layer, typed storage, geo utilities)
-- Animation system (all keyframes, stagger, transitions)
-- Phase 1 safety score calculator (client-side rule-based)
-- Dark mode support (complete with auto-switch)
-- Offline SOS queue (localStorage + service worker sync)
-- Gradient mesh background component
-- Animated number component (rAF-based score morphing)
-- Error boundary with fallback UI
-- Service worker for offline capabilities
+- Google Maps API integration (lib/api/google/ — places, directions, distance-matrix, geocoding, air-quality, caching)
+- Phase 1 safety score calculator (lib/safety/ — client-side rule-based with 15 factors)
+- Service worker for offline capabilities (SOS queue, push notifications, cache strategies)
+- Fallback data files (data/assam-restricted-areas.json, data/assam-police-stations.json)
+- Animation system utilities (lib/animations/ — variants, transitions, stagger helpers)
+- Page transition wrapper (components/shared/page-transition.tsx)
+- Session refactor to React Context pattern (currently useSyncExternalStore)
+- Admin panel architecture refactor (index.tsx at 413 lines, needs composition root pattern)
+- Route guards / middleware for admin auth (currently inline in AdminPanel)
+
+---
+
+## SECTION 27: AUTHENTICATION & SESSION MANAGEMENT
+
+### Tourist Auth Flow
+1. User opens Settings tab → sees AuthView (login/register form)
+2. Registration: POST /api/auth/register → receives { touristId, token, user, qr_content }
+3. Login: POST /api/auth/login → receives { touristId, token, user, qr_content }
+4. Session stored in localStorage via `setSession()` from lib/session.ts
+5. Session accessed app-wide via `useSession()` hook (useSyncExternalStore pattern)
+6. Logout: `clearSession()` removes localStorage keys
+
+### Admin Auth Flow
+1. Admin navigates to /admin → App.tsx renders AdminLayout
+2. AdminLayout uses `useAdminSession()` for header/nav state
+3. AdminPanel checks `localStorage.getItem("adminToken")` for auth state
+4. If not authenticated → renders LoginScreen component
+5. Login: POST /api/admin/login → stores token in localStorage, sets admin session
+6. Logout: `clearAdminSession()` removes localStorage keys
+
+### Session Types
+
+**Tourist Session** (lib/session.ts):
+- touristId, name, email, token
+- Stored as `safarsathi_session` in localStorage
+- Reactive via useSyncExternalStore with listeners
+
+**Admin Session** (lib/session.ts):
+- adminId, name, email, departmentCode, city, district, state
+- Stored as `safarsathi_admin_session` in localStorage
+- Reactive via useSyncExternalStore with listeners
+
+### Known Issues
+- No JWT refresh mechanism — tokens persist until manual logout
+- No token expiry validation on client side
+- Admin auth is duplicated: AdminPanel checks localStorage directly AND uses useAdminSession()
+- No route-level auth guards — auth is checked inline in components
+
+---
+
+## SECTION 28: ADMIN CONSOLE ARCHITECTURE
+
+### Layout
+AdminLayout.tsx renders:
+- Top header bar with SafarSathi branding, nav tabs, search, live status indicator, user dropdown
+- Mobile-responsive: horizontal scrolling nav on small screens
+- Renders AdminPanel as main content area
+
+### Admin Sections (5 tabs)
+
+| Tab | Component | Features |
+|-----|-----------|----------|
+| Dashboard | DashboardSection | Stats overview, recent alerts, activity feed, quick actions |
+| Alerts | AlertsSection | Filterable alert table, bulk resolve, individual resolve |
+| Tourists | TouristsSection | Tourist list with risk levels, contact, track on map |
+| Risk Zones | ZonesSection | Interactive map for zone CRUD, click-to-place zones |
+| Police Units | PoliceSection | Police department management with CRUD |
+
+### Data Flow
+```
+useAdminData(isAuthenticated)
+  → fetches: dashboard, alerts, tourists, risk zones, police
+  → normalizes: API responses → typed AdminData
+  → returns: { data, refreshing, refetch }
+
+useAlertActions(refetch): resolve, bulkResolve
+useZoneActions(refetch): save, delete
+usePoliceActions(refetch): save, delete
+useFilteredData(data, ...filters): computed filtered views
+useQuickStats(data): derived statistics
+```
+
+### Known Issues
+- AdminPanel index.tsx is 413 lines — should be a composition root ≤60 lines
+- Hardcoded API_BASE in index.tsx (`http://localhost:8081/api`) duplicates lib/api/client.ts
+- Login uses raw fetch instead of lib/api/admin.ts `adminLogin()` function
+- 15+ useState calls in AdminPanel — should be extracted to a dedicated hook
+- Dialog state management is verbose — consider a reducer or dialog manager
+
+---
+
+## SECTION 29: ROUTING & ROLE-BASED ACCESS
+
+### Current Routing (App.tsx)
+Manual pathname-based routing using `window.location.pathname`:
+```
+/ → UserLayout (contains Home, Map, ID, Settings tabs)
+/admin → AdminLayout → AdminPanel
+```
+
+No React Router — uses `popstate` event listener and conditional rendering.
+
+### Role Detection
+- Tourist: Any user on `/` path. Auth is optional (unauthenticated users see limited UI).
+- Admin: Any user on `/admin` path. Auth required — LoginScreen shown if no token.
+- No explicit role field — admin vs tourist determined purely by navigation path.
+
+### Known Issues
+- No client-side route protection — admin page is accessible to anyone who navigates to /admin
+- No 404 handling — unknown paths render nothing
+- No deep linking support within tabs
+- Switching between /admin and / requires full page reload
 
 ---
