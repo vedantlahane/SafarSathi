@@ -84,6 +84,9 @@ export async function getTouristDashboard(touristId: string) {
     gender: tourist.gender,
     nationality: tourist.nationality,
     emergencyContact: tourist.emergencyContact,
+    bloodType: tourist.bloodType,
+    allergies: tourist.allergies,
+    medicalConditions: tourist.medicalConditions,
     safetyScore,
     idHash: tourist.idHash
   };

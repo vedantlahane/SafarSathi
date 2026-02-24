@@ -17,6 +17,7 @@ import Home from "@/pages/user/home/Home";
 import Map from "@/pages/user/map/Map";
 import Identity from "@/pages/user/ID/Identity";
 import Settings from "@/pages/user/settings/Settings";
+import Onboarding from "@/pages/user/onboarding/Onboarding";
 
 const PAGES: Record<TabValue, React.ComponentType> = {
   home: Home,
@@ -105,6 +106,7 @@ const UserLayout = () => {
         </Tabs>
 
         <SOSBall />
+        <Onboarding />
       </SOSProvider>
     </ThemeProvider>
   );

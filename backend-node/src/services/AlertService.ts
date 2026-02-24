@@ -6,6 +6,7 @@ import {
   getAlertById,
   createAlert as createAlertDoc,
   updateAlert as updateAlertDoc,
+  createNotification,
   type IAlert,
 } from "./mongoStore.js";
 import type { Alert } from "../models/Alert.js";
@@ -30,6 +31,18 @@ export async function createAlert(
     ...alert,
     status: alert.status ?? "OPEN",
   });
+
+  if (saved.touristId) {
+    await createNotification({
+      touristId: saved.touristId,
+      title: saved.alertType ?? "Alert",
+      message: saved.message ?? "Safety alert received",
+      type: "alert",
+      sourceTab: "home",
+      read: false,
+    });
+  }
+
   broadcastAlert(mapToAlert(saved));
   return saved;
 }

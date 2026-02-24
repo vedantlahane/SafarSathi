@@ -9,6 +9,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@simplewebauthn/server": "^13.2.3",
     "bcryptjs": "latest",
     "cors": "latest",
     "dotenv": "latest",

@@ -9,6 +9,7 @@ import sosRoutes from "./sos.js";
 import publicStationsRoutes from "./publicStations.js";
 import publicHospitalsRoutes from "./publicHospitals.js";
 import healthRoutes from "./health.js";
+import notificationRoutes from "./notifications.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/api/action", sosRoutes);
 router.use("/api/police-stations", publicStationsRoutes);
 router.use("/api/hospitals", publicHospitalsRoutes);
 router.use("/api/health", healthRoutes);
+router.use("/api", notificationRoutes);
 
 export default router;

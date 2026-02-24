@@ -7,6 +7,8 @@ import {
     NearestStationBar,
     NearestHospitalBar,
 } from "./bottom-cards";
+import { NavigationHeader } from "./navigation-header";
+import { RouteDeviationAlert } from "./route-deviation-alert";
 
 interface MapOverlaysProps {
     isOnline: boolean;
@@ -16,6 +18,17 @@ interface MapOverlaysProps {
     nearestStation: any;
     nearestHospital: any;
     onClearDestination: () => void;
+    navigation: {
+        active: boolean;
+        distanceRemaining: number | null;
+        etaMinutes: number | null;
+        safetyScore: number | null;
+        isDeviation: boolean;
+        hasArrived: boolean;
+        dismissArrival: () => void;
+        acknowledgeDeviation: () => void;
+    };
+    onRecalculateRoutes: () => void;
 }
 
 function MapOverlaysInner({
@@ -26,6 +39,8 @@ function MapOverlaysInner({
     nearestStation,
     nearestHospital,
     onClearDestination,
+    navigation,
+    onRecalculateRoutes,
 }: MapOverlaysProps) {
     return (
         <>
@@ -33,7 +48,22 @@ function MapOverlaysInner({
 
             <RouteInfoPanel
                 routeInfo={routeInfo}
-                visible={showRoutes && !!destination}
+                visible={showRoutes && !!destination && !navigation.active}
+            />
+
+            <NavigationHeader
+                visible={navigation.active}
+                distanceRemaining={navigation.distanceRemaining}
+                etaMinutes={navigation.etaMinutes}
+                safetyScore={navigation.safetyScore}
+                arrived={navigation.hasArrived}
+                onDismissArrival={navigation.dismissArrival}
+            />
+
+            <RouteDeviationAlert
+                visible={navigation.isDeviation}
+                onRecalculate={onRecalculateRoutes}
+                onDismiss={navigation.acknowledgeDeviation}
             />
 
             {destination ? (

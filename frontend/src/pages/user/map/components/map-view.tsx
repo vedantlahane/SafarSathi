@@ -4,7 +4,14 @@ import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { MAP_DEFAULTS } from "../constants";
-import type { RiskZone } from "../types";
+import type {
+    Destination,
+    Hospital,
+    LayerVisibility,
+    PoliceStation,
+    RiskZone,
+    RouteInfo,
+} from "../types";
 
 import { FlyToLocation } from "./fly-to-location";
 import { SearchControl } from "./search-control";
@@ -28,15 +35,15 @@ interface MapViewProps {
         position: [number, number];
         flyTo: [number, number] | null;
         zones: RiskZone[];
-        stations: any[];
-        hospitals: any[];
+        stations: PoliceStation[];
+        hospitals: Hospital[];
         userPosition: [number, number] | null;
         accuracy: number | null;
         heading: number | null;
         speed: number | null;
         userInZone: boolean;
         currentZoneName: string | null;
-        showLayers: { routes: boolean;[k: string]: boolean };
+        showLayers: LayerVisibility;
         handleLocate: () => void;
         locating: boolean;
         bearing: number;
@@ -44,9 +51,9 @@ interface MapViewProps {
     };
     /** Navigation state from useMapNavigation. */
     nav: {
-        destination: any;
-        routeInfo: { routes: any[] };
-        handleSelectDestination: (dest: any) => void;
+        destination: Destination | null;
+        routeInfo: RouteInfo;
+        handleSelectDestination: (name: string, lat: number, lng: number) => void;
         clearDestination: () => void;
     };
     onZoneClick: (zone: RiskZone) => void;

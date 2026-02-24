@@ -1,10 +1,10 @@
 import { useSettings } from "./hooks/use-settings";
-import { AuthView } from "./components/auth-view";
 import { LoggedInView } from "./components/logged-in-view";
+import Auth from "@/pages/user/auth/Auth";
 
 const Settings = () => {
   const s = useSettings();
-  if (!s.session?.touristId) return <AuthView s={s} />;
+  if (!s.session?.touristId) return <Auth />;
   return <LoggedInView s={s} />;
 };
 
