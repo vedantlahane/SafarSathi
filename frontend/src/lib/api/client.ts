@@ -19,10 +19,25 @@ export async function request<T>(
         "Content-Type": "application/json",
     };
 
-    // Check for admin token first, then tourist token
+    // Check path for admin route
+    const isAdminRoute = path.startsWith("/api/admin");
     const adminSession = getAdminSession();
     const touristSession = getSession();
-    const token = adminSession?.token || touristSession?.token;
+
+    // Choose appropriate token
+    let token = "";
+    if (isAdminRoute && adminSession?.token) {
+        token = adminSession.token;
+    } else if (!isAdminRoute && touristSession?.token) {
+        token = touristSession.token;
+    } else if (touristSession?.token) {
+        // Fallback: if no admin token, but tourist token exists, send tourist token
+        // Wait, better: Just use whatever token if the specific one is missing,
+        // but prefer the right one based on role.
+        token = touristSession.token || adminSession?.token || "";
+    } else {
+        token = adminSession?.token || "";
+    }
 
     if (token) {
         headers["Authorization"] = `Bearer ${token}`;
