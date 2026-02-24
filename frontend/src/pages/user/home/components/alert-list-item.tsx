@@ -5,14 +5,20 @@ import { ALERT_PRIORITY_COLORS, type AlertView } from "../types";
 
 interface AlertListItemProps {
   alert: AlertView;
+  onOpenDetail?: (alert: AlertView) => void;
 }
 
-function AlertListItemInner({ alert }: AlertListItemProps) {
+function AlertListItemInner({ alert, onOpenDetail }: AlertListItemProps) {
   const dotColor =
     ALERT_PRIORITY_COLORS[alert.priority] ?? ALERT_PRIORITY_COLORS.low;
 
   return (
-    <div className="py-3" role="listitem">
+    <button
+      className="w-full rounded-lg py-3 text-left active:scale-[0.99]"
+      role="listitem"
+      onClick={() => onOpenDetail?.(alert)}
+      aria-label={`Open ${alert.type} alert details`}
+    >
       <div className="flex items-start gap-3">
         {/* Priority indicator */}
         <div
@@ -34,7 +40,7 @@ function AlertListItemInner({ alert }: AlertListItemProps) {
           </p>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

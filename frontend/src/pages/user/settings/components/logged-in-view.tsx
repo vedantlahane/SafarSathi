@@ -10,6 +10,10 @@ import { ThemeSelector } from "./theme-selector";
 import { NotificationSettings } from "./notification-settings";
 import { PrivacySettings } from "./privacy-settings";
 import { EmergencyProfile } from "./emergency-profile";
+import { EditEmergencyContactSheet } from "./edit-emergency-contact-sheet";
+import { EditBloodTypeSheet } from "./edit-blood-type-sheet";
+import { EditAllergiesSheet } from "./edit-allergies-sheet";
+import { EditMedicalSheet } from "./edit-medical-sheet";
 import { AboutSection } from "./about-section";
 import { DangerZone } from "./danger-zone";
 import { MessageToast } from "./message-toast";
@@ -66,10 +70,14 @@ function LoggedInViewInner({ s }: { s: S }) {
                 {/* Emergency Profile */}
                 <SettingsGroup heading="Emergency Profile">
                     <EmergencyProfile
-                        emergencyContact={s.emergencyContact}
+                        emergencyContact={s.emergencyContactPhone}
                         bloodType={s.bloodType}
                         allergies={s.allergies}
                         medicalConditions={s.medicalConditions}
+                        onEditEmergencyContact={() => s.setShowEmergencyContact(true)}
+                        onEditBloodType={() => s.setShowBloodType(true)}
+                        onEditAllergies={() => s.setShowAllergies(true)}
+                        onEditMedicalConditions={() => s.setShowMedical(true)}
                     />
                 </SettingsGroup>
 
@@ -119,6 +127,45 @@ function LoggedInViewInner({ s }: { s: S }) {
                     </form>
                 </SheetContent>
             </Sheet>
+
+            <EditEmergencyContactSheet
+                open={s.showEmergencyContact}
+                onOpenChange={s.setShowEmergencyContact}
+                name={s.emergencyContactName}
+                phone={s.emergencyContactPhone}
+                loading={s.loading}
+                canSave={s.canSaveEmergencyContact}
+                onNameChange={s.setEmergencyContactName}
+                onPhoneChange={s.setEmergencyContactPhone}
+                onSave={s.saveEmergencyContact}
+            />
+
+            <EditBloodTypeSheet
+                open={s.showBloodType}
+                onOpenChange={s.setShowBloodType}
+                value={s.bloodType}
+                loading={s.loading}
+                onValueChange={s.setBloodType}
+                onSave={s.saveBloodType}
+            />
+
+            <EditAllergiesSheet
+                open={s.showAllergies}
+                onOpenChange={s.setShowAllergies}
+                value={s.allergies}
+                loading={s.loading}
+                onValueChange={s.setAllergies}
+                onSave={s.saveAllergies}
+            />
+
+            <EditMedicalSheet
+                open={s.showMedical}
+                onOpenChange={s.setShowMedical}
+                value={s.medicalConditions}
+                loading={s.loading}
+                onValueChange={s.setMedicalConditions}
+                onSave={s.saveMedicalConditions}
+            />
         </div>
     );
 }

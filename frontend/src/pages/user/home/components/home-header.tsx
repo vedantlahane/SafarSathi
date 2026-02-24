@@ -1,16 +1,27 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Bell } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/session";
+import { NAVIGATE_TAB_EVENT, type NavigateTabDetail, type NotificationView } from "../types";
+import { NotificationSheet } from "./notification-sheet";
 
 interface HomeHeaderProps {
   alertCount: number;
+  notifications: NotificationView[];
+  onReadNotification: (id: string) => void;
+  onMarkAllNotificationsRead: () => void;
 }
 
-function HomeHeaderInner({ alertCount }: HomeHeaderProps) {
+function HomeHeaderInner({
+  alertCount,
+  notifications,
+  onReadNotification,
+  onMarkAllNotificationsRead,
+}: HomeHeaderProps) {
   const session = useSession();
+  const [open, setOpen] = useState(false);
 
   const initials = session?.name
     ? session.name
@@ -52,6 +63,7 @@ function HomeHeaderInner({ alertCount }: HomeHeaderProps) {
         variant="ghost"
         size="icon"
         className="relative h-10 w-10 rounded-full"
+        onClick={() => setOpen(true)}
         aria-label={
           alertCount > 0
             ? `${alertCount} unread notification${alertCount > 1 ? "s" : ""}`
@@ -71,6 +83,21 @@ function HomeHeaderInner({ alertCount }: HomeHeaderProps) {
           </>
         )}
       </Button>
+
+      <NotificationSheet
+        open={open}
+        onOpenChange={setOpen}
+        notifications={notifications}
+        onRead={onReadNotification}
+        onMarkAllRead={onMarkAllNotificationsRead}
+        onNavigate={(tab) => {
+          window.dispatchEvent(
+            new CustomEvent<NavigateTabDetail>(NAVIGATE_TAB_EVENT, {
+              detail: { tab },
+            })
+          );
+        }}
+      />
     </header>
   );
 }

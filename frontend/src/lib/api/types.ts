@@ -8,7 +8,10 @@ export type TouristRegistrationPayload = {
     address?: string;
     gender?: string;
     nationality?: string;
-    emergencyContact?: string;
+    emergencyContact?: { name?: string; phone?: string };
+    bloodType?: string;
+    allergies?: string[];
+    medicalConditions?: string[];
     currentLat?: number;
     currentLng?: number;
 };
@@ -23,7 +26,10 @@ export type TouristProfile = {
     address?: string;
     gender?: string;
     nationality?: string;
-    emergencyContact?: string;
+    emergencyContact?: { name?: string; phone?: string };
+    bloodType?: string;
+    allergies?: string[];
+    medicalConditions?: string[];
     safetyScore?: number;
     idHash?: string;
     idExpiry?: string;

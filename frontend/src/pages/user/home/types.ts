@@ -15,6 +15,16 @@ export interface SafetyFactor {
   trend: "up" | "down" | "stable";
 }
 
+export interface NotificationView {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  type: "alert" | "score_change" | "system" | "tip";
+  read: boolean;
+  sourceTab: "home" | "map" | "identity" | "settings";
+}
+
 export interface DashboardData {
   safetyScore: number;
   status: SafetyStatus;

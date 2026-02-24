@@ -1,4 +1,5 @@
 import { sha256, hashPassword, comparePassword } from "../utils/hash.js";
+import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { issueDigitalID } from "./BlockchainService.js";
@@ -23,7 +24,10 @@ type TouristRegistration = {
   address?: string;
   gender?: string;
   nationality?: string;
-  emergencyContact?: string;
+  emergencyContact?: { name?: string; phone?: string };
+  bloodType?: string;
+  allergies?: string[];
+  medicalConditions?: string[];
   passwordHash: string; // Actually raw password from frontend
   currentLat?: number;
   currentLng?: number;
@@ -57,6 +61,9 @@ export async function registerTourist(
     gender: payload.gender,
     nationality: payload.nationality,
     emergencyContact: payload.emergencyContact,
+    bloodType: payload.bloodType,
+    allergies: payload.allergies,
+    medicalConditions: payload.medicalConditions,
     passwordHash: hashedPassword,
     idHash,
     idExpiry: expiry.toISOString(),
@@ -113,7 +120,14 @@ export async function updateProfile(touristId: string, payload: Record<string, u
   if (payload.address !== undefined) updates.address = payload.address as string;
   if (payload.gender !== undefined) updates.gender = payload.gender as string;
   if (payload.nationality !== undefined) updates.nationality = payload.nationality as string;
-  if (payload.emergencyContact !== undefined) updates.emergencyContact = payload.emergencyContact as string;
+  if (payload.emergencyContact !== undefined) {
+    updates.emergencyContact = payload.emergencyContact as { name?: string; phone?: string };
+  }
+  if (payload.bloodType !== undefined) updates.bloodType = payload.bloodType as string;
+  if (payload.allergies !== undefined) updates.allergies = payload.allergies as string[];
+  if (payload.medicalConditions !== undefined) {
+    updates.medicalConditions = payload.medicalConditions as string[];
+  }
 
   return updateTourist(touristId, updates);
 }
@@ -147,4 +161,42 @@ export async function updateLocation(touristId: string, lat: number, lng: number
 
 export async function listTourists() {
   return getAllTourists();
+}
+
+export async function requestPasswordReset(email: string) {
+  const tourist = await getTouristByEmail(email);
+  if (!tourist) {
+    return { ok: true };
+  }
+
+  const resetToken = randomBytes(20).toString("hex");
+  const resetTokenHash = sha256(resetToken);
+  const expires = new Date(Date.now() + 1000 * 60 * 30);
+
+  await updateTourist(tourist._id, {
+    resetTokenHash,
+    resetTokenExpires: expires,
+  });
+
+  return { ok: true, resetToken };
+}
+
+export async function confirmPasswordReset(token: string, newPassword: string) {
+  const tokenHash = sha256(token);
+  const tourist = await TouristModel.findOne({
+    resetTokenHash: tokenHash,
+    resetTokenExpires: { $gt: new Date() },
+  });
+
+  if (!tourist) {
+    return { ok: false, message: "Invalid or expired reset token." };
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+  tourist.passwordHash = hashedPassword;
+  tourist.resetTokenHash = undefined;
+  tourist.resetTokenExpires = undefined;
+  await tourist.save();
+
+  return { ok: true };
 }

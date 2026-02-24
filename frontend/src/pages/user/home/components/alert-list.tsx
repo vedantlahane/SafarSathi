@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { AlertListItem } from "./alert-list-item";
+import { AlertDetailSheet } from "./alert-detail-sheet";
 import { EmptyStates } from "./empty-states";
-import type { AlertView } from "../types";
+import { NAVIGATE_TAB_EVENT, type AlertView, type NavigateTabDetail } from "../types";
 
 interface AlertListProps {
   alerts: AlertView[];
@@ -24,8 +25,29 @@ interface AlertListProps {
 const VISIBLE_COUNT = 3;
 
 function AlertListInner({ alerts, loading, hasSession }: AlertListProps) {
+  const [selectedAlert, setSelectedAlert] = useState<AlertView | null>(null);
+  const [acknowledged, setAcknowledged] = useState<Set<number>>(() => new Set());
+
   const visibleAlerts = alerts.slice(0, VISIBLE_COUNT);
   const hasMore = alerts.length > VISIBLE_COUNT;
+
+  const handleAcknowledge = (alertId: number) => {
+    setAcknowledged((prev) => {
+      const next = new Set(prev);
+      next.add(alertId);
+      return next;
+    });
+    setSelectedAlert(null);
+  };
+
+  const handleViewMap = () => {
+    window.dispatchEvent(
+      new CustomEvent<NavigateTabDetail>(NAVIGATE_TAB_EVENT, {
+        detail: { tab: "map" },
+      })
+    );
+    setSelectedAlert(null);
+  };
 
   return (
     <section className="space-y-2" aria-label="Recent alerts">
@@ -67,7 +89,7 @@ function AlertListInner({ alerts, loading, hasSession }: AlertListProps) {
               >
                 {alerts.map((a, i) => (
                   <div key={a.id}>
-                    <AlertListItem alert={a} />
+                    <AlertListItem alert={a} onOpenDetail={setSelectedAlert} />
                     {i < alerts.length - 1 && <Separator />}
                   </div>
                 ))}
@@ -91,12 +113,24 @@ function AlertListInner({ alerts, loading, hasSession }: AlertListProps) {
         <div role="list" aria-label="Recent alerts list">
           {visibleAlerts.map((a, i) => (
             <div key={a.id}>
-              <AlertListItem alert={a} />
+              <AlertListItem alert={a} onOpenDetail={setSelectedAlert} />
               {i < visibleAlerts.length - 1 && <Separator />}
             </div>
           ))}
         </div>
       )}
+
+      <AlertDetailSheet
+        open={Boolean(selectedAlert)}
+        alert={selectedAlert}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAlert(null);
+        }}
+        onAcknowledge={handleAcknowledge}
+        onViewMap={handleViewMap}
+      />
+
+      {acknowledged.size > 0 && <span className="sr-only">acknowledged {acknowledged.size} alerts</span>}
     </section>
   );
 }

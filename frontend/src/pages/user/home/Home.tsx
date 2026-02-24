@@ -2,6 +2,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { useAppState } from "@/lib/store";
 import { useDashboard } from "./hooks/use-dashboard";
 import { useLocationShare } from "./hooks/use-location-share";
+import { useNotifications } from "./hooks/use-notifications";
 import { HomeHeader } from "./components/home-header";
 import { SafetyScoreHero } from "./components/safety-score-hero";
 import { QuickActions } from "./components/quick-actions";
@@ -18,6 +19,7 @@ import { OfflineBanner } from "./components/offline-banner";
 export default function Home() {
   const { data, loading, refresh, hasSession } = useDashboard();
   const locationShare = useLocationShare();
+  const notifications = useNotifications(data.alerts);
   const { isOnline } = useAppState();
 
   return (
@@ -27,7 +29,12 @@ export default function Home() {
     >
       <div className="stagger-children flex flex-col gap-5 px-4 pt-3 pb-8">
         {!isOnline && <OfflineBanner />}
-        <HomeHeader alertCount={data.openAlerts} />
+        <HomeHeader
+          alertCount={notifications.unreadCount}
+          notifications={notifications.notifications}
+          onReadNotification={notifications.markRead}
+          onMarkAllNotificationsRead={notifications.markAllRead}
+        />
         <SafetyScoreHero
           score={data.safetyScore}
           status={data.status}

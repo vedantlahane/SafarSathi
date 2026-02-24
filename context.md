@@ -74,6 +74,12 @@ VITE_ENABLE_GOOGLE_AIR_QUALITY     — Feature flag
 VITE_APP_VERSION                   — Semantic version string
 ```
 
+Backend auth environment variables:
+```
+WEBAUTHN_RP_ID   — Relying party ID (domain) for WebAuthn
+WEBAUTHN_ORIGIN  — Allowed origin for WebAuthn requests
+```
+
 When Google feature flags are disabled, the app falls back to: Nominatim for search, straight-line distance for routing, no AQI data.
 
 ---
@@ -439,6 +445,7 @@ All gesture logic lives in pure functions (no React, no side effects) for testab
     <ThemeProvider>
       <GradientMeshBackground />
       <SOSProvider>
+        <Onboarding />          ← First-launch overlay
         <Tabs>                    ← shadcn Tabs component
           <StatusBar />
           <TabsContent value="home">  <Home />  </TabsContent>
@@ -465,6 +472,12 @@ Tab transition: 200ms color change.
 Background: bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl, top border.
 Height: auto with safe-area-bottom padding.
 
+### Onboarding Overlay
+First-launch onboarding renders above tabs inside UserLayout and blocks interaction until completed.
+- Steps: splash (1.4s), permissions, feature slides, SOS tutorial, get started
+- Permissions: geolocation + notifications (must resolve before continuing)
+- Completion stored in localStorage key `yatrax:onboarding:v1`
+
 ---
 
 ## SECTION 13: HOME PAGE — Safety Dashboard
@@ -483,7 +496,8 @@ Slides in from top, fades out when connection restored.
 Left: Avatar (48px, rounded-full, border-2 border-primary/20) with AvatarFallback showing first initial.
 Left text: "Welcome back," (text-sm font-medium) then first name (text-lg font-semibold).
 Right: Notification bell icon (Bell from Lucide, 24px).
-Bell has red badge circle (-top-1 -right-1, h-5 w-5, rounded-full, bg-red-500) showing unread count.
+Bell has red badge circle (-top-1 -right-1, h-5 w-5, rounded-full, bg-red-500) showing unread count from notifications.
+Tap opens Notification Center sheet.
 Padding: p-4.
 
 #### 3. Safety Score Hero Card (THE MOST IMPORTANT ELEMENT)
@@ -574,6 +588,9 @@ Alert row contents:
 - Center: flex-1 min-w-0. Title (text-sm font-medium truncate). Message (text-xs text-muted-foreground truncate, single line).
 - Right: relative time (text-[10px] text-muted-foreground whitespace-nowrap). Examples: "2m ago", "15m ago", "1h ago", "3h ago"
 
+Alert row interaction:
+- Tap opens Alert Detail sheet with full message, severity, timestamp, and action to focus on the alert location in Map.
+
 Between rows: shadcn Separator component (thin horizontal line)
 After 3rd row: no separator
 
@@ -588,6 +605,12 @@ Empty state (no alerts):
 - Centered content: CheckCircle icon (48px, text-emerald-500)
 - "No Active Alerts" heading (text-sm font-semibold)
 - "Your area is currently clear" description (text-xs text-muted-foreground)
+
+#### Notification Center Sheet (Triggered by Bell)
+Opens a shadcn Sheet from bottom. Shows full notification list with read/unread states.
+- Header: "Notifications" with "Mark all read" action
+- Each item: title, message, type badge, timestamp; unread rows have stronger text and a dot indicator
+- Tapping a notification marks it read; dismiss action is optional
 
 #### 7. Daily Tip (Glass Level 3)
 Single card, static content. Random tip selected on component mount using seeded random (based on date so it changes daily but not on every render). NOT rotating, NOT auto-advancing.
@@ -623,7 +646,8 @@ src/pages/user/home/
 ├── types.ts                    ← DashboardData, Alert, Factor, SafetyStatus types
 ├── hooks/
 │   ├── use-dashboard.ts        ← Fetch dashboard data, score animation, WebSocket alerts
-│   └── use-location-share.ts   ← Web Share API logic with clipboard fallback
+│   ├── use-location-share.ts   ← Web Share API logic with clipboard fallback
+│   └── use-notifications.ts    ← Notification list + read state
 └── components/
     ├── home-header.tsx         ← Avatar + greeting + notification bell
     ├── safety-score-hero.tsx   ← Score ring + badge + progress + factors + description
@@ -632,6 +656,8 @@ src/pages/user/home/
     ├── emergency-strip.tsx     ← Horizontal scroll emergency contacts (always visible)
     ├── alert-list.tsx          ← Container with max 3 rows + View All
     ├── alert-list-item.tsx     ← Single alert row (memo'd for list performance)
+    ├── alert-detail-sheet.tsx  ← Alert details + map focus action
+    ├── notification-sheet.tsx  ← Notification Center sheet
     ├── daily-tip.tsx           ← Random tip glass card
     ├── empty-states.tsx        ← No alerts state, no score state
     └── offline-banner.tsx      ← Network lost banner
@@ -647,7 +673,7 @@ Full-screen Leaflet map with extensive safety intelligence overlays. Every featu
 
 Layer 0 (z-0): Leaflet map container with tile layer (OpenStreetMap light or CartoDB Dark Matter)
 Layer 1 (z-auto via Leaflet): Risk zone circles, route polylines, markers
-Layer 2 (z-999): Route info panel overlay
+Layer 2 (z-999): Route info panel overlay or active navigation header
 Layer 3 (z-1000): Search bar, stats pill, map controls, compass, bottom cards, offline banner
 Layer 4 (z-1001): Offline banner (above everything on map)
 
@@ -878,6 +904,27 @@ Safety badge colors in route rows:
 - Score >= 80: bg-emerald-100 text-emerald-700
 - Score 50-79: bg-amber-100 text-amber-700
 - Score < 50: bg-red-100 text-red-700
+
+### Feature 10a: Navigation Header (Active Navigation)
+Condition: Only visible when destination is set, safest route is active, and routes are not loading.
+Position: Absolute, top 120px, left 16px, right 16px, z-999 (same slot as Route Info Panel; header replaces it while navigating).
+Contents:
+- Left icon container (emerald). MapPin icon normally, CheckCircle when arrived.
+- Title: "Active Navigation" or "Arrived" with short helper text.
+- Badges: ETA (minutes), distance remaining, and safety score when available.
+- Arrival state: "Dismiss" button and small advisory strip.
+
+Navigation thresholds:
+- Deviation: user is > 60m from safest route.
+- Arrival: user is within 30m of destination.
+
+### Feature 10b: Route Deviation Alert
+Condition: Visible when deviation threshold is met and active navigation is true.
+Position: Absolute, bottom 208px-ish (above bottom cards), left 16px, right 16px, z-1001.
+Style: red-tinted glass card with warning icon.
+Actions:
+- "Recalc" button triggers route recalculation.
+- Dismiss button hides the alert until the next deviation.
 
 ### Feature 11: Destination Bar (Bottom Card)
 Position: Absolute, bottom 144px, left 16px, right 16px, z-1000
@@ -1143,8 +1190,9 @@ src/pages/user/map/
 │   │                              geofence alerts, dark mode, online/offline,
 │   │                              nearest station/hospital, layer state,
 │   │                              backend data fetch, locate handler
-│   └── use-map-navigation.ts   ← Destination state, route generation,
+│   ├── use-map-navigation.ts   ← Destination state, route generation,
 │                                  safe route scoring, route ranking
+│   └── use-navigation.ts        ← Active navigation, deviation + arrival detection
 └── components/
     ├── map-icons.ts            ← DefaultIcon, PoliceIcon, HospitalIcon,
     │                              createUserIcon(heading), DestinationIcon
@@ -1152,6 +1200,8 @@ src/pages/user/map/
     ├── search-control.tsx      ← Debounced search with abort, results dropdown
     ├── stats-pill.tsx          ← Zone/station/hospital/inZone indicator
     ├── map-controls.tsx        ← Compass, zoom in, zoom out, locate
+    ├── map-view.tsx            ← Leaflet map container and base layers
+    ├── map-overlays.tsx        ← Overlays wrapper (route info, headers, banners)
     ├── zone-overlay.tsx        ← Risk zone Circle components with tooltips
     ├── station-markers.tsx     ← Police Marker components with rich popups
     ├── hospital-markers.tsx    ← Hospital Marker components with rich popups
@@ -1159,6 +1209,8 @@ src/pages/user/map/
     ├── destination-marker.tsx  ← Destination pin with navigate/clear popup
     ├── route-lines.tsx         ← Safest/fastest/alternative Polylines
     ├── route-info-panel.tsx    ← Route comparison overlay card
+    ├── navigation-header.tsx   ← Active navigation header + arrival state
+    ├── route-deviation-alert.tsx ← Deviation warning + recalc CTA
     ├── bottom-cards.tsx        ← DestinationBar, NearestStationBar,
     │                              NearestHospitalBar (3 exported components)
     ├── layers-sheet.tsx        ← Full layer control Sheet from bottom
@@ -1273,6 +1325,7 @@ src/pages/user/ID/
 
 ### Visual Structure
 Full scrollable page with grouped sections separated by subtle separators. Each section has a heading and contains settings items.
+If the user is not authenticated, render the Auth screen instead of settings groups.
 
 ### Layout (Top to Bottom)
 
@@ -1362,7 +1415,10 @@ src/pages/user/settings/
 ├── Settings.tsx                    ← Composition root
 ├── types.ts                        ← SettingsState, NotificationPrefs, PrivacyPrefs
 ├── hooks/
-│   └── use-settings.ts             ← Settings fetch/save, theme logic, profile data
+│   ├── use-settings.ts             ← Settings composition (theme + profile + emergency)
+│   ├── use-tourist-profile.ts      ← Profile fetch + normalization
+│   ├── use-profile-editor.ts       ← Profile edit/submit helpers
+│   └── use-emergency-editor.ts     ← Emergency info edit helpers
 └── components/
     ├── settings-header.tsx         ← Profile card with avatar
     ├── settings-group.tsx          ← Section wrapper (heading + children)
@@ -1372,6 +1428,12 @@ src/pages/user/settings/
     ├── notification-settings.tsx   ← Push, sounds, vibration, quiet hours
     ├── privacy-settings.tsx        ← Location, accuracy, data collection
     ├── emergency-profile.tsx       ← Emergency contact, blood type, allergies, medical
+    ├── logged-in-view.tsx          ← Logged-in settings view wrapper
+    ├── edit-emergency-contact-sheet.tsx ← Edit emergency contact sheet
+    ├── edit-blood-type-sheet.tsx   ← Edit blood type sheet
+    ├── edit-allergies-sheet.tsx    ← Edit allergies sheet
+    ├── edit-medical-sheet.tsx      ← Edit medical conditions sheet
+    ├── message-toast.tsx           ← Settings status toast
     ├── about-section.tsx           ← Version, terms, privacy, support
     ├── danger-zone.tsx             ← Sign out, delete account with confirmation
     └── settings-skeleton.tsx       ← Loading skeleton
@@ -1671,10 +1733,10 @@ The backend is a Node.js + Express.js REST API using MongoDB as the primary data
 
 ### Directory Structure (`backend-node/src/`)
 - `config/`: Database connection (`mongoStore.ts`), CORS options, and env parsing.
-- `controllers/`: Request handlers mapping to specific domains (e.g., `authController.ts`, `alertController.ts`).
+- `controllers/`: Request handlers mapping to specific domains (e.g., `authController.ts`, `alertController.ts`, `notificationsController.ts`).
 - `middleware/`: Custom `requestLogger.ts` and `errorHandler.ts`. Basic `authMiddleware` exists but is inconsistently applied.
 - `models/`: Mongoose model initializations (e.g., `Tourist.ts`, `Alert.ts`).
-- `routes/`: Express routers aggregating controllers (e.g., `api/auth`, `api/sos`).
+- `routes/`: Express routers aggregating controllers (e.g., `api/auth`, `api/sos`, `api/notifications`).
 - `schemas/`: Mongoose schema definitions and TypeScript interfaces.
 - `services/`: Business logic and external connections (e.g., `websocketHub.ts`).
 
@@ -1683,8 +1745,9 @@ The system uses standard 2D indexes (`[lat, lng]`) for location queries, not Pos
 
 #### 1. Tourist (`Tourist.schema.ts`)
 Core user profile and location tracking entity.
-- **Fields**: `_id`, `name`, `email` (unique), `phone`, `passportNumber`, `passwordHash` (stored raw/basic hash), `safetyScore` (default 100), `currentLat`, `currentLng`, `lastSeen`.
-- **References**: Profile info (`dateOfBirth`, `address`, `gender`, `emergencyContact`, `idHash`).
+- **Fields**: `_id`, `name`, `email` (unique), `phone`, `passportNumber`, `passwordHash`, `safetyScore` (default 100), `currentLat`, `currentLng`, `lastSeen`.
+- **Profile info**: `dateOfBirth`, `address`, `gender`, `nationality`, `emergencyContact` (name + phone), `bloodType`, `allergies[]`, `medicalConditions[]`, `idHash`, `idExpiry`.
+- **Auth helpers**: `resetTokenHash`, `resetTokenExpires`, `webauthnCredentials[]` (credentialId, publicKey, counter, transports).
 - **Indexes**: Compound index on `{ currentLat: 1, currentLng: 1 }`.
 
 #### 2. RiskZone (`RiskZone.schema.ts`)
@@ -1697,7 +1760,12 @@ SOS triggers, warnings, and system notifications.
 - **Fields**: `alertId` (unique), `touristId` (refs Tourist), `alertType`, `priority` (LOW/MEDIUM/HIGH/CRITICAL), `status` (OPEN/ACKNOWLEDGED/RESOLVED/DISMISSED), `latitude`, `longitude`.
 - **Indexes**: `{ status: 1 }`, `{ createdAt: -1 }`.
 
-#### 4. PoliceDepartment & Hospital
+#### 4. Notification (`Notification.schema.ts`)
+Tourist notification inbox items.
+- **Fields**: `notificationId` (unique), `touristId`, `title`, `message`, `type` (default "system"), `sourceTab` (default "home"), `read` (boolean).
+- **Indexes**: `{ touristId: 1, createdAt: -1 }`.
+
+#### 5. PoliceDepartment & Hospital
 Static infrastructure entities.
 - **Police**: `name`, `departmentCode`, `latitude`, `longitude`, `contactNumber`, `type` (outpost/station/district_hq).
 - **Hospital**: `name`, `latitude`, `longitude`, `contactNumber`, `emergency` (boolean), `level` (PHC/CHC/DH/Medical College).
@@ -1726,6 +1794,20 @@ Returns: Full tourist profile (id, name, email, phone, photoUrl, country, touris
 PUT /api/tourist/{id}/profile
 Body: Partial profile fields
 Returns: updated boolean, full profile object
+
+### Notification Endpoints
+
+GET /api/tourist/{touristId}/notifications
+Auth: Bearer token
+Returns: Array of Notification items
+
+POST /api/tourist/{touristId}/notifications/{notificationId}/read
+Auth: Bearer token
+Returns: updated notification
+
+POST /api/tourist/{touristId}/notifications/read-all
+Auth: Bearer token
+Returns: success
 
 ### SOS Endpoints
 
@@ -1814,11 +1896,36 @@ Returns: valid boolean, name, passport_partial, id_expiry, blockchain_status
 ### Auth Endpoints
 
 POST /api/auth/register
-Body: TouristRegistrationPayload (name, email, phone, passportNumber, passwordHash, dateOfBirth, address, gender, nationality, emergencyContact, currentLat, currentLng)
+Body: TouristRegistrationPayload (name, email, phone, passportNumber, passwordHash, dateOfBirth, address, gender, nationality, emergencyContact, bloodType, allergies, medicalConditions, currentLat, currentLng)
 Returns: touristId, token, user (TouristProfile), qr_content
 
 POST /api/auth/login
 Body: email, password
+Returns: touristId, token, user (TouristProfile), qr_content
+
+POST /api/auth/password-reset/request
+Body: email
+Returns: success, resetToken (dev only)
+
+POST /api/auth/password-reset/confirm
+Body: resetToken, newPassword
+Returns: success
+
+POST /api/auth/biometric/register/options
+Auth: Bearer token
+Returns: WebAuthn registration options
+
+POST /api/auth/biometric/register/verify
+Auth: Bearer token
+Body: WebAuthn registration response
+Returns: success
+
+POST /api/auth/biometric/login/options
+Body: email
+Returns: WebAuthn authentication options
+
+POST /api/auth/biometric/login/verify
+Body: WebAuthn authentication response
 Returns: touristId, token, user (TouristProfile), qr_content
 
 GET /api/auth/profile/{touristId}
@@ -1827,6 +1934,20 @@ Returns: TouristProfile
 PUT /api/auth/profile/{touristId}
 Body: Partial TouristProfile
 Returns: updated TouristProfile
+
+### Notification Endpoints
+
+GET /api/tourist/{touristId}/notifications
+Auth: Bearer token
+Returns: Array of Notification items
+
+POST /api/tourist/{touristId}/notifications/{notificationId}/read
+Auth: Bearer token
+Returns: updated notification
+
+POST /api/tourist/{touristId}/notifications/read-all
+Auth: Bearer token
+Returns: success
 
 ---
 
@@ -1852,7 +1973,8 @@ src/
 │   │   ├── types.ts
 │   │   ├── hooks/
 │   │   │   ├── use-dashboard.ts
-│   │   │   └── use-location-share.ts
+│   │   │   ├── use-location-share.ts
+│   │   │   └── use-notifications.ts
 │   │   └── components/
 │   │       ├── home-header.tsx
 │   │       ├── safety-score-hero.tsx
@@ -1861,9 +1983,36 @@ src/
 │   │       ├── emergency-strip.tsx
 │   │       ├── alert-list.tsx
 │   │       ├── alert-list-item.tsx
+│   │       ├── alert-detail-sheet.tsx
+│   │       ├── notification-sheet.tsx
 │   │       ├── daily-tip.tsx
 │   │       ├── empty-states.tsx
 │   │       └── offline-banner.tsx
+│   │
+│   ├── onboarding/
+│   │   ├── Onboarding.tsx
+│   │   ├── hooks/
+│   │   │   └── use-onboarding.ts
+│   │   └── components/
+│   │       ├── splash-screen.tsx
+│   │       ├── permission-step.tsx
+│   │       ├── feature-slides.tsx
+│   │       ├── sos-tutorial.tsx
+│   │       └── get-started.tsx
+│   │
+│   ├── auth/
+│   │   ├── Auth.tsx
+│   │   ├── types.ts
+│   │   ├── hooks/
+│   │   │   └── use-auth.ts
+│   │   └── components/
+│   │       ├── auth-header.tsx
+│   │       ├── login-form.tsx
+│   │       ├── register-form.tsx
+│   │       ├── register-step-1.tsx
+│   │       ├── register-step-2.tsx
+│   │       ├── register-step-3.tsx
+│   │       └── auth-success.tsx
 │   │
 │   ├── map/
 │   │   ├── Map.tsx
@@ -1871,13 +2020,16 @@ src/
 │   │   ├── constants.ts
 │   │   ├── hooks/
 │   │   │   ├── use-map-data.ts
-│   │   │   └── use-map-navigation.ts
+│   │   │   ├── use-map-navigation.ts
+│   │   │   └── use-navigation.ts
 │   │   └── components/
 │   │       ├── map-icons.ts
 │   │       ├── fly-to-location.tsx
 │   │       ├── search-control.tsx
 │   │       ├── stats-pill.tsx
 │   │       ├── map-controls.tsx
+│   │       ├── map-view.tsx
+│   │       ├── map-overlays.tsx
 │   │       ├── zone-overlay.tsx
 │   │       ├── station-markers.tsx
 │   │       ├── hospital-markers.tsx
@@ -1885,6 +2037,8 @@ src/
 │   │       ├── destination-marker.tsx
 │   │       ├── route-lines.tsx
 │   │       ├── route-info-panel.tsx
+│   │       ├── navigation-header.tsx
+│   │       ├── route-deviation-alert.tsx
 │   │       ├── bottom-cards.tsx
 │   │       ├── layers-sheet.tsx
 │   │       ├── zone-dialog.tsx
@@ -1910,7 +2064,10 @@ src/
 │       ├── Settings.tsx
 │       ├── types.ts
 │       ├── hooks/
-│       │   └── use-settings.ts
+│       │   ├── use-settings.ts
+│       │   ├── use-tourist-profile.ts
+│       │   ├── use-profile-editor.ts
+│       │   └── use-emergency-editor.ts
 │       └── components/
 │           ├── settings-header.tsx
 │           ├── settings-group.tsx
@@ -1920,6 +2077,12 @@ src/
 │           ├── notification-settings.tsx
 │           ├── privacy-settings.tsx
 │           ├── emergency-profile.tsx
+│           ├── logged-in-view.tsx
+│           ├── edit-emergency-contact-sheet.tsx
+│           ├── edit-blood-type-sheet.tsx
+│           ├── edit-allergies-sheet.tsx
+│           ├── edit-medical-sheet.tsx
+│           ├── message-toast.tsx
 │           ├── about-section.tsx
 │           ├── danger-zone.tsx
 │           └── settings-skeleton.tsx
@@ -1947,29 +2110,19 @@ src/
 │
 ├── lib/
 │   ├── api/
+│   │   ├── admin.ts                ← Admin API calls
+│   │   ├── auth.ts                 ← Auth + password reset + biometrics
 │   │   ├── client.ts               ← Base fetch wrapper (auth headers, retry,
 │   │   │                               timeout, error handling, toast on failure)
-│   │   ├── endpoints.ts            ← URL constants
+│   │   ├── index.ts                ← API barrel exports
+│   │   ├── notifications.ts        ← Notification list + read endpoints
+│   │   ├── public.ts               ← Public endpoints (risk zones, stations, hospitals)
+│   │   ├── tourist.ts              ← Dashboard + profile calls
 │   │   ├── types.ts                ← Shared API response/request types
-│   │   ├── tourist.ts              ← fetchDashboard, fetchProfile, updateProfile
-│   │   ├── sos.ts                  ← postPreAlert, postSOSTrigger, cancelSOS, getSOSStatus
-│   │   ├── location.ts             ← postLocation
-│   │   ├── alerts.ts               ← fetchAlerts, markAlertRead
-│   │   └── google/
-│   │       ├── google-client.ts
-│   │       ├── places.ts
-│   │       ├── directions.ts
-│   │       ├── distance-matrix.ts
-│   │       ├── geocoding.ts
-│   │       ├── air-quality.ts
-│   │       ├── cache.ts
-│   │       └── types.ts
+│   │   └── websocket.ts            ← WebSocket client helpers
 │   │
-│   ├── session/
-│   │   ├── session-context.tsx      ← SessionContext definition
-│   │   ├── session-provider.tsx     ← Provider with JWT decode, refresh
-│   │   ├── use-session.ts          ← Hook returning session data
-│   │   └── types.ts                ← Session, User types
+│   ├── session.ts                  ← Session storage and hooks
+│   ├── sos.ts                      ← SOS actions and helpers
 │   │
 │   ├── theme/
 
@@ -2389,9 +2542,13 @@ These decisions are FINAL and should not be revisited:
 ### What Exists (Production-Quality)
 - UserLayout with tab navigation, SOS ball integration, and ThemeProvider
 - Home page (composition root, 45 lines, all sub-components, pull-to-refresh, WebSocket real-time alerts)
+- Onboarding flow (splash, permissions, feature slides, SOS tutorial)
+- Notification center sheet with mark-all-read and read tracking
+- Alert detail sheet with map focus action
 - Map page (composition root, ~70 lines, all 20 features, MapView + MapOverlays extracted)
+- Active navigation header with arrival + deviation detection
 - Identity page (card flip animation, QR code, holographic shimmer, extracted skeleton)
-- Settings page (12 components: header, theme selector, notifications, privacy, emergency, about, danger zone, language selector, skeleton)
+- Settings page (auth gate, emergency profile edit sheets, settings groups)
 - SOS floating ball system (6 states, gesture handler, confirm overlay, success screen)
 - Dynamic theme engine (score-driven oklch transitions, auto dark mode at 6PM/6AM)
 - Glassmorphism card system (glass-1, glass-2, glass-3 via GlassCard component)
@@ -2404,6 +2561,7 @@ These decisions are FINAL and should not be revisited:
 - Global offline banner component
 - Admin console (29 files: dashboard, alerts, tourists, risk zones, police management)
 - Dual auth system (tourist login/register + admin login with JWT tokens)
+- Password reset endpoints + WebAuthn biometric auth
 - Pull-to-refresh component
 
 ### What Needs Building
@@ -2422,12 +2580,14 @@ These decisions are FINAL and should not be revisited:
 ## SECTION 27: AUTHENTICATION & SESSION MANAGEMENT
 
 ### Tourist Auth Flow
-1. User opens Settings tab → sees AuthView (login/register form)
+1. User opens Settings tab → sees Auth screen (login/register)
 2. Registration: POST /api/auth/register → receives { touristId, token, user, qr_content }
 3. Login: POST /api/auth/login → receives { touristId, token, user, qr_content }
-4. Session stored in localStorage via `setSession()` from lib/session.ts
-5. Session accessed app-wide via `useSession()` hook (useSyncExternalStore pattern)
-6. Logout: `clearSession()` removes localStorage keys
+4. Remember-me enabled → session stored in localStorage, otherwise in sessionStorage
+5. Optional biometrics: WebAuthn register + login via `/api/auth/biometric/*`
+6. Password reset: request token then confirm with new password
+7. Session accessed app-wide via `useSession()` hook (useSyncExternalStore pattern)
+8. Logout: `clearSession()` removes localStorage/sessionStorage keys
 
 ### Admin Auth Flow
 1. Admin navigates to /admin → App.tsx renders AdminLayout
@@ -2441,12 +2601,12 @@ These decisions are FINAL and should not be revisited:
 
 **Tourist Session** (lib/session.ts):
 - touristId, name, email, token
-- Stored as `safarsathi_session` in localStorage
+- Stored as `safarSathiSession` in localStorage or `safarSathiSession:temp` in sessionStorage
 - Reactive via useSyncExternalStore with listeners
 
 **Admin Session** (lib/session.ts):
 - adminId, name, email, departmentCode, city, district, state
-- Stored as `safarsathi_admin_session` in localStorage
+- Stored as `safarSathiAdminSession` in localStorage
 - Reactive via useSyncExternalStore with listeners
 
 ### Known Issues

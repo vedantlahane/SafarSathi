@@ -7,16 +7,18 @@ import {
   AlertModel,
   BlockchainLogModel,
   HospitalModel,
+  NotificationModel,
   ITourist,
   IRiskZone,
   IPoliceDepartment,
   IAlert,
+  INotification,
   IBlockchainLog,
   IHospital,
 } from "../schemas/index.js";
 
 // Re-export the types for use by other services
-export type { ITourist, IRiskZone, IPoliceDepartment, IAlert, IBlockchainLog, IHospital };
+export type { ITourist, IRiskZone, IPoliceDepartment, IAlert, INotification, IBlockchainLog, IHospital };
 
 // Counter collection for auto-increment IDs
 import mongoose from "mongoose";
@@ -155,6 +157,31 @@ export async function updateAlert(alertId: number, data: Partial<IAlert>): Promi
   return AlertModel.findOneAndUpdate({ alertId }, data, { new: true }).lean();
 }
 
+// ==================== NOTIFICATIONS ====================
+
+export async function getNotificationsByTouristId(touristId: string): Promise<INotification[]> {
+  return NotificationModel.find({ touristId }).sort({ createdAt: -1 }).lean();
+}
+
+export async function getNotificationById(notificationId: number): Promise<INotification | null> {
+  return NotificationModel.findOne({ notificationId }).lean();
+}
+
+export async function createNotification(data: Partial<INotification>): Promise<INotification> {
+  const notificationId = await getNextId("notificationId");
+  const notification = new NotificationModel({ ...data, notificationId });
+  await notification.save();
+  return notification.toObject();
+}
+
+export async function updateNotification(notificationId: number, data: Partial<INotification>) {
+  return NotificationModel.findOneAndUpdate({ notificationId }, data, { new: true }).lean();
+}
+
+export async function markAllNotificationsRead(touristId: string) {
+  await NotificationModel.updateMany({ touristId, read: false }, { $set: { read: true } });
+}
+
 // ==================== HOSPITALS ====================
 
 export async function getAllHospitals(): Promise<IHospital[]> {
@@ -208,7 +235,10 @@ export async function seedDatabase() {
     address: "Pan Bazaar, Guwahati, Assam, India",
     gender: "Male",
     nationality: "Indian",
-    emergencyContact: JSON.stringify({ name: "Riya Sharma", relationship: "Sibling", phone: "+91-9876543210" }),
+    emergencyContact: { name: "Riya Sharma", phone: "+91-9876543210" },
+    bloodType: "O+",
+    allergies: ["Dust"],
+    medicalConditions: ["Asthma"],
     passwordHash: await hashPassword("password123"),
     idHash: sha256("IND1234567+91-9876543211"),
     idExpiry: idExpiry.toISOString(),
@@ -333,6 +363,7 @@ export async function seedDatabase() {
   // Initialize counters
   await CounterModel.findByIdAndUpdate("riskZoneId", { seq: 2 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("alertId", { seq: 0 }, { upsert: true });
+  await CounterModel.findByIdAndUpdate("notificationId", { seq: 0 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("blockchainLogId", { seq: 0 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("hospitalId", { seq: 4 }, { upsert: true });
 

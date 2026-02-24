@@ -8,7 +8,10 @@ export interface Tourist {
   address?: string;
   gender?: string;
   nationality?: string;
-  emergencyContact?: string;
+  emergencyContact?: { name?: string; phone?: string };
+  bloodType?: string;
+  allergies?: string[];
+  medicalConditions?: string[];
   passwordHash: string;
   idHash: string;
   idExpiry?: string;

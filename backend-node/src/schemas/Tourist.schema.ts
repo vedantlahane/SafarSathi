@@ -10,10 +10,21 @@ export interface ITourist {
   address?: string;
   gender?: string;
   nationality?: string;
-  emergencyContact?: string;
+  emergencyContact?: { name?: string; phone?: string };
+  bloodType?: string;
+  allergies?: string[];
+  medicalConditions?: string[];
   passwordHash: string;
   idHash?: string;
   idExpiry?: string;
+  resetTokenHash?: string;
+  resetTokenExpires?: Date;
+  webauthnCredentials?: Array<{
+    credentialId: string;
+    publicKey: string;
+    counter: number;
+    transports?: string[];
+  }>;
   currentLat?: number;
   currentLng?: number;
   lastSeen?: string;
@@ -21,6 +32,14 @@ export interface ITourist {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const EmergencyContactSchema = new Schema(
+  {
+    name: String,
+    phone: String,
+  },
+  { _id: false }
+);
 
 const TouristSchema = new Schema<ITourist>(
   {
@@ -33,10 +52,23 @@ const TouristSchema = new Schema<ITourist>(
     address: String,
     gender: String,
     nationality: String,
-    emergencyContact: String,
+    emergencyContact: EmergencyContactSchema,
+    bloodType: String,
+    allergies: [String],
+    medicalConditions: [String],
     passwordHash: { type: String, required: true },
     idHash: String,
     idExpiry: String,
+    resetTokenHash: String,
+    resetTokenExpires: Date,
+    webauthnCredentials: [
+      {
+        credentialId: String,
+        publicKey: String,
+        counter: Number,
+        transports: [String],
+      },
+    ],
     currentLat: Number,
     currentLng: Number,
     lastSeen: String,

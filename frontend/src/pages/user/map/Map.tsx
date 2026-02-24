@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useMapData } from "./hooks/use-map-data";
 import { useMapNavigation } from "./hooks/use-map-navigation";
+import { useNavigation } from "./hooks/use-navigation";
 import { TILE_URLS, TILE_ATTRIBUTIONS } from "./constants";
 import type { RiskZone } from "./types";
 
@@ -15,6 +16,7 @@ import { ZoneDialog } from "./components/zone-dialog";
 const Map = () => {
   const data = useMapData();
   const nav = useMapNavigation(data.userPosition, data.zones, data.stations);
+  const navigation = useNavigation(data.userPosition, nav.destination, nav.routeInfo);
   const [layersOpen, setLayersOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<RiskZone | null>(null);
 
@@ -40,6 +42,17 @@ const Map = () => {
           nearestStation={data.nearestStation}
           nearestHospital={data.nearestHospital}
           onClearDestination={nav.clearDestination}
+          navigation={{
+            active: navigation.active,
+            distanceRemaining: navigation.distanceRemaining,
+            etaMinutes: navigation.etaMinutes,
+            safetyScore: navigation.safest?.safetyScore ?? null,
+            isDeviation: navigation.isDeviation,
+            hasArrived: navigation.hasArrived,
+            dismissArrival: navigation.dismissArrival,
+            acknowledgeDeviation: navigation.acknowledgeDeviation,
+          }}
+          onRecalculateRoutes={nav.recalculateRoutes}
         />
       </div>
 

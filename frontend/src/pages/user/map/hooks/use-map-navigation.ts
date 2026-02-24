@@ -205,6 +205,12 @@ export function useMapNavigation(
     setRoutes([]);
   }, []);
 
+  const recalculateRoutes = useCallback(() => {
+    if (destination) {
+      calculateRoutes(destination);
+    }
+  }, [destination, calculateRoutes]);
+
   const routeInfo: RouteInfo = useMemo(
     () => ({
       routes,
@@ -220,5 +226,6 @@ export function useMapNavigation(
     routeInfo,
     handleSelectDestination,
     clearDestination,
+    recalculateRoutes,
   };
 }

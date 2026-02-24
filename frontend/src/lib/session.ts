@@ -20,6 +20,7 @@ export type AdminSession = {
 };
 
 const STORAGE_KEY = "safarSathiSession";
+const SESSION_STORAGE_KEY = "safarSathiSession:temp";
 const ADMIN_STORAGE_KEY = "safarSathiAdminSession";
 let cachedSession: TouristSession | null = null;
 let cachedAdminSession: AdminSession | null = null;
@@ -43,7 +44,16 @@ export function getSession(): TouristSession | null {
   }
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    return null;
+    const sessionRaw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!sessionRaw) {
+      return null;
+    }
+    try {
+      cachedSession = JSON.parse(sessionRaw) as TouristSession;
+      return cachedSession;
+    } catch {
+      return null;
+    }
   }
   try {
     cachedSession = JSON.parse(raw) as TouristSession;
@@ -53,15 +63,23 @@ export function getSession(): TouristSession | null {
   }
 }
 
-export function saveSession(session: TouristSession) {
+export function saveSession(session: TouristSession, options?: { persist?: boolean }) {
   cachedSession = session;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  const persist = options?.persist ?? true;
+  if (persist) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  } else {
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
   emitChange();
 }
 
 export function clearSession() {
   cachedSession = null;
   window.localStorage.removeItem(STORAGE_KEY);
+  window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
   emitChange();
 }
 
