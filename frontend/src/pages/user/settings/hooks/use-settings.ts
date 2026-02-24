@@ -70,8 +70,7 @@ export function useSettings() {
         hapticFeedback("light"); setLoading(true);
         try {
             const r = await loginTourist({ email: loginEmail, password: loginPassword });
-            const p = await fetchTouristProfile(r.touristId);
-            saveSession({ touristId: r.touristId, token: r.token, name: p.name, email: p.email, idHash: p.idHash });
+            saveSession({ touristId: r.touristId, token: r.token, name: r.user.name, email: r.user.email, idHash: r.user.idHash });
             hapticFeedback("medium"); showMsg("success", "Welcome back!"); setLoginEmail(""); setLoginPassword("");
         } catch (err) { hapticFeedback("heavy"); showMsg("error", (err as Error).message || "Login failed"); } finally { setLoading(false); }
     }, [loginEmail, loginPassword, showMsg]);
@@ -82,8 +81,7 @@ export function useSettings() {
         hapticFeedback("light"); setLoading(true);
         try {
             const r = await registerTourist({ name: registerName, email: registerEmail, phone: registerPhone, passportNumber: registerPassport, passwordHash: registerPassword });
-            const p = await fetchTouristProfile(r.touristId);
-            saveSession({ touristId: r.touristId, token: r.token, name: p.name, email: p.email, idHash: p.idHash });
+            saveSession({ touristId: r.touristId, token: r.token, name: r.user.name, email: r.user.email, idHash: r.user.idHash });
             hapticFeedback("medium"); showMsg("success", "Account created!"); setShowRegister(false);
             setRegisterName(""); setRegisterEmail(""); setRegisterPhone(""); setRegisterPassport(""); setRegisterPassword("");
         } catch (err) { hapticFeedback("heavy"); showMsg("error", (err as Error).message || "Registration failed"); } finally { setLoading(false); }
