@@ -64,7 +64,12 @@ export function SOSProvider({ children }: SOSProviderProps) {
         setPhase("firing");
         hapticFeedback("heavy");
 
-        const touristId = session?.touristId ?? "";
+        const touristId = session?.touristId;
+        if (!touristId) {
+            setPhase("success");
+            return;
+        }
+
         try {
             const getLocation = (): Promise<{
                 lat: number | null;
