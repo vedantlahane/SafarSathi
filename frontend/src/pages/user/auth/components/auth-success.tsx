@@ -1,6 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 
 interface AuthSuccessProps {
   name: string;
@@ -14,7 +15,7 @@ export function AuthSuccess({ name, touristId, qrContent, onContinue }: AuthSucc
 
   return (
     <div className="px-4 pb-8">
-      <div className="mt-6 glass-1 rounded-3xl p-6 text-center">
+      <GlassCard level={1} className="mt-6 rounded-3xl p-6 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
           <CheckCircle2 className="h-6 w-6 text-emerald-500" />
         </div>
@@ -30,7 +31,7 @@ export function AuthSuccess({ name, touristId, qrContent, onContinue }: AuthSucc
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">ID: {touristId}</p>
-      </div>
+      </GlassCard>
 
       <Button className="mt-6 h-12 w-full rounded-xl" onClick={onContinue}>
         Continue to app

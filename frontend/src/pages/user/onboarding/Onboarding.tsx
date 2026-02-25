@@ -53,7 +53,10 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[60]"
+      style={{ backgroundColor: "var(--theme-bg-from)" }}
+    >
       {content}
     </div>
   );

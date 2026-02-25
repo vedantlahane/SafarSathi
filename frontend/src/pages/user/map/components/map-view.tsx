@@ -1,6 +1,6 @@
 // src/pages/user/map/components/map-view.tsx
-import { Suspense } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { Suspense, useEffect } from "react";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { MAP_DEFAULTS } from "../constants";
@@ -60,6 +60,18 @@ interface MapViewProps {
     onLayersOpen: () => void;
 }
 
+function MapResizeHandler() {
+    const map = useMap();
+    useEffect(() => {
+        const observer = new ResizeObserver(() => {
+            map.invalidateSize();
+        });
+        observer.observe(map.getContainer());
+        return () => observer.disconnect();
+    }, [map]);
+    return null;
+}
+
 export function MapView({
     tileUrl,
     tileAttr,
@@ -80,6 +92,7 @@ export function MapView({
                 style={{ height: "100%", width: "100%" }}
                 className="z-0"
             >
+                <MapResizeHandler />
                 <TileLayer attribution={tileAttr} url={tileUrl} />
                 <FlyToLocation position={data.flyTo} zoom={16} />
                 <SearchControl

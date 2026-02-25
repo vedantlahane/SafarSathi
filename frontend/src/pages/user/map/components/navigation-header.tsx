@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, MapPin, Timer } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDistance } from "../types";
@@ -25,8 +25,8 @@ export function NavigationHeader({
 
   return (
     <div className="absolute top-[120px] left-4 right-4 z-[999]">
-      <Card className="shadow-lg border-0 bg-white/85 dark:bg-slate-900/85 backdrop-blur-lg">
-        <CardContent className="p-3 flex items-center gap-3">
+      <GlassCard level={1} className="overflow-hidden">
+        <div className="p-3 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
             {arrived ? (
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -58,8 +58,8 @@ export function NavigationHeader({
                     safetyScore >= 80
                       ? "text-[9px] bg-emerald-100 text-emerald-700"
                       : safetyScore >= 50
-                      ? "text-[9px] bg-amber-100 text-amber-700"
-                      : "text-[9px] bg-red-100 text-red-700"
+                        ? "text-[9px] bg-amber-100 text-amber-700"
+                        : "text-[9px] bg-red-100 text-red-700"
                   }
                 >
                   {safetyScore}
@@ -72,8 +72,8 @@ export function NavigationHeader({
               Dismiss
             </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
       {arrived && (
         <div className="mt-2 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[10px] text-emerald-700">
           <AlertTriangle className="h-3 w-3" />

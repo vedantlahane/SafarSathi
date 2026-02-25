@@ -8,19 +8,22 @@ export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const LEVEL_STYLES = {
     1: cn(
-        "backdrop-blur-xl",
-        "shadow-lg shadow-black/5",
-        "border",
+        "backdrop-blur-2xl bg-blend-luminosity",
+        "shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]",
+        "ring-1 ring-inset ring-white/40 dark:ring-white/10",
+        "border border-white/20 dark:border-white/5",
     ),
     2: cn(
-        "backdrop-blur-lg",
-        "shadow-md shadow-black/3",
-        "border",
+        "backdrop-blur-xl bg-blend-luminosity",
+        "shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)]",
+        "ring-1 ring-inset ring-white/30 dark:ring-white/5",
+        "border border-white/10 dark:border-transparent",
     ),
     3: cn(
-        "backdrop-blur-md",
+        "backdrop-blur-lg bg-blend-luminosity",
         "shadow-none",
-        "border",
+        "ring-1 ring-inset ring-white/20 dark:ring-transparent",
+        "border border-white/10 dark:border-white/5",
     ),
 } as const;
 
@@ -41,6 +44,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
             style={{
                 backgroundColor: "var(--theme-card-bg)",
                 borderColor: "var(--theme-card-border)",
+                boxShadow: level === 1 ? "var(--theme-glow) 0px 4px 32px -12px" : undefined,
                 ...style,
             }}
             {...props}
