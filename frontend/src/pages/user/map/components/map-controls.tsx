@@ -21,7 +21,7 @@ function MapControlsInner({
   const map = useMap();
 
   return (
-    <div className="absolute bottom-36 right-4 z-[1000] flex flex-col gap-2">
+    <div className="absolute top-1/2 -translate-y-1/2 right-4 z-[1000] flex flex-col gap-2">
       <Button
         variant="secondary"
         size="icon"

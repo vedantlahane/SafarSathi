@@ -1,5 +1,6 @@
 import { ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 
 interface GetStartedProps {
   onContinueGuest: () => void;
@@ -16,23 +17,23 @@ export function GetStarted({ onContinueGuest, onSignIn, onBack }: GetStartedProp
       </p>
 
       <div className="mt-6 space-y-3">
-        <div className="glass-2 rounded-2xl p-4">
+        <GlassCard level={2} className="rounded-2xl p-4">
           <p className="text-sm font-semibold">Guest mode enabled</p>
           <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
             <li>• Live safety score and alerts</li>
             <li>• Full map and route safety overlays</li>
             <li>• Floating SOS emergency flow</li>
           </ul>
-        </div>
+        </GlassCard>
 
-        <div className="glass-3 rounded-2xl p-4">
+        <GlassCard level={3} className="rounded-2xl p-4">
           <p className="text-sm font-semibold">Sign-in unlocks</p>
           <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
             <li>• Personalized digital tourist ID</li>
             <li>• Emergency profile sharing with responders</li>
             <li>• Profile sync across devices</li>
           </ul>
-        </div>
+        </GlassCard>
       </div>
 
       <div className="mt-auto space-y-2">

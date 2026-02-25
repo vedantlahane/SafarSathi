@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Map, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 import {
   Sheet,
   SheetContent,
@@ -70,20 +71,20 @@ export function AlertDetailSheet({
 
         {alert && (
           <div className="space-y-4 px-4 pb-8">
-            <div className="glass-2 rounded-2xl p-4">
+            <GlassCard level={2} className="rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold">Severity</p>
                 <Badge className="capitalize">{severity}</Badge>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">{SEVERITY_TEXT[severity]}</p>
-            </div>
+            </GlassCard>
 
-            <div className="glass-3 rounded-2xl p-4">
+            <GlassCard level={3} className="rounded-2xl p-4">
               <p className="text-sm font-semibold">Details</p>
               <p className="mt-2 text-xs text-muted-foreground">{alert.message}</p>
-            </div>
+            </GlassCard>
 
-            <div className="glass-3 rounded-2xl p-4">
+            <GlassCard level={3} className="rounded-2xl p-4">
               <p className="text-sm font-semibold">Recommended actions</p>
               <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                 {ACTIONS[severity].map((action) => (
@@ -93,7 +94,7 @@ export function AlertDetailSheet({
                   </li>
                 ))}
               </ul>
-            </div>
+            </GlassCard>
 
             <div className="grid grid-cols-2 gap-2">
               <Button className="h-11 rounded-xl" onClick={onViewMap}>

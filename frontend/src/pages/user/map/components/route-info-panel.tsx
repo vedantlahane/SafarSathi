@@ -7,7 +7,7 @@ import {
   CheckCircle,
   Zap,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { GlassCard } from "@/components/ui/glass-card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatDistance } from "../types";
@@ -24,8 +24,8 @@ function RouteInfoPanelInner({ routeInfo, visible }: RouteInfoPanelProps) {
 
   return (
     <div className="absolute top-[120px] left-4 right-4 z-[999]">
-      <Card className="shadow-lg border-0 bg-white/85 dark:bg-slate-900/85 backdrop-blur-lg overflow-hidden">
-        <CardContent className="p-3 space-y-2">
+      <GlassCard level={1} className="overflow-hidden">
+        <div className="p-3 space-y-2">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             Route Comparison
           </p>
@@ -93,8 +93,8 @@ function RouteInfoPanelInner({ routeInfo, visible }: RouteInfoPanelProps) {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
     </div>
   );
 }

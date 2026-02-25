@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Bell, CheckCheck, Info, ShieldAlert, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 import {
   Sheet,
   SheetContent,
@@ -92,9 +93,9 @@ export function NotificationSheet({
 
         <div className="flex-1 overflow-y-auto px-4 pb-6">
           {filtered.length === 0 ? (
-            <div className="glass-3 rounded-2xl p-4 text-center text-sm text-muted-foreground">
+            <GlassCard level={3} className="rounded-2xl p-4 text-center text-sm text-muted-foreground">
               No notifications in this view.
-            </div>
+            </GlassCard>
           ) : (
             <div className="space-y-2">
               {filtered.map((item) => {

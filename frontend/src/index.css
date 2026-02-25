@@ -54,6 +54,8 @@
   transition: all 2s ease-in-out;
 }
 
+@custom-variant dark (&:is(.dark, .dark *));
+
 /* ─── Dark Mode Overrides ────────────────────────────── */
 .dark {
   --color-background: hsl(222 47% 6%);
@@ -426,6 +428,10 @@ html {
 
 /* ─── Font Rendering ─────────────────────────────────── */
 body {
+  background-color: var(--color-background);
+  background-image: linear-gradient(135deg, var(--theme-bg-from), var(--theme-bg-to));
+  background-attachment: fixed;
+  color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

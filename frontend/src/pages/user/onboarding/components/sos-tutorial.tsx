@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, Hand, Siren } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 
 interface SOSTutorialProps {
   onNext: () => void;
@@ -25,12 +26,11 @@ export function SOSTutorial({ onNext, onBack }: SOSTutorialProps) {
         Practice once now, so you can trigger help instantly when needed.
       </p>
 
-      <div className="mt-6 glass-1 rounded-3xl p-6">
+      <GlassCard level={1} className="mt-6 rounded-3xl p-6">
         <div className="relative mx-auto h-56 rounded-2xl border border-border/60 bg-muted/20">
           <button
-            className={`absolute top-1/2 -translate-y-1/2 h-14 w-14 rounded-full border border-border bg-white/70 shadow-lg backdrop-blur ${
-              side === "right" ? "right-3" : "left-3"
-            } ${active ? "scale-110" : ""}`}
+            className={`absolute top-1/2 -translate-y-1/2 h-14 w-14 rounded-full border border-border bg-white/70 shadow-lg backdrop-blur ${side === "right" ? "right-3" : "left-3"
+              } ${active ? "scale-110" : ""}`}
             onMouseDown={() => setActive(true)}
             onMouseUp={() => setActive(false)}
             onTouchStart={() => setActive(true)}
@@ -60,7 +60,7 @@ export function SOSTutorial({ onNext, onBack }: SOSTutorialProps) {
             </div>
           ))}
         </div>
-      </div>
+      </GlassCard>
 
       <div className="mt-auto grid grid-cols-2 gap-2">
         <Button variant="outline" className="h-12 rounded-xl" onClick={onBack}>

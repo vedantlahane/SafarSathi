@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, ShieldAlert, Siren, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 
 interface FeatureSlidesProps {
   onNext: () => void;
@@ -43,21 +44,20 @@ export function FeatureSlides({ onNext, onSkip }: FeatureSlidesProps) {
         Skip
       </button>
 
-      <div className="mt-8 glass-1 rounded-3xl p-6 text-center">
+      <GlassCard level={1} className="mt-8 rounded-3xl p-6 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
           <Icon className="h-7 w-7 text-primary" />
         </div>
         <h3 className="text-xl font-bold">{slide.title}</h3>
         <p className="mt-2 text-sm text-muted-foreground">{slide.description}</p>
-      </div>
+      </GlassCard>
 
       <div className="mt-6 flex items-center justify-center gap-2">
         {SLIDES.map((_, i) => (
           <span
             key={i}
-            className={`h-2 rounded-full transition-all ${
-              i === index ? "w-6 bg-primary" : "w-2 bg-muted"
-            }`}
+            className={`h-2 rounded-full transition-all ${i === index ? "w-6 bg-primary" : "w-2 bg-muted"
+              }`}
           />
         ))}
       </div>
