@@ -65,3 +65,6 @@ frontend/package-lock.json
 
 # Generated service worker and build outputs
 frontend/dev-dist/
+
+# Java compiled classes
+*.class
