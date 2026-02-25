@@ -62,3 +62,6 @@ temp/
 *.sln
 backend/src/main/resources/application.properties
 frontend/package-lock.json
+
+# Generated service worker and build outputs
+frontend/dev-dist/
