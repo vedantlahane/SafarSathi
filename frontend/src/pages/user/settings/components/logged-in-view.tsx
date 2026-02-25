@@ -10,6 +10,7 @@ import { ThemeSelector } from "./theme-selector";
 import { NotificationSettings } from "./notification-settings";
 import { PrivacySettings } from "./privacy-settings";
 import { EmergencyProfile } from "./emergency-profile";
+import { cn } from "@/lib/utils";
 import { EditEmergencyContactSheet } from "./edit-emergency-contact-sheet";
 import { EditBloodTypeSheet } from "./edit-blood-type-sheet";
 import { EditAllergiesSheet } from "./edit-allergies-sheet";
@@ -96,7 +97,10 @@ function LoggedInViewInner({ s }: { s: S }) {
 
             {/* Edit Profile Sheet */}
             <Sheet open={s.showProfileEdit} onOpenChange={s.setShowProfileEdit}>
-                <SheetContent side="bottom" className="h-[88vh] rounded-t-3xl overflow-hidden">
+                <SheetContent
+                    side="bottom"
+                    className="h-[88vh] rounded-[32px] border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-950/60 backdrop-blur-[40px] drop-shadow-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_24px_48px_rgba(0,0,0,0.2)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_24px_48px_rgba(0,0,0,0.6)] overflow-hidden"
+                >
                     <SheetHeader className="pb-4">
                         <SheetTitle className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
@@ -105,25 +109,42 @@ function LoggedInViewInner({ s }: { s: S }) {
                         </SheetTitle>
                     </SheetHeader>
                     <form onSubmit={s.handleProfileUpdate} className="mt-2 space-y-4 overflow-y-auto pb-8">
-                        {[
-                            { icon: User, label: "Full Name", val: s.profileName, set: s.setProfileName },
-                            { icon: Phone, label: "Phone Number", val: s.profilePhone, set: s.setProfilePhone, type: "tel" },
-                            { icon: MapPin, label: "Address", val: s.profileAddress, set: s.setProfileAddress },
-                            { icon: Globe, label: "Nationality", val: s.profileNationality, set: s.setProfileNationality },
-                            { icon: User, label: "Gender", val: s.profileGender, set: s.setProfileGender, ph: "Male / Female / Other" },
-                        ].map(({ icon: I, label, val, set, type, ph }) => (
-                            <div key={label} className="space-y-2">
-                                <label className="text-xs font-semibold">{label}</label>
-                                <div className="relative">
-                                    <I className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input type={type || "text"} value={val} onChange={(e) => set(e.target.value)} placeholder={ph} className="pl-11 h-12 rounded-xl" />
-                                </div>
+                        <div className="px-4">
+                            <div className="overflow-hidden rounded-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+                                {[
+                                    { icon: User, label: "Full Name", val: s.profileName, set: s.setProfileName },
+                                    { icon: Phone, label: "Phone Number", val: s.profilePhone, set: s.setProfilePhone, type: "tel" },
+                                    { icon: MapPin, label: "Address", val: s.profileAddress, set: s.setProfileAddress },
+                                    { icon: Globe, label: "Nationality", val: s.profileNationality, set: s.setProfileNationality },
+                                    { icon: User, label: "Gender", val: s.profileGender, set: s.setProfileGender, ph: "Male / Female / Other" },
+                                ].map(({ icon: I, label, val, set, type, ph }, idx, arr) => (
+                                    <div key={label} className={cn(
+                                        "relative flex items-center min-h-[64px] group transition-colors focus-within:bg-white/40 dark:focus-within:bg-slate-800/40",
+                                        idx < arr.length - 1 && "border-b border-black/5 dark:border-white/5"
+                                    )}>
+                                        <div className="w-[52px] flex justify-center items-center">
+                                            <I className="h-[20px] w-[20px] text-slate-400 group-focus-within:text-primary transition-colors" />
+                                        </div>
+                                        <div className="flex-1 flex flex-col justify-center h-full py-1 pr-4">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none pt-2">{label}</label>
+                                            <Input
+                                                type={type || "text"}
+                                                value={val}
+                                                onChange={(e) => set(e.target.value)}
+                                                placeholder={ph || "Enter value"}
+                                                className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                        <Separator className="my-4" />
-                        <Button type="submit" className="w-full h-12 rounded-xl font-semibold" disabled={s.loading}>
-                            {s.loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="mr-2 h-4 w-4" />Save Changes</>}
-                        </Button>
+                        </div>
+                        <div className="px-4 pb-4">
+                            <Separator className="my-6 opacity-30" />
+                            <Button type="submit" className="w-full h-14 rounded-2xl font-semibold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" disabled={s.loading}>
+                                {s.loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="mr-2 h-5 w-5 drop-shadow-sm" />Save Changes</>}
+                            </Button>
+                        </div>
                     </form>
                 </SheetContent>
             </Sheet>

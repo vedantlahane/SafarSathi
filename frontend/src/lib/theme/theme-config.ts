@@ -21,13 +21,13 @@ export interface ThemeColors {
 
 export const THEME_COLORS: Record<SafetyState, ThemeColors> = {
     safe: {
-        bgFrom: "oklch(0.97 0.03 160)",   // emerald-50
-        bgTo: "oklch(0.97 0.02 180)",     // teal-50
+        bgFrom: "oklch(0.98 0.02 160)",   // subtle airy emerald
+        bgTo: "oklch(0.98 0.01 180)",     // subtle airy teal
         primary: "oklch(0.65 0.17 160)",   // emerald-500
         primaryForeground: "oklch(0.99 0 0)",
         glow: "oklch(0.65 0.17 160 / 0.15)",
-        cardBg: "rgba(255, 255, 255, 0.45)",
-        cardBgDark: "rgba(30, 41, 59, 0.45)",
+        cardBg: "rgba(255, 255, 255, 0.40)",
+        cardBgDark: "rgba(15, 23, 42, 0.40)",
         cardBorder: "rgba(16, 185, 129, 0.15)",
         cardBorderDark: "rgba(16, 185, 129, 0.25)",
         sosScale: 1,
@@ -36,13 +36,13 @@ export const THEME_COLORS: Record<SafetyState, ThemeColors> = {
         statusBadge: "secondary",
     },
     caution: {
-        bgFrom: "oklch(0.97 0.04 85)",    // amber-50
-        bgTo: "oklch(0.97 0.04 60)",      // orange-50
+        bgFrom: "oklch(0.98 0.03 80)",    // subtle airy amber
+        bgTo: "oklch(0.98 0.03 60)",      // subtle airy orange
         primary: "oklch(0.77 0.16 75)",    // amber-500
         primaryForeground: "oklch(0.15 0 0)",
         glow: "oklch(0.77 0.16 75 / 0.15)",
-        cardBg: "rgba(255, 255, 255, 0.45)",
-        cardBgDark: "rgba(30, 41, 59, 0.45)",
+        cardBg: "rgba(255, 255, 255, 0.40)",
+        cardBgDark: "rgba(15, 23, 42, 0.40)",
         cardBorder: "rgba(245, 158, 11, 0.15)",
         cardBorderDark: "rgba(245, 158, 11, 0.25)",
         sosScale: 1.167,
@@ -51,13 +51,13 @@ export const THEME_COLORS: Record<SafetyState, ThemeColors> = {
         statusBadge: "default",
     },
     danger: {
-        bgFrom: "oklch(0.97 0.03 25)",    // red-50
-        bgTo: "oklch(0.97 0.03 10)",      // rose-50
+        bgFrom: "oklch(0.98 0.03 25)",    // subtle airy red
+        bgTo: "oklch(0.98 0.02 10)",      // subtle airy rose
         primary: "oklch(0.63 0.22 25)",    // red-500
         primaryForeground: "oklch(0.99 0 0)",
         glow: "oklch(0.63 0.22 25 / 0.20)",
-        cardBg: "rgba(255, 255, 255, 0.45)",
-        cardBgDark: "rgba(30, 41, 59, 0.45)",
+        cardBg: "rgba(255, 255, 255, 0.40)",
+        cardBgDark: "rgba(15, 23, 42, 0.40)",
         cardBorder: "rgba(239, 68, 68, 0.20)",
         cardBorderDark: "rgba(239, 68, 68, 0.30)",
         sosScale: 1.333,
@@ -70,16 +70,16 @@ export const THEME_COLORS: Record<SafetyState, ThemeColors> = {
 /** Dark mode override backgrounds by safety state */
 export const DARK_BG: Record<SafetyState, { from: string; to: string }> = {
     safe: {
-        from: "oklch(0.13 0.01 260)",   // slate-950
-        to: "oklch(0.15 0.03 160)",     // subtle emerald glow
+        from: "oklch(0.18 0.02 260)",   // rich dark slate
+        to: "oklch(0.20 0.15 160)",     // deep emerald bloom
     },
     caution: {
-        from: "oklch(0.13 0.01 260)",
-        to: "oklch(0.15 0.03 75)",      // subtle amber glow
+        from: "oklch(0.18 0.02 260)",
+        to: "oklch(0.22 0.16 75)",      // deep amber bloom
     },
     danger: {
-        from: "oklch(0.13 0.01 260)",
-        to: "oklch(0.15 0.04 25)",      // subtle red glow
+        from: "oklch(0.18 0.02 260)",
+        to: "oklch(0.21 0.14 25)",      // deep red bloom
     },
 };
 

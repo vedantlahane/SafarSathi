@@ -9,6 +9,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import type { NotificationView } from "../types";
 
 interface NotificationSheetProps {
@@ -46,7 +47,15 @@ export function NotificationSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[72vh] rounded-t-3xl">
+      <SheetContent
+        side="bottom"
+        className={cn(
+          "h-[75vh] rounded-[32px] border border-white/20 dark:border-white/10",
+          "bg-white/60 dark:bg-slate-950/60 backdrop-blur-[40px] backdrop-saturate-[200%]",
+          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_24px_48px_rgba(0,0,0,0.2)]",
+          "dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_24px_48px_rgba(0,0,0,0.6)]"
+        )}
+      >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
@@ -101,32 +110,41 @@ export function NotificationSheet({
               {filtered.map((item) => {
                 const Icon = typeIcon(item.type);
                 return (
-                  <button
+                  <GlassCard
+                    level={2}
                     key={item.id}
-                    className="w-full rounded-2xl border border-border/60 bg-muted/20 px-3 py-3 text-left active:scale-[0.99]"
-                    onClick={() => {
-                      onRead(item.id);
-                      onNavigate(item.sourceTab);
-                      onOpenChange(false);
-                    }}
-                    aria-label={`Open ${item.title} notification`}
+                    className="w-full text-left active:scale-[0.98] transition-all duration-300 p-0"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-                        <Icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-semibold">{item.title}</p>
-                          <span className="text-[10px] text-muted-foreground">{item.time}</span>
+                    <button
+                      className="w-full h-full px-3 py-3"
+                      onClick={() => {
+                        onRead(item.id);
+                        onNavigate(item.sourceTab);
+                        onOpenChange(false);
+                      }}
+                      aria-label={`Open ${item.title} notification`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="mt-0.5 rounded-xl bg-primary/10 dark:bg-primary/20 p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+                          <Icon className="h-[18px] w-[18px] text-primary" />
                         </div>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                          {item.message}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-[15px] font-semibold tracking-tight">{item.title}</p>
+                            <span className="text-[11px] font-medium text-muted-foreground bg-slate-100/50 dark:bg-slate-800/50 px-2 py-0.5 rounded-full">{item.time}</span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-slate-600 dark:text-slate-300">
+                            {item.message}
+                          </p>
+                        </div>
+                        {!item.read && (
+                          <div className="mt-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                          </div>
+                        )}
                       </div>
-                      {!item.read && <span className="mt-1 h-2 w-2 rounded-full bg-red-500" />}
-                    </div>
-                  </button>
+                    </button>
+                  </GlassCard>
                 );
               })}
             </div>

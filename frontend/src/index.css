@@ -8,8 +8,8 @@
   --color-card-foreground: hsl(222.2 84% 4.9%);
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(217 91% 60%);
-  --color-primary-foreground: hsl(210 40% 98%);
+  --color-primary: var(--theme-primary);
+  --color-primary-foreground: var(--theme-primary-foreground);
   --color-secondary: hsl(210 40% 96.1%);
   --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
   --color-muted: hsl(210 40% 96.1%);
@@ -20,7 +20,7 @@
   --color-destructive-foreground: hsl(210 40% 98%);
   --color-border: hsl(214.3 31.8% 91.4%);
   --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(217 91% 60%);
+  --color-ring: var(--theme-primary);
   --radius: 1rem;
 
   /* Custom animation definitions for Tailwind v4 */
@@ -50,8 +50,13 @@
   --sos-scale: 1;
   --sos-pulse-speed: 3s;
 
-  /* Smooth 2s transition for all theme variable changes */
-  transition: all 2s ease-in-out;
+  /* Smooth 2s transition exclusively for theme background shifts, avoids text color drift */
+  transition: --theme-bg-from 2s ease-in-out,
+    --theme-bg-to 2s ease-in-out,
+    --theme-primary 2s ease-in-out,
+    --theme-glow 2s ease-in-out,
+    --theme-card-bg 2s ease-in-out,
+    --theme-card-border 2s ease-in-out;
 }
 
 @custom-variant dark (&:is(.dark, .dark *));
@@ -105,10 +110,14 @@
   -webkit-backdrop-filter: blur(20px);
 }
 
+/* ─── Global Cleanups ────────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* ─── Touch Feedback ─────────────────────────────────── */
 .touch-action {
   transition: transform 100ms ease-out, opacity 100ms ease-out;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .touch-action:active {
