@@ -21,7 +21,7 @@ export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelecte
   const riskLevel = tourist.riskScore > 70 ? "high" : tourist.riskScore > 40 ? "medium" : "low";
 
   return (
-    <div className={`grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+    <div className={`grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 items-center border-b border-slate-100 hover:bg-white/50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
       <div className="py-3 px-4">
         <input
           type="checkbox"

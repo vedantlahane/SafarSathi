@@ -11,13 +11,13 @@ interface StatCardProps {
 }
 
 const colorMap: Record<string, { bg: string; icon: string; border: string; accent: string }> = {
-  blue: { bg: "bg-blue-50", icon: "text-blue-600", border: "border-blue-100", accent: "bg-blue-600" },
-  red: { bg: "bg-red-50", icon: "text-red-600", border: "border-red-100", accent: "bg-red-600" },
-  green: { bg: "bg-emerald-50", icon: "text-emerald-600", border: "border-emerald-100", accent: "bg-emerald-600" },
-  amber: { bg: "bg-amber-50", icon: "text-amber-600", border: "border-amber-100", accent: "bg-amber-600" },
-  purple: { bg: "bg-purple-50", icon: "text-purple-600", border: "border-purple-100", accent: "bg-purple-600" },
-  slate: { bg: "bg-slate-50", icon: "text-slate-600", border: "border-slate-100", accent: "bg-slate-600" },
-  cyan: { bg: "bg-cyan-50", icon: "text-cyan-600", border: "border-cyan-100", accent: "bg-cyan-600" },
+  blue: { bg: "bg-blue-50/70", icon: "text-blue-600", border: "border-blue-200/40", accent: "bg-blue-500" },
+  red: { bg: "bg-red-50/70", icon: "text-red-600", border: "border-red-200/40", accent: "bg-red-500" },
+  green: { bg: "bg-emerald-50/70", icon: "text-emerald-600", border: "border-emerald-200/40", accent: "bg-emerald-500" },
+  amber: { bg: "bg-amber-50/70", icon: "text-amber-600", border: "border-amber-200/40", accent: "bg-amber-500" },
+  purple: { bg: "bg-purple-50/70", icon: "text-purple-600", border: "border-purple-200/40", accent: "bg-purple-500" },
+  slate: { bg: "bg-slate-50/70", icon: "text-slate-600", border: "border-slate-200/40", accent: "bg-slate-500" },
+  cyan: { bg: "bg-cyan-50/70", icon: "text-cyan-600", border: "border-cyan-200/40", accent: "bg-cyan-500" },
 };
 
 export function StatCard({ icon: Icon, label, value, change, changeType, color, onClick }: StatCardProps) {
@@ -25,7 +25,7 @@ export function StatCard({ icon: Icon, label, value, change, changeType, color, 
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border ${c.border} ${c.bg} p-4 ${onClick ? "cursor-pointer hover:shadow-lg transition-all" : ""}`}
+      className={`relative overflow-hidden rounded-xl border ${c.border} ${c.bg} backdrop-blur-sm p-4 shadow-sm ${onClick ? "cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200" : "transition-all"}`}
       onClick={onClick}
     >
       <div className={`absolute top-0 right-0 w-20 h-20 ${c.accent} opacity-5 rounded-full -translate-y-1/2 translate-x-1/2`} />

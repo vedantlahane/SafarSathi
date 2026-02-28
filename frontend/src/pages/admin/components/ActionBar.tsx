@@ -47,7 +47,7 @@ export function ActionBar({
   children,
 }: ActionBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-slate-50/50 border-b border-slate-200">
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-lg border-b border-white/60">
       {/* Search */}
       <div className="relative flex-1 min-w-[200px] max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -55,14 +55,14 @@ export function ActionBar({
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="pl-9 bg-white border-slate-200"
+          className="pl-9 bg-white/70 backdrop-blur-sm border-slate-200/60 rounded-xl"
         />
       </div>
 
       {/* Filter */}
       {showFilter && filterOptions && onFilterChange && (
         <Select value={filterValue} onValueChange={onFilterChange}>
-          <SelectTrigger className="w-[160px] bg-white border-slate-200">
+          <SelectTrigger className="w-[160px] bg-white/70 backdrop-blur-sm border-slate-200/60 rounded-xl">
             <Filter className="w-4 h-4 mr-2 text-slate-400" />
             <SelectValue placeholder={filterPlaceholder} />
           </SelectTrigger>

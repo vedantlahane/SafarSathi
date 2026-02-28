@@ -403,7 +403,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-100">
+    <div className="h-full flex flex-col">
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {renderSection()}

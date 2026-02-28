@@ -77,7 +77,7 @@ export function ZonesSection({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b bg-white">
+      <div className="px-6 py-4 border-b border-white/60 bg-white/60 backdrop-blur-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Risk Zone Management</h2>
@@ -184,7 +184,7 @@ export function ZonesSection({
       {/* Zone Add Helper */}
       {isAddingZone && newZonePosition && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl shadow-xl border border-slate-200">
+          <div className="flex items-center gap-3 px-4 py-3 bg-white/80 backdrop-blur-xl rounded-xl shadow-xl border border-white/60">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <MapPin className="w-5 h-5 text-blue-600" />
             </div>

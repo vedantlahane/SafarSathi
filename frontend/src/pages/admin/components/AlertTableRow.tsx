@@ -27,7 +27,7 @@ export function AlertTableRow({ alert, onResolve, onView, isSelected, onSelect }
   const TypeIcon = typeIcons[alert.type as keyof typeof typeIcons] || AlertTriangle;
 
   return (
-    <tr className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+    <tr className={`border-b border-slate-100 hover:bg-white/50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
       <td className="py-3 px-4">
         <input
           type="checkbox"

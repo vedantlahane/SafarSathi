@@ -127,7 +127,7 @@ export function HospitalsSection({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-blue-100/70 backdrop-blur-sm flex items-center justify-center">
               <Hospital className="h-5 w-5 text-blue-600" />
             </div>
             <div>
@@ -138,7 +138,7 @@ export function HospitalsSection({
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-red-100/70 backdrop-blur-sm flex items-center justify-center">
               <Stethoscope className="h-5 w-5 text-red-600" />
             </div>
             <div>
@@ -149,7 +149,7 @@ export function HospitalsSection({
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-emerald-100/70 backdrop-blur-sm flex items-center justify-center">
               <Bed className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
@@ -160,7 +160,7 @@ export function HospitalsSection({
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-amber-100/70 backdrop-blur-sm flex items-center justify-center">
               <Ambulance className="h-5 w-5 text-amber-600" />
             </div>
             <div>

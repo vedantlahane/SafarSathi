@@ -62,7 +62,7 @@ export function PoliceSection({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b bg-white">
+      <div className="px-6 py-4 border-b border-white/60 bg-white/60 backdrop-blur-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Police Station Management</h2>
@@ -153,7 +153,7 @@ export function PoliceSection({
           </ScrollArea>
 
           {/* Quick Actions */}
-          <div className="p-3 border-t bg-slate-50">
+          <div className="p-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm">
             <Button
               variant="outline"
               className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"

@@ -42,7 +42,7 @@ export function ActivityItem({
 
   return (
     <div
-      className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300" : ""} bg-white`}
+      className={`flex items-start gap-3 p-3 rounded-xl border border-white/60 transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300" : ""} bg-white/60 backdrop-blur-sm`}
       onClick={onClick}
     >
       <div className={`p-2 rounded-lg ${color} border`}>

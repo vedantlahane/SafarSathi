@@ -148,8 +148,8 @@ export function DashboardSection({
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Map Section */}
-        <Card className="lg:col-span-2 overflow-hidden">
-          <CardHeader className="py-3 px-4 border-b">
+        <Card className="lg:col-span-2 overflow-hidden bg-white/70 backdrop-blur-sm border-white/60">
+          <CardHeader className="py-3 px-4 border-b border-slate-200/60">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-600" />
@@ -175,8 +175,8 @@ export function DashboardSection({
         </Card>
 
         {/* Activity Feed */}
-        <Card>
-          <CardHeader className="py-3 px-4 border-b">
+        <Card className="bg-white/70 backdrop-blur-sm border-white/60">
+          <CardHeader className="py-3 px-4 border-b border-slate-200/60">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-blue-600" />
@@ -217,8 +217,8 @@ export function DashboardSection({
       {/* Quick Actions & Recent Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Alerts Table */}
-        <Card>
-          <CardHeader className="py-3 px-4 border-b">
+        <Card className="bg-white/70 backdrop-blur-sm border-white/60">
+          <CardHeader className="py-3 px-4 border-b border-slate-200/60">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -235,7 +235,7 @@ export function DashboardSection({
                 recentAlerts.map((alert) => (
                   <div
                     key={alert.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                    className="flex items-center justify-between p-3 bg-white/50 backdrop-blur-sm rounded-xl cursor-pointer hover:bg-white/80 transition-all"
                     onClick={() => onAlertClick?.(alert)}
                   >
                     <div className="flex items-center gap-3">
@@ -261,8 +261,8 @@ export function DashboardSection({
         </Card>
 
         {/* System Status */}
-        <Card>
-          <CardHeader className="py-3 px-4 border-b">
+        <Card className="bg-white/70 backdrop-blur-sm border-white/60">
+          <CardHeader className="py-3 px-4 border-b border-slate-200/60">
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="w-4 h-4 text-emerald-500" />
               System Status
@@ -270,19 +270,19 @@ export function DashboardSection({
           </CardHeader>
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200/60 backdrop-blur-sm">
                 <p className="text-sm text-emerald-600 font-medium">API Status</p>
                 <p className="text-2xl font-bold text-emerald-700">Online</p>
               </div>
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-4 bg-blue-50/70 rounded-xl border border-blue-200/60 backdrop-blur-sm">
                 <p className="text-sm text-blue-600 font-medium">WebSocket</p>
                 <p className="text-2xl font-bold text-blue-700">Connected</p>
               </div>
-              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="p-4 bg-purple-50/70 rounded-xl border border-purple-200/60 backdrop-blur-sm">
                 <p className="text-sm text-purple-600 font-medium">Database</p>
                 <p className="text-2xl font-bold text-purple-700">Healthy</p>
               </div>
-              <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="p-4 bg-amber-50/70 rounded-xl border border-amber-200/60 backdrop-blur-sm">
                 <p className="text-sm text-amber-600 font-medium">Last Sync</p>
                 <p className="text-lg font-bold text-amber-700">Just now</p>
               </div>
