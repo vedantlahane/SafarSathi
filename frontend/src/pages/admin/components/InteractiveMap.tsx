@@ -1,8 +1,11 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import { MapContainer, TileLayer, Circle, Marker, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Plus, X } from "lucide-react";
+import {
+  Plus, X, Layers, ZoomIn, ZoomOut, Locate, Eye, EyeOff,
+  Shield, User, AlertTriangle, MapPin,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RiskZone, Tourist, Alert, PoliceDepartment } from "../types";
 
@@ -117,6 +120,53 @@ interface InteractiveMapProps {
   showAlerts?: boolean;
 }
 
+// ── Zoom Controls ────────────────────────────────────────
+function ZoomControls() {
+  const map = useMap();
+  return (
+    <div className="absolute top-3 right-3 z-1000 flex flex-col gap-1">
+      <button
+        onClick={() => map.zoomIn()}
+        className="glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm"
+        title="Zoom in"
+      >
+        <ZoomIn className="w-3.5 h-3.5 text-slate-700" />
+      </button>
+      <button
+        onClick={() => map.zoomOut()}
+        className="glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm"
+        title="Zoom out"
+      >
+        <ZoomOut className="w-3.5 h-3.5 text-slate-700" />
+      </button>
+      <button
+        onClick={() => map.setView(CENTER, 13)}
+        className="glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm mt-1"
+        title="Reset view"
+      >
+        <Locate className="w-3.5 h-3.5 text-slate-700" />
+      </button>
+    </div>
+  );
+}
+
+// ── FitBounds helper ─────────────────────────────────────
+function FitBoundsOnData({ zones, tourists, alerts, policeUnits }: { zones: RiskZone[]; tourists: Tourist[]; alerts: Alert[]; policeUnits?: PoliceDepartment[] }) {
+  const map = useMap();
+  useEffect(() => {
+    const points: [number, number][] = [];
+    zones.forEach(z => points.push([z.center.lat, z.center.lng]));
+    tourists.filter(t => t.location).forEach(t => points.push([t.location!.lat, t.location!.lng]));
+    alerts.filter(a => a.location).forEach(a => points.push([a.location!.lat, a.location!.lng]));
+    policeUnits?.forEach(p => points.push([p.location.lat, p.location.lng]));
+    if (points.length >= 2) {
+      map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 15 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // only on mount
+  return null;
+}
+
 // ── Component ────────────────────────────────────────────
 export function InteractiveMap({
   zones,
@@ -129,10 +179,22 @@ export function InteractiveMap({
   isAddingZone,
   newZonePosition,
   onMapClick,
-  showPolice = true,
-  showTourists = true,
-  showAlerts = true,
+  showPolice: initialShowPolice = true,
+  showTourists: initialShowTourists = true,
+  showAlerts: initialShowAlerts = true,
 }: InteractiveMapProps) {
+  const [layerToggles, setLayerToggles] = useState({
+    zones: true,
+    police: initialShowPolice,
+    tourists: initialShowTourists,
+    alerts: initialShowAlerts,
+  });
+  const [showLayerPanel, setShowLayerPanel] = useState(false);
+
+  const toggleLayer = useCallback((layer: keyof typeof layerToggles) => {
+    setLayerToggles(prev => ({ ...prev, [layer]: !prev[layer] }));
+  }, []);
+
   const activeAlerts = useMemo(
     () => alerts.filter((a) => a.status === "ACTIVE" && a.location?.lat && a.location?.lng),
     [alerts]
@@ -143,8 +205,15 @@ export function InteractiveMap({
     [tourists]
   );
 
+  const mapStats = useMemo(() => ({
+    zones: zones.filter(z => z.isActive).length,
+    tourists: visibleTourists.filter(t => t.isActive).length,
+    alerts: activeAlerts.length,
+    police: policeUnits?.filter(p => p.isActive).length ?? 0,
+  }), [zones, visibleTourists, activeAlerts, policeUnits]);
+
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full group">
       <MapContainer
         center={CENTER}
         zoom={13}
@@ -157,12 +226,13 @@ export function InteractiveMap({
       >
         <ResizeHandler />
         <TileLayer attribution={TILE_ATTR} url={TILE_URL} />
+        <FitBoundsOnData zones={zones} tourists={tourists} alerts={alerts} policeUnits={policeUnits} />
 
         {/* Zone Add Click */}
         {isAddingZone && <ClickHandler onMapClick={onMapClick} />}
 
         {/* Risk Zones */}
-        {zones.map((zone) => {
+        {layerToggles.zones && zones.map((zone) => {
           const c = severityColor[zone.severity] || severityColor.medium;
           const isSelected = selectedZone?.id === zone.id;
           return (
@@ -174,22 +244,24 @@ export function InteractiveMap({
                 color: c.stroke,
                 fillColor: c.fill,
                 fillOpacity: isSelected ? 0.25 : 0.12,
-                weight: isSelected ? 3 : 2,
+                weight: isSelected ? 3 : 1.5,
+                dashArray: zone.isActive ? undefined : "6 4",
               }}
               eventHandlers={{ click: () => onZoneClick?.(zone) }}
             >
               <Tooltip direction="center" permanent={false}>
-                <span className="text-xs font-medium">
-                  {zone.name} · {zone.severity} severity
-                  {zone.isActive ? "" : " (inactive)"}
-                </span>
+                <div className="text-center">
+                  <p className="text-xs font-semibold">{zone.name}</p>
+                  <p className="text-[10px] text-slate-500">{zone.severity} severity · {zone.radius}m radius</p>
+                  {!zone.isActive && <p className="text-[10px] text-amber-600 font-medium">Inactive</p>}
+                </div>
               </Tooltip>
             </Circle>
           );
         })}
 
         {/* Police Stations */}
-        {showPolice &&
+        {layerToggles.police &&
           policeUnits?.map((p) => (
             <Marker
               key={p.id}
@@ -197,15 +269,20 @@ export function InteractiveMap({
               icon={p.isActive ? PoliceIcon : PoliceInactiveIcon}
             >
               <Tooltip>
-                <span className="text-xs font-medium">
-                  {p.name} — {p.isActive ? "On Duty" : "Off Duty"}
-                </span>
+                <div>
+                  <p className="text-xs font-semibold">{p.name}</p>
+                  <p className="text-[10px] text-slate-500">
+                    {p.isActive ? "🟢 On Duty" : "⚫ Off Duty"}
+                    {p.officerCount ? ` · ${p.officerCount} officers` : ""}
+                  </p>
+                  {p.jurisdictionRadiusKm && <p className="text-[10px] text-slate-400">{p.jurisdictionRadiusKm}km jurisdiction</p>}
+                </div>
               </Tooltip>
             </Marker>
           ))}
 
         {/* Tourists */}
-        {showTourists &&
+        {layerToggles.tourists &&
           visibleTourists.map((t) => (
             <Marker
               key={t.id}
@@ -213,13 +290,18 @@ export function InteractiveMap({
               icon={TouristDot(t.isActive)}
             >
               <Tooltip>
-                <span className="text-xs">{t.name}{t.isActive ? " (online)" : ""}</span>
+                <div>
+                  <p className="text-xs font-medium">{t.name}</p>
+                  <p className="text-[10px] text-slate-500">
+                    {t.isActive ? "Online" : "Offline"} · Risk: {t.riskLevel}
+                  </p>
+                </div>
               </Tooltip>
             </Marker>
           ))}
 
         {/* Active Alerts */}
-        {showAlerts &&
+        {layerToggles.alerts &&
           activeAlerts.map((a) => (
             <Marker
               key={a.id}
@@ -227,9 +309,11 @@ export function InteractiveMap({
               icon={AlertIcon}
             >
               <Tooltip>
-                <span className="text-xs font-medium text-red-600">
-                  {a.type} — {a.touristName || "Unknown"}
-                </span>
+                <div>
+                  <p className="text-xs font-semibold text-red-600">{a.type.replaceAll("_", " ")}</p>
+                  <p className="text-[10px] text-slate-500">{a.touristName || "Unknown tourist"}</p>
+                  {a.assignedUnit && <p className="text-[10px] text-blue-600">Assigned: {a.assignedUnit}</p>}
+                </div>
               </Tooltip>
             </Marker>
           ))}
@@ -247,46 +331,118 @@ export function InteractiveMap({
             </Tooltip>
           </Marker>
         )}
+
+        {/* Map-level zoom controls */}
+        <ZoomControls />
       </MapContainer>
 
-      {/* Add Zone Toggle */}
-      {onAddZone && (
-        <div className="absolute top-3 left-3 z-[1000]">
+      {/* ── Live Stats Overlay (top-left) ─────────────────── */}
+      <div className="absolute top-3 left-3 z-1000 flex flex-col gap-1.5">
+        {/* Add Zone Toggle */}
+        {onAddZone && (
           <Button
             size="sm"
             onClick={onAddZone}
-            className={`shadow-lg ${isAddingZone ? "bg-red-500 hover:bg-red-600" : "bg-blue-600 hover:bg-blue-700"}`}
+            className={`shadow-lg h-8 text-xs ${isAddingZone ? "bg-red-500 hover:bg-red-600" : "bg-blue-600 hover:bg-blue-700"}`}
           >
             {isAddingZone ? (
-              <><X className="h-4 w-4 mr-1.5" /> Cancel</>
+              <><X className="h-3.5 w-3.5 mr-1" /> Cancel</>
             ) : (
-              <><Plus className="h-4 w-4 mr-1.5" /> Add Zone</>
+              <><Plus className="h-3.5 w-3.5 mr-1" /> Add Zone</>
             )}
           </Button>
-        </div>
-      )}
+        )}
 
-      {/* Map Legend */}
-      <div className="absolute bottom-3 left-3 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg p-3 text-xs space-y-2 shadow-lg border border-slate-200/60">
-        <p className="font-semibold text-slate-700 mb-2">Legend</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500/40 border-2 border-red-500" />
-            <span className="text-slate-600">Critical</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500/40 border-2 border-orange-500" />
-            <span className="text-slate-600">High</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-slate-600">Tourist</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-lg bg-blue-600 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        {/* Live counters */}
+        <div className="glass-elevated rounded-xl border border-white/40 p-2 shadow-lg">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-semibold text-slate-700">{mapStats.alerts} Alert{mapStats.alerts !== 1 ? "s" : ""}</span>
             </div>
-            <span className="text-slate-600">Police</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-[10px] font-semibold text-slate-700">{mapStats.tourists} Online</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <span className="text-[10px] font-semibold text-slate-700">{mapStats.zones} Zone{mapStats.zones !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-semibold text-slate-700">{mapStats.police} On Duty</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Layer Toggle Panel (bottom-right) ─────────────── */}
+      <div className="absolute bottom-3 right-3 z-1000">
+        <div className="flex flex-col items-end gap-1.5">
+          {showLayerPanel && (
+            <div className="glass-elevated rounded-xl border border-white/40 p-2.5 shadow-lg animate-in scale-in space-y-1">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Map Layers</p>
+              {([
+                { key: "zones" as const, label: "Risk Zones", icon: MapPin, color: "text-purple-600" },
+                { key: "police" as const, label: "Police", icon: Shield, color: "text-blue-600" },
+                { key: "tourists" as const, label: "Tourists", icon: User, color: "text-cyan-600" },
+                { key: "alerts" as const, label: "Alerts", icon: AlertTriangle, color: "text-red-600" },
+              ]).map(({ key, label, icon: Icon, color }) => (
+                <button
+                  key={key}
+                  onClick={() => toggleLayer(key)}
+                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    layerToggles[key]
+                      ? "bg-white/50 text-slate-800"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {layerToggles[key] ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <Icon className={`w-3 h-3 ${layerToggles[key] ? color : "text-slate-400"}`} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => setShowLayerPanel(prev => !prev)}
+            className={`glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm ${showLayerPanel ? "bg-white/60" : ""}`}
+            title="Toggle layers"
+          >
+            <Layers className="w-3.5 h-3.5 text-slate-700" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Map Legend (bottom-left) ───────────────────────── */}
+      <div className="absolute bottom-3 left-3 z-1000 glass-elevated rounded-xl p-2.5 shadow-lg border border-white/40">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Legend</p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-red-500 bg-red-500/30" />
+            <span className="text-[10px] text-slate-600">Critical</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-orange-500 bg-orange-500/30" />
+            <span className="text-[10px] text-slate-600">High</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-amber-500 bg-amber-500/30" />
+            <span className="text-[10px] text-slate-600">Medium</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-emerald-500 bg-emerald-500/30" />
+            <span className="text-[10px] text-slate-600">Low</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <span className="text-[10px] text-slate-600">Tourist</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-blue-600 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <span className="text-[10px] text-slate-600">Police</span>
           </div>
         </div>
       </div>
