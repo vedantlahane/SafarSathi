@@ -3,6 +3,7 @@ import { MapPin, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ export function ZoneDialog({
   initialPosition,
 }: ZoneDialogProps) {
   const [formData, setFormData] = useState<ZoneFormData>(defaultFormData);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (zone) {
@@ -71,7 +73,9 @@ export function ZoneDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     onSave(formData);
+    setSaving(false);
     onOpenChange(false);
   };
 
@@ -185,17 +189,13 @@ export function ZoneDialog({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label htmlFor="zoneActive" className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="zoneActive"
-                  className="rounded border-gray-300"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                />
-                Active Zone
-              </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="zoneActive">Active Zone</Label>
+              <Switch
+                id="zoneActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              />
             </div>
 
             {initialPosition && (
@@ -210,8 +210,8 @@ export function ZoneDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              {zone ? "Update Zone" : "Create Zone"}
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={saving}>
+              {saving ? "Saving..." : zone ? "Update Zone" : "Create Zone"}
             </Button>
           </DialogFooter>
         </form>

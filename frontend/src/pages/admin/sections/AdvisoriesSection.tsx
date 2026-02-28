@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { TravelAdvisoryAdmin, AdvisoryFormData } from "../types";
 
 interface AdvisoriesSectionProps {
@@ -281,7 +282,10 @@ export function AdvisoriesSection({
                 value={form.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
                 rows={3}
+                maxLength={500}
+                placeholder="Describe the advisory..."
               />
+              <p className="text-xs text-muted-foreground text-right">{form.description.length}/500</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
@@ -319,7 +323,7 @@ export function AdvisoriesSection({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !form.title}>
+            <Button onClick={handleSave} disabled={saving || !form.title || !form.description || !form.region}>
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </Button>
           </DialogFooter>

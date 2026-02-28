@@ -305,7 +305,16 @@ export function HospitalsSection({
               </div>
               <div className="grid gap-2">
                 <Label>Tier</Label>
-                <Input value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} placeholder="district, state, etc." />
+                <Select value={form.tier} onValueChange={(v) => setForm({ ...form, tier: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="district">District</SelectItem>
+                    <SelectItem value="state">State</SelectItem>
+                    <SelectItem value="national">National</SelectItem>
+                    <SelectItem value="primary">Primary</SelectItem>
+                    <SelectItem value="private">Private</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -337,7 +346,7 @@ export function HospitalsSection({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !form.name}>
+            <Button onClick={handleSave} disabled={saving || !form.name || !form.contact || !form.lat || !form.lng}>
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </Button>
           </DialogFooter>

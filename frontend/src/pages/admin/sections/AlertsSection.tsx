@@ -13,6 +13,7 @@ interface AlertsSectionProps {
   onBulkResolve: (alertIds: string[]) => void;
   onViewAlert: (alert: Alert) => void;
   onRefresh: () => void;
+  globalSearch?: string;
 }
 
 const filterOptions = [
@@ -31,20 +32,24 @@ export function AlertsSection({
   onBulkResolve,
   onViewAlert,
   onRefresh,
+  globalSearch = "",
 }: AlertsSectionProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<AlertFilter>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
+
+  // Combine local + global search
+  const effectiveSearch = search || globalSearch;
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) => {
-      // Search filter
-      const matchesSearch = !search ||
-        alert.touristName?.toLowerCase().includes(search.toLowerCase()) ||
-        alert.type.toLowerCase().includes(search.toLowerCase()) ||
-        String(alert.id).toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = !effectiveSearch ||
+        alert.touristName?.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+        alert.type.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+        String(alert.id).toLowerCase().includes(effectiveSearch.toLowerCase());
 
-      // Status/type filter
       let matchesFilter = true;
       if (filter === "active") matchesFilter = alert.status === "ACTIVE";
       else if (filter === "pending") matchesFilter = alert.status === "PENDING";
@@ -54,7 +59,17 @@ export function AlertsSection({
 
       return matchesSearch && matchesFilter;
     });
-  }, [alerts, search, filter]);
+  }, [alerts, effectiveSearch, filter]);
+
+  // Paginated alerts
+  const totalPages = Math.max(1, Math.ceil(filteredAlerts.length / pageSize));
+  const paginatedAlerts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAlerts.slice(start, start + pageSize);
+  }, [filteredAlerts, currentPage]);
+
+  // Reset page when filters change
+  useMemo(() => { setCurrentPage(1); }, [effectiveSearch, filter]);
 
   const handleSelectAll = () => {
     if (selectedIds.size === filteredAlerts.length) {
@@ -75,8 +90,29 @@ export function AlertsSection({
   };
 
   const handleBulkResolve = () => {
+    if (!confirm(`Resolve ${selectedIds.size} selected alerts?`)) return;
     onBulkResolve(Array.from(selectedIds));
     setSelectedIds(new Set());
+  };
+
+  const handleExport = () => {
+    const headers = ["ID", "Type", "Status", "Tourist", "Time", "Location"];
+    const rows = filteredAlerts.map(a => [
+      a.id,
+      a.type,
+      a.status,
+      a.touristName || "Unknown",
+      new Date(a.timestamp).toLocaleString(),
+      a.location ? `${a.location.lat.toFixed(4)},${a.location.lng.toFixed(4)}` : "N/A",
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `alerts-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const activeCount = alerts.filter((a) => a.status === "ACTIVE").length;
@@ -116,7 +152,7 @@ export function AlertsSection({
         onRefresh={onRefresh}
         isRefreshing={isLoading}
         showExport={true}
-        onExport={() => console.log("Export alerts")}
+        onExport={handleExport}
       >
         {selectedIds.size > 0 && (
           <Button
@@ -153,9 +189,9 @@ export function AlertsSection({
 
           {/* Table Body */}
           <ScrollArea className="flex-1">
-            {filteredAlerts.length > 0 ? (
+            {paginatedAlerts.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {filteredAlerts.map((alert) => (
+                {paginatedAlerts.map((alert) => (
                   <AlertTableRow
                     key={alert.id}
                     alert={alert}
@@ -179,9 +215,34 @@ export function AlertsSection({
             )}
           </ScrollArea>
 
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm text-sm text-slate-500">
-            Showing {filteredAlerts.length} of {alerts.length} alerts
+          {/* Footer with Pagination */}
+          <div className="px-4 py-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm flex items-center justify-between">
+            <span className="text-sm text-slate-500">
+              Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredAlerts.length)} of {filteredAlerts.length} alerts
+            </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-slate-600 px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>

@@ -19,52 +19,57 @@ const riskColors = {
 
 export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelected, onSelect }: TouristTableRowProps) {
   const riskLevel = tourist.riskScore > 70 ? "high" : tourist.riskScore > 40 ? "medium" : "low";
+  const lastSeen = tourist.lastSeen ? new Date(tourist.lastSeen).toLocaleDateString() : "—";
 
   return (
-    <div className={`grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 items-center border-b border-slate-100 hover:bg-white/50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+    <div className={`grid grid-cols-[40px_1fr_100px_80px_120px_100px_100px] gap-3 items-center border-b border-slate-100 hover:bg-white/50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
       <div className="py-3 px-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={() => onSelect(tourist.id)}
           className="rounded border-slate-300"
+          aria-label={`Select ${tourist.name || "tourist"}`}
         />
       </div>
       <div className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <div className="relative">
+          <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-medium">
               {tourist.name?.charAt(0) || "T"}
             </div>
             <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${tourist.isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
           </div>
-          <div>
-            <p className="font-medium text-slate-900 text-sm">{tourist.name || "Unknown"}</p>
-            <p className="text-xs text-slate-500">{tourist.email}</p>
+          <div className="min-w-0">
+            <p className="font-medium text-slate-900 text-sm truncate">{tourist.name || "Unknown"}</p>
+            <p className="text-xs text-slate-500 truncate">{tourist.email}</p>
           </div>
         </div>
       </div>
-      <div className="py-3 px-4">
+      <div className="py-3 px-2">
         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${tourist.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
           <Circle className={`h-1.5 w-1.5 fill-current ${tourist.isActive ? "text-emerald-500" : "text-slate-400"}`} />
           {tourist.isActive ? "Online" : "Offline"}
         </span>
       </div>
-      <div className="py-3 px-4">
+      <div className="py-3 px-2">
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${riskColors[riskLevel]}`}>
           {tourist.riskScore}
         </span>
       </div>
-      <div className="py-3 px-4 text-sm text-slate-500">{tourist.phoneNumber || "—"}</div>
-      <div className="py-3 px-4">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(tourist)}>
+      <div className="py-3 px-2 text-xs text-slate-500 truncate">{lastSeen}</div>
+      <div className="py-3 px-2 text-xs text-slate-500 truncate">
+        {tourist.location ? `${tourist.location.lat.toFixed(2)}, ${tourist.location.lng.toFixed(2)}` : "—"}
+      </div>
+      <div className="py-3 px-2">
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(tourist)} title="View details">
             <Eye className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onTrack(tourist)}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onTrack(tourist)} title="Track on map">
             <Navigation className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-600" onClick={() => onContact(tourist)}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-600" onClick={() => onContact(tourist)} title="Contact tourist">
             <MessageSquare className="h-3.5 w-3.5" />
           </Button>
         </div>

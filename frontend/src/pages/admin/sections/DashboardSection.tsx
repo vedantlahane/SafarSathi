@@ -10,6 +10,11 @@ import {
   Radio,
   Timer,
   UserCheck,
+  CheckCircle,
+  Wifi,
+  WifiOff,
+  Database,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +23,6 @@ import { StatCard, InteractiveMap, ActivityItem } from "../components";
 import type { AdminData, Alert, RiskZone } from "../types";
 
 interface DashboardSectionProps {
-
   data: AdminData;
   onNavigate: (tab: string) => void;
   onAlertClick?: (alert: Alert) => void;
@@ -38,6 +42,7 @@ export function DashboardSection({
   const quickStats = useMemo(() => ({
     activeAlerts: alerts.filter((a) => a.status === "ACTIVE").length,
     pendingAlerts: alerts.filter((a) => a.status === "PENDING").length,
+    resolvedAlerts: alerts.filter((a) => a.status === "RESOLVED").length,
     onlineTourists: tourists.filter((t) => t.isActive).length,
     highRiskTourists: tourists.filter((t) => t.riskLevel === "high").length,
     activeZones: zones.filter((z) => z.isActive).length,
@@ -60,38 +65,83 @@ export function DashboardSection({
     recentAlerts.forEach((alert) => {
       activities.push({
         type: "alert",
-        title: `${alert.type} Alert`,
+        title: `${alert.type.replaceAll("_", " ")} Alert`,
         description: alert.touristName || "Unknown tourist",
         timestamp: new Date(alert.timestamp),
-        severity: alert.status === "ACTIVE" ? "critical" : "info",
+        severity: alert.status === "ACTIVE" ? "critical" : alert.status === "PENDING" ? "high" : "info",
       });
     });
 
-    return activities.slice(0, 8);
-  }, [recentAlerts]);
+    // Add zone activities
+    zones.filter(z => z.isActive && z.severity === "critical").slice(0, 2).forEach((zone) => {
+      activities.push({
+        type: "zone",
+        title: "Critical Zone Active",
+        description: zone.name,
+        timestamp: new Date(),
+        severity: "critical",
+      });
+    });
+
+    // Add police status changes
+    const offDutyCount = police.filter(p => !p.isActive).length;
+    if (offDutyCount > 0) {
+      activities.push({
+        type: "police",
+        title: `${offDutyCount} Station${offDutyCount > 1 ? "s" : ""} Off Duty`,
+        description: "Police coverage gap detected",
+        timestamp: new Date(),
+        severity: offDutyCount > 2 ? "high" : "medium",
+      });
+    }
+
+    return activities
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, 8);
+  }, [recentAlerts, zones, police]);
+
+  // Dynamic system status derived from actual data
+  const systemStatus = useMemo(() => {
+    const hasData = alerts.length > 0 || tourists.length > 0;
+    const hasActiveAlerts = quickStats.activeAlerts > 0;
+    return {
+      api: hasData ? "Online" : "Checking...",
+      apiOk: hasData,
+      database: hasData ? "Healthy" : "Checking...",
+      dbOk: hasData,
+      alerts: hasActiveAlerts ? `${quickStats.activeAlerts} Active` : "All Clear",
+      alertsOk: !hasActiveAlerts,
+      coverage: quickStats.activePolice > 0 ? `${quickStats.activePolice} Units` : "No Coverage",
+      coverageOk: quickStats.activePolice > 0,
+    };
+  }, [alerts, tourists, quickStats]);
 
   return (
     <div className="p-6 space-y-6">
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <StatCard
           icon={AlertTriangle}
           label="Active Alerts"
           value={quickStats.activeAlerts}
+          change={quickStats.pendingAlerts > 0 ? `${quickStats.pendingAlerts} pending` : undefined}
+          changeType={quickStats.pendingAlerts > 0 ? "up" : "neutral"}
           color="red"
           onClick={() => onNavigate("alerts")}
         />
         <StatCard
-          icon={Clock}
-          label="Pending"
-          value={quickStats.pendingAlerts}
-          color="amber"
+          icon={CheckCircle}
+          label="Resolved"
+          value={quickStats.resolvedAlerts}
+          color="green"
           onClick={() => onNavigate("alerts")}
         />
         <StatCard
           icon={Users}
           label="Online Tourists"
           value={quickStats.onlineTourists}
+          change={`${tourists.length} total`}
+          changeType="neutral"
           color="blue"
           onClick={() => onNavigate("tourists")}
         />
@@ -99,27 +149,24 @@ export function DashboardSection({
           icon={Activity}
           label="High Risk"
           value={quickStats.highRiskTourists}
-          color="red"
+          color={quickStats.highRiskTourists > 0 ? "red" : "green"}
           onClick={() => onNavigate("tourists")}
         />
         <StatCard
           icon={MapPin}
           label="Active Zones"
           value={quickStats.activeZones}
+          change={quickStats.criticalZones > 0 ? `${quickStats.criticalZones} critical` : undefined}
+          changeType={quickStats.criticalZones > 0 ? "up" : "neutral"}
           color="purple"
           onClick={() => onNavigate("zones")}
         />
         <StatCard
-          icon={AlertTriangle}
-          label="Critical Zones"
-          value={quickStats.criticalZones}
-          color="red"
-          onClick={() => onNavigate("zones")}
-        />
-        <StatCard
           icon={Shield}
-          label="Police Active"
+          label="Police On Duty"
           value={quickStats.activePolice}
+          change={`${police.length} total`}
+          changeType="neutral"
           color="green"
           onClick={() => onNavigate("police")}
         />
@@ -128,13 +175,6 @@ export function DashboardSection({
           label="Total Tourists"
           value={stats?.totalTourists || tourists.length}
           color="cyan"
-          onClick={() => onNavigate("tourists")}
-        />
-        <StatCard
-          icon={UserCheck}
-          label="Active Now"
-          value={quickStats.activeTouristCount}
-          color="green"
           onClick={() => onNavigate("tourists")}
         />
         <StatCard
@@ -269,22 +309,59 @@ export function DashboardSection({
             </CardTitle>
           </CardHeader>
           <div className="p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200/60 backdrop-blur-sm">
-                <p className="text-sm text-emerald-600 font-medium">API Status</p>
-                <p className="text-2xl font-bold text-emerald-700">Online</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`p-4 rounded-xl border backdrop-blur-sm ${systemStatus.apiOk ? "bg-emerald-50/70 border-emerald-200/60" : "bg-amber-50/70 border-amber-200/60"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  {systemStatus.apiOk ? <Wifi className="w-3.5 h-3.5 text-emerald-500" /> : <WifiOff className="w-3.5 h-3.5 text-amber-500" />}
+                  <p className={`text-sm font-medium ${systemStatus.apiOk ? "text-emerald-600" : "text-amber-600"}`}>API Status</p>
+                </div>
+                <p className={`text-xl font-bold ${systemStatus.apiOk ? "text-emerald-700" : "text-amber-700"}`}>{systemStatus.api}</p>
               </div>
-              <div className="p-4 bg-blue-50/70 rounded-xl border border-blue-200/60 backdrop-blur-sm">
-                <p className="text-sm text-blue-600 font-medium">WebSocket</p>
-                <p className="text-2xl font-bold text-blue-700">Connected</p>
+              <div className={`p-4 rounded-xl border backdrop-blur-sm ${systemStatus.dbOk ? "bg-blue-50/70 border-blue-200/60" : "bg-amber-50/70 border-amber-200/60"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Database className={`w-3.5 h-3.5 ${systemStatus.dbOk ? "text-blue-500" : "text-amber-500"}`} />
+                  <p className={`text-sm font-medium ${systemStatus.dbOk ? "text-blue-600" : "text-amber-600"}`}>Database</p>
+                </div>
+                <p className={`text-xl font-bold ${systemStatus.dbOk ? "text-blue-700" : "text-amber-700"}`}>{systemStatus.database}</p>
               </div>
-              <div className="p-4 bg-purple-50/70 rounded-xl border border-purple-200/60 backdrop-blur-sm">
-                <p className="text-sm text-purple-600 font-medium">Database</p>
-                <p className="text-2xl font-bold text-purple-700">Healthy</p>
+              <div className={`p-4 rounded-xl border backdrop-blur-sm ${systemStatus.alertsOk ? "bg-emerald-50/70 border-emerald-200/60" : "bg-red-50/70 border-red-200/60"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className={`w-3.5 h-3.5 ${systemStatus.alertsOk ? "text-emerald-500" : "text-red-500"}`} />
+                  <p className={`text-sm font-medium ${systemStatus.alertsOk ? "text-emerald-600" : "text-red-600"}`}>Alerts</p>
+                </div>
+                <p className={`text-xl font-bold ${systemStatus.alertsOk ? "text-emerald-700" : "text-red-700"}`}>{systemStatus.alerts}</p>
               </div>
-              <div className="p-4 bg-amber-50/70 rounded-xl border border-amber-200/60 backdrop-blur-sm">
-                <p className="text-sm text-amber-600 font-medium">Last Sync</p>
-                <p className="text-lg font-bold text-amber-700">Just now</p>
+              <div className={`p-4 rounded-xl border backdrop-blur-sm ${systemStatus.coverageOk ? "bg-purple-50/70 border-purple-200/60" : "bg-red-50/70 border-red-200/60"}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className={`w-3.5 h-3.5 ${systemStatus.coverageOk ? "text-purple-500" : "text-red-500"}`} />
+                  <p className={`text-sm font-medium ${systemStatus.coverageOk ? "text-purple-600" : "text-red-600"}`}>Coverage</p>
+                </div>
+                <p className={`text-xl font-bold ${systemStatus.coverageOk ? "text-purple-700" : "text-red-700"}`}>{systemStatus.coverage}</p>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="pt-2 border-t border-slate-200/60">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Quick Actions</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button size="sm" variant="outline" className="justify-start" onClick={() => onNavigate("alerts")}>
+                  <AlertTriangle className="w-3.5 h-3.5 mr-2 text-red-500" />
+                  View Alerts
+                </Button>
+                {onBroadcast && (
+                  <Button size="sm" variant="outline" className="justify-start" onClick={onBroadcast}>
+                    <Radio className="w-3.5 h-3.5 mr-2 text-blue-500" />
+                    Broadcast
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="justify-start" onClick={() => onNavigate("zones")}>
+                  <MapPin className="w-3.5 h-3.5 mr-2 text-purple-500" />
+                  Manage Zones
+                </Button>
+                <Button size="sm" variant="outline" className="justify-start" onClick={() => onNavigate("police")}>
+                  <Shield className="w-3.5 h-3.5 mr-2 text-emerald-500" />
+                  Police Units
+                </Button>
               </div>
             </div>
           </div>

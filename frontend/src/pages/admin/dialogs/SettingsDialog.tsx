@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Bell, Database, Globe, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -33,16 +34,33 @@ interface SettingsData {
   language: string;
 }
 
+const STORAGE_KEY = "safarsathi-admin-settings";
+const DEFAULT_SETTINGS: SettingsData = {
+  alertThreshold: 5,
+  refreshInterval: 30,
+  enableNotifications: true,
+  defaultZoom: 12,
+  language: "en",
+};
+
+function loadSettings(): SettingsData {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return DEFAULT_SETTINGS;
+}
+
 export function SettingsDialog({ open, onOpenChange, onSave }: SettingsDialogProps) {
-  const [settings, setSettings] = useState<SettingsData>({
-    alertThreshold: 5,
-    refreshInterval: 30,
-    enableNotifications: true,
-    defaultZoom: 12,
-    language: "en",
-  });
+  const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
+
+  // Load from localStorage when dialog opens
+  useEffect(() => {
+    if (open) setSettings(loadSettings());
+  }, [open]);
 
   const handleSave = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     onSave?.(settings);
     onOpenChange(false);
   };
@@ -67,6 +85,14 @@ export function SettingsDialog({ open, onOpenChange, onSave }: SettingsDialogPro
               <Bell className="w-4 h-4" /> Notifications
             </h4>
             <div className="grid gap-3 pl-6">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="enableNotifs" className="text-sm">Enable Notifications</Label>
+                <Switch
+                  id="enableNotifs"
+                  checked={settings.enableNotifications}
+                  onCheckedChange={(v) => setSettings({ ...settings, enableNotifications: v })}
+                />
+              </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="alertThreshold" className="text-sm">Alert Threshold</Label>
                 <Input
