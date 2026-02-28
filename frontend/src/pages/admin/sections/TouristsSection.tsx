@@ -80,7 +80,7 @@ export function TouristsSection({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b bg-white">
+      <div className="px-6 py-4 border-b border-white/60 bg-white/60 backdrop-blur-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold text-slate-800">Tourist Management</h2>
@@ -120,9 +120,9 @@ export function TouristsSection({
 
       {/* Tourist Table */}
       <div className="flex-1 overflow-hidden">
-        <Card className="h-full m-4 flex flex-col">
+        <Card className="h-full m-4 flex flex-col bg-white/70 backdrop-blur-sm border-white/60">
           {/* Table Header */}
-          <div className="grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 px-4 py-3 bg-slate-50 border-b text-sm font-medium text-slate-600">
+          <div className="grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 px-4 py-3 bg-white/50 backdrop-blur-sm border-b border-slate-200/60 text-sm font-medium text-slate-600">
             <div>
               <input
                 type="checkbox"
@@ -169,7 +169,7 @@ export function TouristsSection({
           </ScrollArea>
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t bg-slate-50 text-sm text-slate-500">
+          <div className="px-4 py-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm text-sm text-slate-500">
             Showing {filteredTourists.length} of {tourists.length} tourists
           </div>
         </Card>

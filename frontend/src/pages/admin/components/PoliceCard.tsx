@@ -18,7 +18,7 @@ interface PoliceCardProps {
 
 export function PoliceCard({ police, onEdit, onDelete, onContact }: PoliceCardProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md hover:border-slate-300 transition-all">
+    <div className="rounded-xl border border-white/60 bg-white/60 backdrop-blur-sm p-4 hover:shadow-md hover:border-slate-300 transition-all">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-lg ${police.isActive ? "bg-emerald-100" : "bg-slate-100"}`}>

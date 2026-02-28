@@ -1,9 +1,17 @@
 import { getSession, getAdminSession } from "../session";
 
-const DEFAULT_BASE_URL = "http://localhost:8081";
-const API_BASE_URL =
-    (import.meta.env.VITE_BACKEND_NODE_URL as string | undefined) ??
-    DEFAULT_BASE_URL;
+function resolveBaseUrl(): string {
+    // Explicit override via env var
+    const envUrl = import.meta.env.VITE_BACKEND_NODE_URL as string | undefined;
+    if (envUrl) return envUrl;
+
+    // Auto-detect: use the same hostname the browser loaded from,
+    // so LAN / remote devices hit the right backend.
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:8081`;
+}
+
+const API_BASE_URL = resolveBaseUrl();
 
 function buildUrl(path: string) {
     const trimmedBase = API_BASE_URL.replace(/\/$/, "");

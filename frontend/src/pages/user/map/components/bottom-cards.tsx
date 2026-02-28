@@ -152,17 +152,19 @@ function NearestStationBarInner({ station }: NearestStationBarProps) {
               )}
             </div>
           </div>
-          <a href={`tel:${station.contact}`}>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 gap-1.5"
-              aria-label={`Call ${station.name}`}
-            >
-              <Phone className="h-4 w-4" />
-              Call
-            </Button>
-          </a>
+          {station.contact ? (
+            <a href={`tel:${station.contact}`}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 gap-1.5"
+                aria-label={`Call ${station.name}`}
+              >
+                <Phone className="h-4 w-4" />
+                Call
+              </Button>
+            </a>
+          ) : null}
         </div>
       </GlassCard>
     </div>
@@ -219,17 +221,19 @@ function NearestHospitalBarInner({ hospital }: NearestHospitalBarProps) {
               )}
             </div>
           </div>
-          <a href={`tel:${hospital.contact}`}>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1 text-[10px]"
-              aria-label={`Call ${hospital.name}`}
-            >
-              <Phone className="h-3 w-3" />
-              Call
-            </Button>
-          </a>
+          {hospital.contact ? (
+            <a href={`tel:${hospital.contact}`}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1 text-[10px]"
+                aria-label={`Call ${hospital.name}`}
+              >
+                <Phone className="h-3 w-3" />
+                Call
+              </Button>
+            </a>
+          ) : null}
         </div>
       </GlassCard>
     </div>
