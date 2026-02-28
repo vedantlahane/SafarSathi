@@ -16,10 +16,18 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true
+        enabled: false
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+            handler: 'NetworkOnly',
+          }
+        ]
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'apple-touch-icon.svg', 'masked-icon.svg'],
       manifest: {
@@ -64,9 +72,25 @@ export default defineConfig({
     },
   },
   server: {
-    // Handle SPA routing - redirect all paths to index.html
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/ws-connect': {
+        target: 'ws://localhost:8081',
+        ws: true,
+      },
+    },
   },
   preview: {
-    // Also handle SPA routing in preview mode
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 })
