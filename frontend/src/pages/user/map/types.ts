@@ -30,6 +30,11 @@ export interface Hospital {
   emergency: boolean;
   distance?: number;
   eta?: string;
+  tier?: string;
+  specialties?: string[];
+  bedCapacity?: number;
+  availableBeds?: number;
+  ambulanceAvailable?: boolean;
 }
 
 export interface Destination {

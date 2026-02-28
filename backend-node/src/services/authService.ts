@@ -140,7 +140,7 @@ export async function verifyIdHash(idHash: string) {
   return tourist;
 }
 
-export async function updateLocation(touristId: string, lat: number, lng: number, accuracy?: number) {
+export async function updateLocation(touristId: string, lat: number, lng: number, accuracy?: number, speed?: number, heading?: number) {
   const tourist = await getTouristById(touristId);
   if (!tourist) {
     throw new Error("Tourist not found.");
@@ -149,10 +149,25 @@ export async function updateLocation(touristId: string, lat: number, lng: number
   const updated = await updateTourist(touristId, {
     currentLat: lat,
     currentLng: lng,
+    speed,
+    heading,
+    locationAccuracy: accuracy,
     lastSeen: new Date().toISOString(),
   });
 
   if (updated) {
+    // Write to location log (time-series) for ML pipeline
+    const { createLocationLog } = await import("./mongoStore.js");
+    await createLocationLog({
+      touristId,
+      latitude: lat,
+      longitude: lng,
+      speed,
+      heading,
+      accuracy,
+      safetyScoreAtTime: updated.safetyScore ?? 100,
+    }).catch((err) => console.error("Location log write failed:", err));
+
     await processLocation(updated, accuracy);
   }
 

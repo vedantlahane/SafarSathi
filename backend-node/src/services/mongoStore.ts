@@ -8,6 +8,10 @@ import {
   BlockchainLogModel,
   HospitalModel,
   NotificationModel,
+  TouristLocationLogModel,
+  IncidentModel,
+  TravelAdvisoryModel,
+  AuditLogModel,
   ITourist,
   IRiskZone,
   IPoliceDepartment,
@@ -15,10 +19,26 @@ import {
   INotification,
   IBlockchainLog,
   IHospital,
+  ITouristLocationLog,
+  IIncident,
+  ITravelAdvisory,
+  IAuditLog,
 } from "../schemas/index.js";
 
 // Re-export the types for use by other services
-export type { ITourist, IRiskZone, IPoliceDepartment, IAlert, INotification, IBlockchainLog, IHospital };
+export type {
+  ITourist,
+  IRiskZone,
+  IPoliceDepartment,
+  IAlert,
+  INotification,
+  IBlockchainLog,
+  IHospital,
+  ITouristLocationLog,
+  IIncident,
+  ITravelAdvisory,
+  IAuditLog,
+};
 
 // Counter collection for auto-increment IDs
 import mongoose from "mongoose";
@@ -192,6 +212,91 @@ export async function getActiveHospitals(): Promise<IHospital[]> {
   return HospitalModel.find({ isActive: true }).lean();
 }
 
+export async function getHospitalById(hospitalId: number): Promise<IHospital | null> {
+  return HospitalModel.findOne({ hospitalId }).lean();
+}
+
+export async function createHospitalDoc(data: Partial<IHospital>): Promise<IHospital> {
+  const hospitalId = await getNextId("hospitalId");
+  const hospital = new HospitalModel({ ...data, hospitalId });
+  await hospital.save();
+  return hospital.toObject();
+}
+
+export async function updateHospitalDoc(hospitalId: number, data: Partial<IHospital>): Promise<IHospital | null> {
+  return HospitalModel.findOneAndUpdate({ hospitalId }, data, { new: true }).lean();
+}
+
+export async function deleteHospitalDoc(hospitalId: number): Promise<boolean> {
+  const result = await HospitalModel.findOneAndDelete({ hospitalId });
+  return !!result;
+}
+
+// ==================== TOURIST LOCATION LOGS ====================
+
+export async function createLocationLog(data: {
+  touristId: string;
+  latitude: number;
+  longitude: number;
+  speed?: number;
+  heading?: number;
+  accuracy?: number;
+  safetyScoreAtTime?: number;
+}): Promise<ITouristLocationLog> {
+  const log = new TouristLocationLogModel({
+    touristId: data.touristId,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    location: {
+      type: "Point",
+      coordinates: [data.longitude, data.latitude],
+    },
+    speed: data.speed,
+    heading: data.heading,
+    accuracy: data.accuracy,
+    safetyScoreAtTime: data.safetyScoreAtTime ?? 100,
+    timestamp: new Date(),
+  });
+  await log.save();
+  return log.toObject();
+}
+
+export async function getLocationHistory(
+  touristId: string,
+  limit = 100,
+  since?: Date
+): Promise<ITouristLocationLog[]> {
+  const filter: Record<string, unknown> = { touristId };
+  if (since) {
+    filter.timestamp = { $gte: since };
+  }
+  return TouristLocationLogModel.find(filter)
+    .sort({ timestamp: -1 })
+    .limit(limit)
+    .lean();
+}
+
+// ==================== INCIDENTS ====================
+
+export async function createIncident(data: Partial<IIncident>): Promise<IIncident> {
+  const incidentId = await getNextId("incidentId");
+  const incident = new IncidentModel({ ...data, incidentId });
+  await incident.save();
+  return incident.toObject();
+}
+
+export async function getIncidentById(incidentId: number): Promise<IIncident | null> {
+  return IncidentModel.findOne({ incidentId }).lean();
+}
+
+export async function getAllIncidents(): Promise<IIncident[]> {
+  return IncidentModel.find().sort({ createdAt: -1 }).lean();
+}
+
+export async function updateIncident(incidentId: number, data: Partial<IIncident>): Promise<IIncident | null> {
+  return IncidentModel.findOneAndUpdate({ incidentId }, data, { new: true }).lean();
+}
+
 // ==================== BLOCKCHAIN LOGS ====================
 
 export async function getAllBlockchainLogs(): Promise<IBlockchainLog[]> {
@@ -235,7 +340,7 @@ export async function seedDatabase() {
     address: "Pan Bazaar, Guwahati, Assam, India",
     gender: "Male",
     nationality: "Indian",
-    emergencyContact: { name: "Riya Sharma", phone: "+91-9876543210" },
+    emergencyContact: { name: "Riya Sharma", phone: "+91-9876543210", relationship: "Spouse" },
     bloodType: "O+",
     allergies: ["Dust"],
     medicalConditions: ["Asthma"],
@@ -246,6 +351,9 @@ export async function seedDatabase() {
     currentLng: 92.9376,
     lastSeen: now.toISOString(),
     safetyScore: 87,
+    travelType: "solo",
+    preferredLanguage: "en",
+    isActive: true,
   });
 
   // Seed risk zones
@@ -259,6 +367,8 @@ export async function seedDatabase() {
       radiusMeters: 750,
       riskLevel: "HIGH",
       active: true,
+      category: "wildlife",
+      source: "admin",
     },
     {
       zoneId: 2,
@@ -269,6 +379,8 @@ export async function seedDatabase() {
       radiusMeters: 1200,
       riskLevel: "MEDIUM",
       active: true,
+      category: "flood",
+      source: "admin",
     },
   ]);
 
@@ -287,6 +399,9 @@ export async function seedDatabase() {
       state: "Assam",
       contactNumber: "+91-9876543210",
       isActive: true,
+      stationType: "district_hq",
+      jurisdictionRadiusKm: 50,
+      officerCount: 25,
     },
     {
       _id: randomUUID(),
@@ -301,6 +416,9 @@ export async function seedDatabase() {
       state: "Assam",
       contactNumber: "+91-361-2234567",
       isActive: true,
+      stationType: "station",
+      jurisdictionRadiusKm: 15,
+      officerCount: 12,
     },
   ]);
 
@@ -366,6 +484,9 @@ export async function seedDatabase() {
   await CounterModel.findByIdAndUpdate("notificationId", { seq: 0 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("blockchainLogId", { seq: 0 }, { upsert: true });
   await CounterModel.findByIdAndUpdate("hospitalId", { seq: 4 }, { upsert: true });
+  await CounterModel.findByIdAndUpdate("incidentId", { seq: 0 }, { upsert: true });
+  await CounterModel.findByIdAndUpdate("advisoryId", { seq: 0 }, { upsert: true });
+  await CounterModel.findByIdAndUpdate("auditLogId", { seq: 0 }, { upsert: true });
 
   console.log("✅ Database seeded successfully");
 }
