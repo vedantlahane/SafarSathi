@@ -286,6 +286,11 @@ export function useMapData() {
             contact: h.contact,
             type: h.type,
             emergency: h.emergency,
+            tier: h.tier ?? undefined,
+            specialties: h.specialties,
+            bedCapacity: h.bedCapacity,
+            availableBeds: h.availableBeds,
+            ambulanceAvailable: h.ambulanceAvailable,
           }))
         );
       } catch {
@@ -324,6 +329,9 @@ export function useMapData() {
           postLocation(session.touristId, {
             lat: p[0],
             lng: p[1],
+            accuracy: pos.coords.accuracy ?? undefined,
+            speed: pos.coords.speed ?? undefined,
+            heading: pos.coords.heading ?? undefined,
           }).catch(() => { });
         }
       },

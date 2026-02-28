@@ -8,6 +8,8 @@ import {
   TrendingUp,
   Clock,
   Radio,
+  Timer,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,9 @@ export function DashboardSection({
     activeZones: zones.filter((z) => z.isActive).length,
     criticalZones: zones.filter((z) => z.severity === "critical").length,
     activePolice: police.filter((p) => p.isActive).length,
-  }), [alerts, tourists, zones, police]);
+    activeTouristCount: stats?.activeTouristCount ?? tourists.filter((t) => t.isActive).length,
+    avgResponseTimeMs: stats?.avgResponseTimeMs ?? 0,
+  }), [alerts, tourists, zones, police, stats]);
 
   const recentAlerts = useMemo(() =>
     [...alerts]
@@ -125,6 +129,19 @@ export function DashboardSection({
           value={stats?.totalTourists || tourists.length}
           color="cyan"
           onClick={() => onNavigate("tourists")}
+        />
+        <StatCard
+          icon={UserCheck}
+          label="Active Now"
+          value={quickStats.activeTouristCount}
+          color="green"
+          onClick={() => onNavigate("tourists")}
+        />
+        <StatCard
+          icon={Timer}
+          label="Avg Response"
+          value={quickStats.avgResponseTimeMs > 0 ? `${Math.round(quickStats.avgResponseTimeMs / 1000)}s` : "—"}
+          color="blue"
         />
       </div>
 

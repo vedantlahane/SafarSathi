@@ -8,12 +8,16 @@ export type TouristRegistrationPayload = {
     address?: string;
     gender?: string;
     nationality?: string;
-    emergencyContact?: { name?: string; phone?: string };
+    emergencyContact?: { name?: string; phone?: string; relationship?: string };
     bloodType?: string;
     allergies?: string[];
     medicalConditions?: string[];
     currentLat?: number;
     currentLng?: number;
+    travelType?: "solo" | "family" | "group" | "adventure";
+    preferredLanguage?: string;
+    visaType?: string;
+    visaExpiry?: string;
 };
 
 export type TouristProfile = {
@@ -26,13 +30,21 @@ export type TouristProfile = {
     address?: string;
     gender?: string;
     nationality?: string;
-    emergencyContact?: { name?: string; phone?: string };
+    emergencyContact?: { name?: string; phone?: string; relationship?: string };
     bloodType?: string;
     allergies?: string[];
     medicalConditions?: string[];
     safetyScore?: number;
     idHash?: string;
     idExpiry?: string;
+    travelType?: string;
+    preferredLanguage?: string;
+    visaType?: string;
+    visaExpiry?: string;
+    isActive?: boolean;
+    speed?: number;
+    heading?: number;
+    locationAccuracy?: number;
 };
 
 export type TouristAlert = {
@@ -87,6 +99,9 @@ export type PoliceDepartment = {
     state: string;
     contactNumber: string;
     isActive?: boolean;
+    stationType?: "outpost" | "station" | "district_hq";
+    jurisdictionRadiusKm?: number;
+    officerCount?: number;
 };
 
 export type RiskZone = {
@@ -98,6 +113,9 @@ export type RiskZone = {
     radiusMeters: number;
     riskLevel: string;
     active: boolean;
+    category?: "flood" | "wildlife" | "crime" | "traffic" | "political_unrest" | "other";
+    source?: "admin" | "ml_pipeline" | "crowd_report";
+    expiresAt?: string;
     createdAt?: string;
     updatedAt?: string;
 };
@@ -109,11 +127,73 @@ export type HospitalResponse = {
     longitude: number;
     contact: string;
     type: "hospital" | "clinic" | "pharmacy";
+    tier?: "PHC" | "CHC" | "DH" | "Medical_College" | null;
     emergency: boolean;
     city: string;
     district: string;
     state: string;
     isActive: boolean;
+    specialties?: string[];
+    bedCapacity?: number;
+    availableBeds?: number;
+    operatingHours?: { open?: string; close?: string; is24Hours?: boolean };
+    ambulanceAvailable?: boolean;
+};
+
+export type TravelAdvisory = {
+    advisoryId: number;
+    title: string;
+    body: string;
+    region: string;
+    severity: "info" | "warning" | "critical";
+    issuedBy?: string;
+    effectiveFrom: string;
+    effectiveTo: string;
+    source?: "admin" | "ml_pipeline" | "government";
+    active: boolean;
+    affectedZoneIds?: number[];
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type AuditLogEntry = {
+    logId: number;
+    actor: string;
+    actorType: "admin" | "system" | "tourist";
+    action: string;
+    targetCollection: string;
+    targetId: string;
+    changes?: Record<string, unknown>;
+    ipAddress?: string;
+    userAgent?: string;
+    timestamp: string;
+};
+
+export type AuditLogPage = {
+    items: AuditLogEntry[];
+    total: number;
+    page: number;
+    pages: number;
+};
+
+export type LocationPayload = {
+    lat: number;
+    lng: number;
+    accuracy?: number;
+    speed?: number;
+    heading?: number;
+};
+
+export type SOSPayload = {
+    lat?: number;
+    lng?: number;
+    message?: string;
+    media?: string[];
+};
+
+export type SOSResponse = {
+    status: string;
+    alertId: number;
 };
 
 export type AdminDashboardState = {
@@ -122,6 +202,8 @@ export type AdminDashboardState = {
         activeAlerts: number;
         monitoredTourists: number;
         totalTourists: number;
+        activeTouristCount: number;
+        avgResponseTimeMs: number;
     };
     alerts: Array<{
         id: number;
@@ -134,6 +216,7 @@ export type AdminDashboardState = {
         timestamp: string;
         lat: number | null;
         lng: number | null;
+        assignedUnit: string | null;
     }>;
     tourists: Array<{
         id: string;
