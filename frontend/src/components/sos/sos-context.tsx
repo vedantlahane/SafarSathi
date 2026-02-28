@@ -21,9 +21,11 @@ export interface SOSContextValue {
     position: SOSPosition;
     /** Whether the pre-alert has been sent for the current hold */
     preAlertSent: boolean;
+    /** Alert ID returned from the backend after SOS is fired */
+    activeAlertId: number | null;
     /** Start the countdown sequence */
     startCountdown: () => void;
-    /** Cancel an in-progress SOS */
+    /** Cancel an in-progress SOS (sends cancel to backend if alert exists) */
     cancelSOS: () => void;
     /** Dismiss the success screen */
     dismissSuccess: () => void;
@@ -42,6 +44,7 @@ export const SOSContext = createContext<SOSContextValue>({
     countdown: 3,
     position: { side: "right", y: 50 },
     preAlertSent: false,
+    activeAlertId: null,
     startCountdown: () => { },
     cancelSOS: () => { },
     dismissSuccess: () => { },

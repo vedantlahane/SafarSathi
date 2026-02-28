@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Radio, AlertTriangle, Info, Send, Users } from "lucide-react";
+import { Radio, AlertTriangle, Info, Send, Users, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -44,9 +44,10 @@ export function BroadcastDialog({
     }
   };
 
-  const typeInfo = {
+  const typeInfo: Record<BroadcastType, { label: string; desc: string; icon: typeof Users }> = {
     all: { label: "All Tourists", desc: "Send to everyone", icon: Users },
     zone: { label: "Zone-based", desc: "Send to tourists in specific zones", icon: Radio },
+    district: { label: "District-based", desc: "Send to tourists in a specific district", icon: MapPin },
     emergency: { label: "Emergency Alert", desc: "High priority broadcast", icon: AlertTriangle },
   };
 

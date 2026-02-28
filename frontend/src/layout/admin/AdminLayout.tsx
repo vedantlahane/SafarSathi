@@ -9,6 +9,9 @@ import {
   Search,
   ChevronDown,
   Shield,
+  Hospital,
+  FileWarning,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +33,9 @@ const NAV_ITEMS = [
   { id: "tourists", label: "Tourists", icon: Users },
   { id: "zones", label: "Risk Zones", icon: Map },
   { id: "police", label: "Police Units", icon: Building2 },
+  { id: "hospitals", label: "Hospitals", icon: Hospital },
+  { id: "advisories", label: "Advisories", icon: FileWarning },
+  { id: "auditlog", label: "Audit Log", icon: ScrollText },
 ];
 
 export default function AdminLayout() {

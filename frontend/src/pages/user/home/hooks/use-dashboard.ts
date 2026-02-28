@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
-  connectAlertsSocket,
+  connectWebSocket,
   fetchTouristDashboard,
   type TouristAlert,
+  type WSAlertPayload,
+  type WSBroadcastPayload,
+  type WSAdvisoryPayload,
+  type WSScoreUpdatePayload,
 } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback, formatRelativeTime } from "@/lib/store";
@@ -19,6 +23,8 @@ const EMPTY_DATA: DashboardData = {
   factors: [],
   alerts: [],
   openAlerts: 0,
+  broadcasts: [],
+  advisories: [],
 };
 
 /** Derive safety status from numeric score */
@@ -54,11 +60,11 @@ export function useDashboard() {
       const score = d.safetyScore ?? 100;
       setSafetyScore(score);
 
-      setData({
+      setData((prev) => ({
+        ...prev,
         safetyScore: score,
         status: deriveStatus(score),
         recommendation: deriveRecommendation(score),
-        // factors: d.factors ?? [],
         factors: [],
         alerts: d.alerts.map((a: TouristAlert): AlertView => ({
           id: a.id,
@@ -68,7 +74,7 @@ export function useDashboard() {
           priority: a.priority as AlertView["priority"],
         })),
         openAlerts: d.openAlerts ?? 0,
-      });
+      }));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dashboard";
@@ -89,44 +95,101 @@ export function useDashboard() {
     return () => clearInterval(id);
   }, [hasSession, loadDashboard]);
 
-  // WebSocket real-time alerts
+  // WebSocket real-time events (room-based)
   useEffect(() => {
-    if (!hasSession) return;
+    if (!hasSession || !session?.touristId) return;
 
-    const socket = connectAlertsSocket((payload) => {
-      hapticFeedback("medium");
-      const p = payload as {
-        id?: number;
-        alertType?: string;
-        message?: string;
-        createdTime?: string;
-        priority?: string;
-      };
+    const room = `tourist:${session.touristId}`;
 
-      setData((prev) => ({
-        ...prev,
-        alerts: [
-          {
-            id: p.id ?? Date.now(),
-            type: p.alertType ?? "ALERT",
-            message: p.message ?? "New alert received",
-            time: formatRelativeTime(
-              p.createdTime ?? new Date().toISOString()
-            ),
-            priority: (p.priority as AlertView["priority"]) ?? "high",
-          },
-          ...prev.alerts,
-        ].slice(0, 20),
-        openAlerts: prev.openAlerts + 1,
-      }));
+    const socket = connectWebSocket(room, {
+      onAlert: (payload: WSAlertPayload) => {
+        hapticFeedback("medium");
+        setData((prev) => ({
+          ...prev,
+          alerts: [
+            {
+              id: payload.alertId ?? Date.now(),
+              type: payload.alertType ?? "ALERT",
+              message: payload.message ?? "New alert received",
+              time: formatRelativeTime(
+                payload.createdTime ?? new Date().toISOString()
+              ),
+              priority: (payload.priority as AlertView["priority"]) ?? "high",
+            },
+            ...prev.alerts,
+          ].slice(0, 20),
+          openAlerts: prev.openAlerts + 1,
+        }));
 
-      toast.warning(p.alertType ?? "New Alert", {
-        description: p.message ?? "Check your alerts",
-      });
+        toast.warning(payload.alertType ?? "New Alert", {
+          description: payload.message ?? "Check your alerts",
+        });
+      },
+
+      onBroadcast: (payload: WSBroadcastPayload) => {
+        hapticFeedback("medium");
+        setData((prev) => ({
+          ...prev,
+          broadcasts: [
+            {
+              title: payload.title,
+              message: payload.message,
+              priority: payload.priority,
+              sentAt: payload.sentAt,
+            },
+            ...(prev.broadcasts ?? []),
+          ].slice(0, 10),
+        }));
+        toast.info(payload.title, {
+          description: payload.message,
+          duration: 8000,
+        });
+      },
+
+      onAdvisory: (payload: WSAdvisoryPayload) => {
+        hapticFeedback("light");
+        setData((prev) => ({
+          ...prev,
+          advisories: [
+            {
+              id: payload.id,
+              title: payload.title,
+              description: payload.description,
+              severity: payload.severity,
+              region: payload.region,
+              issuedAt: payload.issuedAt,
+              expiresAt: payload.expiresAt,
+            },
+            ...(prev.advisories ?? []),
+          ].slice(0, 10),
+        }));
+        toast.info(`Advisory: ${payload.title}`, {
+          description: payload.description,
+          duration: 10_000,
+        });
+      },
+
+      onScoreUpdate: (payload: WSScoreUpdatePayload) => {
+        const newScore = payload.safetyScore;
+        setSafetyScore(newScore);
+        setData((prev) => ({
+          ...prev,
+          safetyScore: newScore,
+          status: deriveStatus(newScore),
+          recommendation: deriveRecommendation(newScore),
+        }));
+
+        if (payload.previousScore && newScore < payload.previousScore - 10) {
+          hapticFeedback("heavy");
+          toast.warning("Safety score dropped", {
+            description: payload.reason ?? `${payload.previousScore} → ${newScore}`,
+          });
+        }
+      },
     });
 
     return () => socket.close();
-  }, [hasSession]);
+  }, [hasSession, session?.touristId, setSafetyScore]);
 
   const refresh = useCallback(async () => {
     hapticFeedback("light");
