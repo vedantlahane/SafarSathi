@@ -85,7 +85,7 @@ export async function login(req: Request, res: Response) {
 
 export async function profile(req: Request, res: Response) {
   const touristId = normalizeParam(req.params.touristId);
-  if (!touristId || !isValidUuid(touristId)) {
+  if (!touristId || !isValidIdFormat(touristId)) {
     return res.status(400).json({ message: "Invalid tourist ID format." });
   }
   const profileData = await getProfile(touristId);
@@ -97,7 +97,7 @@ export async function profile(req: Request, res: Response) {
 
 export async function updateProfileDetails(req: Request, res: Response) {
   const touristId = normalizeParam(req.params.touristId);
-  if (!touristId || !isValidUuid(touristId)) {
+  if (!touristId || !isValidIdFormat(touristId)) {
     return res.status(400).json({ message: "Invalid tourist ID format." });
   }
   try {
@@ -332,8 +332,8 @@ function normalizeEmergencyContact(value?: { name?: string; phone?: string } | s
   return value;
 }
 
-function isValidUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value
-  );
+function isValidIdFormat(value: string) {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(value);
+  return isUuid || isObjectId;
 }

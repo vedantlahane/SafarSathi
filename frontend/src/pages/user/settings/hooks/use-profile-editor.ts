@@ -54,11 +54,11 @@ export function useProfileEditor(options: ProfileEditorOptions) {
       setLoading(true);
       try {
         const payload = {
-          ...(profileName && { name: profileName }),
-          ...(profilePhone && { phone: profilePhone }),
-          ...(profileAddress && { address: profileAddress }),
-          ...(profileNationality && { nationality: profileNationality }),
-          ...(profileGender && { gender: profileGender }),
+          name: profileName,
+          phone: profilePhone,
+          address: profileAddress,
+          nationality: profileNationality,
+          gender: profileGender,
         };
         const updated = await updateTouristProfile(touristId, payload);
         setProfile(updated);
