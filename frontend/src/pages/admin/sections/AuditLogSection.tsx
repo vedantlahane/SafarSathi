@@ -97,12 +97,12 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-slate-100/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl glass-card flex items-center justify-center ring-1 ring-white/40">
             <ScrollText className="h-5 w-5 text-slate-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Audit Log</h2>
-            <p className="text-xs text-muted-foreground">{displayTotal} total entries</p>
+            <h2 className="text-lg font-semibold text-slate-900">Audit Log</h2>
+            <p className="text-xs text-slate-500">{displayTotal} total entries</p>
           </div>
         </div>
         <Button
@@ -133,7 +133,7 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3">
+      <div className="glass-thin rounded-2xl p-4 border border-white/40 flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -142,11 +142,11 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search by performer..."
-              className="pl-10"
+              className="pl-10 bg-white/50 border-white/40 rounded-xl focus:bg-white/70"
             />
           </div>
           <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-36 bg-white/50 border-white/40 rounded-xl">
               <SelectValue placeholder="Action" />
             </SelectTrigger>
             <SelectContent>
@@ -160,7 +160,7 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
             </SelectContent>
           </Select>
           <Select value={entityFilter} onValueChange={setEntityFilter}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-36 bg-white/50 border-white/40 rounded-xl">
               <SelectValue placeholder="Entity" />
             </SelectTrigger>
             <SelectContent>
@@ -173,11 +173,11 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
               <SelectItem value="PoliceDepartment">Police</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={handleSearch} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={handleSearch} disabled={loading} className="bg-white/50 border-white/40 rounded-xl hover:bg-white/70">
             <Filter className="h-4 w-4 mr-1" />
             Apply
           </Button>
-          <Button variant="outline" size="sm" onClick={() => fetchPage(page)} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={() => fetchPage(page)} disabled={loading} className="bg-white/50 border-white/40 rounded-xl hover:bg-white/70">
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>

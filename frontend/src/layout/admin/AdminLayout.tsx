@@ -58,7 +58,14 @@ export default function AdminLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100/80 via-white to-slate-50/80">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/20 relative overflow-hidden">
+      {/* iOS Glass Background Blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-200/25 rounded-full blur-3xl animate-[mesh-drift-1_60s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-violet-200/20 rounded-full blur-3xl animate-[mesh-drift-2_55s_ease-in-out_infinite]" />
+        <div className="absolute top-[40%] right-[20%] w-[30%] h-[30%] bg-emerald-200/15 rounded-full blur-3xl animate-[mesh-drift-3_65s_ease-in-out_infinite]" />
+        <div className="absolute top-[60%] left-[30%] w-[25%] h-[25%] bg-sky-200/20 rounded-full blur-3xl animate-[mesh-drift-4_50s_ease-in-out_infinite]" />
+      </div>
       {/* Top Navigation — iOS-style frosted glass */}
       <header className="sticky top-0 z-50 glass-bar border-b border-white/30">
         <div className="h-14 px-5 flex items-center justify-between">
