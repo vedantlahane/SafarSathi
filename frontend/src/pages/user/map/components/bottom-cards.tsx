@@ -12,6 +12,8 @@ import {
   Loader2,
   CheckCircle,
   AlertTriangle,
+  Ambulance,
+  BedDouble,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
@@ -182,22 +184,37 @@ function NearestHospitalBarInner({ hospital }: NearestHospitalBarProps) {
             <Cross className="h-4 w-4 text-rose-600" />
           </div>
           <div className="flex-1 min-w-0">
-            // src/pages/user/map/components/bottom-cards.tsx (continued)
             <p className="text-[10px] text-muted-foreground">
               Nearest Hospital
             </p>
             <p className="text-xs font-medium truncate">{hospital.name}</p>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               {hospital.eta && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                   <Clock className="h-3 w-3" />
                   {hospital.eta}
                 </span>
               )}
               {hospital.distance !== undefined && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                   <MapPin className="h-3 w-3" />
                   {formatDistance(hospital.distance)}
+                </span>
+              )}
+              {hospital.tier && (
+                <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
+                  {hospital.tier}
+                </Badge>
+              )}
+              {hospital.availableBeds !== undefined && hospital.bedCapacity !== undefined && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                  <BedDouble className="h-3 w-3" />
+                  {hospital.availableBeds}/{hospital.bedCapacity}
+                </span>
+              )}
+              {hospital.ambulanceAvailable && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                  <Ambulance className="h-3 w-3" />
                 </span>
               )}
             </div>

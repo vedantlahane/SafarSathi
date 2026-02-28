@@ -8,6 +8,8 @@ import { SafetyScoreHero } from "./components/safety-score-hero";
 import { QuickActions } from "./components/quick-actions";
 import { EmergencyStrip } from "./components/emergency-strip";
 import { AlertList } from "./components/alert-list";
+import { BroadcastList } from "./components/broadcast-list";
+import { AdvisoryList } from "./components/advisory-list";
 import { DailyTip } from "./components/daily-tip";
 import { OfflineBanner } from "./components/offline-banner";
 
@@ -44,6 +46,8 @@ export default function Home() {
         />
         <QuickActions locationShare={locationShare} hasSession={hasSession} />
         <EmergencyStrip />
+        <BroadcastList broadcasts={data.broadcasts} />
+        <AdvisoryList advisories={data.advisories} />
         <AlertList alerts={data.alerts} loading={loading} hasSession={hasSession} />
         <DailyTip />
       </div>
