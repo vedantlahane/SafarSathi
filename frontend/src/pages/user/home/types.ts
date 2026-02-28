@@ -25,6 +25,23 @@ export interface NotificationView {
   sourceTab: "home" | "map" | "identity" | "settings";
 }
 
+export interface BroadcastView {
+  title: string;
+  message: string;
+  priority: string;
+  sentAt: string;
+}
+
+export interface AdvisoryView {
+  id: string;
+  title: string;
+  description: string;
+  severity: string;
+  region: string;
+  issuedAt: string;
+  expiresAt?: string;
+}
+
 export interface DashboardData {
   safetyScore: number;
   status: SafetyStatus;
@@ -32,6 +49,8 @@ export interface DashboardData {
   factors: SafetyFactor[];
   alerts: AlertView[];
   openAlerts: number;
+  broadcasts: BroadcastView[];
+  advisories: AdvisoryView[];
 }
 
 export interface LocationShareState {

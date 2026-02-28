@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Radio, AlertTriangle, Info, Send, Users } from "lucide-react";
+import { Radio, AlertTriangle, Info, Send, Users, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,16 +37,19 @@ export function BroadcastDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
-      onSend(type, message);
-      setMessage("");
-      onOpenChange(false);
+    if (!message.trim()) return;
+    if (type === "emergency" && !confirm("This will trigger emergency push notifications and SMS to all recipients. Continue?")) {
+      return;
     }
+    onSend(type, message);
+    setMessage("");
+    onOpenChange(false);
   };
 
-  const typeInfo = {
+  const typeInfo: Record<BroadcastType, { label: string; desc: string; icon: typeof Users }> = {
     all: { label: "All Tourists", desc: "Send to everyone", icon: Users },
     zone: { label: "Zone-based", desc: "Send to tourists in specific zones", icon: Radio },
+    district: { label: "District-based", desc: "Send to tourists in a specific district", icon: MapPin },
     emergency: { label: "Emergency Alert", desc: "High priority broadcast", icon: AlertTriangle },
   };
 
@@ -89,9 +92,10 @@ export function BroadcastDialog({
             <textarea
               id="broadcastMessage"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => setMessage(e.target.value.slice(0, 500))}
               placeholder="Enter your broadcast message..."
               className="w-full min-h-[120px] px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              maxLength={500}
               required
             />
             <p className="text-xs text-slate-500 text-right">{message.length}/500</p>

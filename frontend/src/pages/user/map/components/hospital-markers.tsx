@@ -69,16 +69,18 @@ function HospitalMarkersInner({ hospitals }: HospitalMarkersProps) {
                 )}
               </div>
               <div className="flex gap-2">
-                <a href={`tel:${h.contact}`} className="flex-1">
-                  <Button
-                    size="sm"
-                    className="w-full h-8 text-xs gap-1"
-                    aria-label={`Call ${h.name}`}
-                  >
-                    <Phone className="h-3 w-3" />
-                    Call
-                  </Button>
-                </a>
+                {h.contact ? (
+                  <a href={`tel:${h.contact}`} className="flex-1">
+                    <Button
+                      size="sm"
+                      className="w-full h-8 text-xs gap-1"
+                      aria-label={`Call ${h.name}`}
+                    >
+                      <Phone className="h-3 w-3" />
+                      Call
+                    </Button>
+                  </a>
+                ) : null}
                 <Button
                   size="sm"
                   variant="outline"

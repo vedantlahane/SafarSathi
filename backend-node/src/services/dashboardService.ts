@@ -1,4 +1,5 @@
 import { getRecentLogs } from "./BlockchainService.js";
+import { listCurrentAdvisories } from "./advisoryService.js";
 import {
   getAllTourists,
   getTouristById,
@@ -39,11 +40,26 @@ export async function getAdminDashboardState() {
     .map((tourist) => toTouristSummary(tourist, alertsByTourist.get(tourist._id) ?? []))
     .sort((a, b) => (b.lastPing ?? "").localeCompare(a.lastPing ?? ""));
 
+  const activeAlertViews = alertViews.filter((a) => isAlertActive(a.status));
+  const criticalAlerts = activeAlertViews.filter((a) => a.priority === "critical");
+  const activeTourists = allTourists.filter((t) => t.isActive !== false);
+
+  // Compute average response time from resolved alerts with responseTimeMs
+  const resolvedAlerts = allAlerts.filter(
+    (a) => (a.status === "RESOLVED" || a.status === "DISMISSED") && (a as any).responseTimeMs
+  );
+  const avgResponseTimeMs =
+    resolvedAlerts.length > 0
+      ? resolvedAlerts.reduce((sum, a) => sum + ((a as any).responseTimeMs ?? 0), 0) / resolvedAlerts.length
+      : 0;
+
   const stats = {
-    criticalAlerts: alertViews.filter((alert) => alert.priority === "critical" && isAlertActive(alert.status)).length,
-    activeAlerts: alertViews.filter((alert) => isAlertActive(alert.status)).length,
-    monitoredTourists: touristSummaries.filter((summary) => summary.status !== "safe").length,
-    totalTourists: touristSummaries.length
+    criticalAlerts: criticalAlerts.length,
+    activeAlerts: activeAlertViews.length,
+    monitoredTourists: touristSummaries.filter((s) => s.status !== "safe").length,
+    totalTourists: touristSummaries.length,
+    activeTouristCount: activeTourists.length,
+    avgResponseTimeMs: Math.round(avgResponseTimeMs),
   };
 
   const responseUnits = allPoliceDepartments.map((dept) => toResponseUnit(dept));
@@ -52,7 +68,7 @@ export async function getAdminDashboardState() {
     stats,
     alerts: alertViews,
     tourists: touristSummaries,
-    responseUnits
+    responseUnits,
   };
 }
 

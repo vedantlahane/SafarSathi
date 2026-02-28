@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { LoginScreen } from "./components";
 import {
@@ -7,6 +7,9 @@ import {
   TouristsSection,
   ZonesSection,
   PoliceSection,
+  HospitalsSection,
+  AdvisoriesSection,
+  AuditLogSection,
 } from "./sections";
 import {
   ZoneDialog,
@@ -23,12 +26,17 @@ import {
   useAlertActions,
   useZoneActions,
   usePoliceActions,
+  useHospitalActions,
+  useAdvisoryActions,
+  useBroadcastAction,
 } from "./hooks";
 import type {
   Alert,
   Tourist,
   RiskZone,
   PoliceDepartment,
+  HospitalAdmin,
+  TravelAdvisoryAdmin,
   ZoneFormData,
   PoliceFormData,
   BroadcastType,
@@ -41,9 +49,24 @@ import { adminLogin } from "../../lib/api/admin";
 interface AdminIndexProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  globalSearch?: string;
+  onAlertCountUpdate?: (count: number) => void;
+  settingsOpen?: boolean;
+  onSettingsOpenChange?: (open: boolean) => void;
+  reportsOpen?: boolean;
+  onReportsOpenChange?: (open: boolean) => void;
 }
 
-export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
+export function AdminPanel({
+  activeTab,
+  onTabChange,
+  globalSearch = "",
+  onAlertCountUpdate,
+  settingsOpen: externalSettingsOpen,
+  onSettingsOpenChange,
+  reportsOpen: externalReportsOpen,
+  onReportsOpenChange,
+}: AdminIndexProps) {
   // Auth state
   const session = useAdminSession();
   const isAuthenticated = !!session?.token;
@@ -54,6 +77,9 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const alertActions = useAlertActions(refresh);
   const zoneActions = useZoneActions(refresh);
   const policeActions = usePoliceActions(refresh);
+  const hospitalActions = useHospitalActions(refresh);
+  const advisoryActions = useAdvisoryActions(refresh);
+  const { broadcast: sendBroadcastApi } = useBroadcastAction();
 
   // Dialog states
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
@@ -61,9 +87,21 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const [alertDetailOpen, setAlertDetailOpen] = useState(false);
   const [touristDetailOpen, setTouristDetailOpen] = useState(false);
   const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false); // Unused but keeping for future
-  const [reportsDialogOpen, setReportsDialogOpen] = useState(false); // Unused but keeping for future
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  // Use external settings/reports state from layout, or internal fallback
+  const settingsDialogOpen = externalSettingsOpen ?? false;
+  const setSettingsDialogOpen = onSettingsOpenChange ?? (() => {});
+  const reportsDialogOpen = externalReportsOpen ?? false;
+  const setReportsDialogOpen = onReportsOpenChange ?? (() => {});
+
+  // Push active alert count up to layout for the badge
+  useEffect(() => {
+    if (data.alerts && onAlertCountUpdate) {
+      const activeCount = data.alerts.filter((a) => a.status === "ACTIVE").length;
+      onAlertCountUpdate(activeCount);
+    }
+  }, [data.alerts, onAlertCountUpdate]);
 
   // Selected items
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -129,15 +167,20 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   }, []);
 
   const handleContactTourist = useCallback((tourist: Tourist) => {
-    toast.info(`Contacting ${tourist.name}...`);
-    // Implement contact logic (e.g. open mailto or tel)
-    window.location.href = `tel:${tourist.phoneNumber}`;
+    if (tourist.phoneNumber) {
+      window.open(`tel:${tourist.phoneNumber}`, "_blank");
+      toast.info(`Calling ${tourist.name}...`);
+    } else if (tourist.email) {
+      window.open(`mailto:${tourist.email}`, "_blank");
+      toast.info(`Emailing ${tourist.name}...`);
+    } else {
+      toast.error("No contact information available");
+    }
   }, []);
 
   const handleTrackTourist = useCallback((tourist: Tourist) => {
     onTabChange("zones");
-    toast.info(`Tracking ${tourist.name} on map`);
-    // Logic to focus map on tourist would go here
+    toast.info(`Switched to map — tracking ${tourist.name}`);
   }, [onTabChange]);
 
   // Zone handlers
@@ -176,10 +219,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (isAddingZone) {
       setNewZonePosition({ lat, lng });
-      setZoneDialogOpen(true); // Open dialog immediately after picking point? Or just set point? 
-      // Based on UI flow, usually selecting point then filling form.
-      // Let's open dialog if they click while adding.
-      // Actually usually user clicks "Add Zone", then clicks map.
+      setZoneDialogOpen(true);
     }
   }, [isAddingZone]);
 
@@ -212,8 +252,12 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   }, []);
 
   const handleContactPolice = useCallback((police: PoliceDepartment) => {
-    toast.info(`Dispatching to ${police.name}...`);
-    window.location.href = `tel:${police.contactNumber}`;
+    if (police.contactNumber) {
+      window.open(`tel:${police.contactNumber}`, "_blank");
+      toast.info(`Calling ${police.name}...`);
+    } else {
+      toast.error("No contact number available");
+    }
   }, []);
 
   const handleSavePolice = useCallback(async (formData: PoliceFormData) => {
@@ -238,6 +282,12 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
       } else if (deleteConfirmation.type === "police") {
         await policeActions.delete(deleteConfirmation.id);
         toast.success("Station deleted");
+      } else if (deleteConfirmation.type === "hospital") {
+        await hospitalActions.delete(deleteConfirmation.id);
+        toast.success("Hospital deleted");
+      } else if (deleteConfirmation.type === "advisory") {
+        await advisoryActions.delete(deleteConfirmation.id);
+        toast.success("Advisory deleted");
       }
     } catch (err) {
       toast.error("Delete failed");
@@ -245,14 +295,23 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
 
     setDeleteConfirmation(null);
     setConfirmDeleteOpen(false);
-  }, [deleteConfirmation, zoneActions, policeActions]);
+  }, [deleteConfirmation, zoneActions, policeActions, hospitalActions, advisoryActions]);
 
-  // Broadcast handler
+  // Broadcast handler — real API call
   const handleBroadcast = useCallback(async (type: BroadcastType, message: string) => {
-    toast.success(`Broadcast sent to ${type === "all" ? "all tourists" : type}: ${message}`);
-    // Implement actual broadcast logic if API supports it
+    const result = await sendBroadcastApi({
+      title: "Admin Broadcast",
+      message,
+      target: type === "emergency" ? "all" : (type as "all" | "zone" | "district"),
+      priority: type === "emergency" ? "critical" : "medium",
+    });
+    if (result) {
+      toast.success(`Broadcast sent to ${result.recipientCount} recipients`);
+    } else {
+      toast.error("Failed to send broadcast");
+    }
     setBroadcastDialogOpen(false);
-  }, []);
+  }, [sendBroadcastApi]);
 
   // Render login screen if not authenticated
   if (!isAuthenticated) {
@@ -282,6 +341,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
             onBulkResolve={handleBulkResolve}
             onViewAlert={handleViewAlert}
             onRefresh={refresh}
+            globalSearch={globalSearch}
           />
         );
       case "tourists":
@@ -294,6 +354,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
             onTrackTourist={handleTrackTourist}
             onBroadcast={() => setBroadcastDialogOpen(true)}
             onRefresh={refresh}
+            globalSearch={globalSearch}
           />
         );
       case "zones":
@@ -329,11 +390,43 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
             onRefresh={refresh}
           />
         );
+      case "hospitals":
+        return (
+          <HospitalsSection
+            hospitals={data.hospitals}
+            isLoading={isLoading}
+            onSave={hospitalActions.save}
+            onDelete={(hospital: HospitalAdmin) => {
+              setDeleteConfirmation({ type: "hospital", id: hospital.id, name: hospital.name });
+              setConfirmDeleteOpen(true);
+            }}
+            onRefresh={refresh}
+          />
+        );
+      case "advisories":
+        return (
+          <AdvisoriesSection
+            advisories={data.advisories}
+            isLoading={isLoading}
+            onSave={advisoryActions.save}
+            onDelete={(advisory: TravelAdvisoryAdmin) => {
+              setDeleteConfirmation({ type: "advisory", id: advisory.id, name: advisory.title });
+              setConfirmDeleteOpen(true);
+            }}
+            onRefresh={refresh}
+          />
+        );
+      case "auditlog":
+        return (
+          <AuditLogSection
+            initialLogs={data.auditLogs}
+            initialTotal={data.auditLogTotal}
+          />
+        );
       default:
         return (
           <DashboardSection
             data={data}
-
             onNavigate={onTabChange}
             onAlertClick={handleViewAlert}
             onZoneClick={handleEditZone}
@@ -344,7 +437,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-100">
+    <div className="h-full flex flex-col">
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {renderSection()}
