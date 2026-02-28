@@ -21,16 +21,16 @@ export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelecte
   const riskLevel = tourist.riskScore > 70 ? "high" : tourist.riskScore > 40 ? "medium" : "low";
 
   return (
-    <tr className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
-      <td className="py-3 px-4">
+    <div className={`grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 items-center border-b border-slate-100 hover:bg-slate-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+      <div className="py-3 px-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={() => onSelect(tourist.id)}
           className="rounded border-slate-300"
         />
-      </td>
-      <td className="py-3 px-4">
+      </div>
+      <div className="py-3 px-4">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-medium">
@@ -43,20 +43,20 @@ export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelecte
             <p className="text-xs text-slate-500">{tourist.email}</p>
           </div>
         </div>
-      </td>
-      <td className="py-3 px-4">
+      </div>
+      <div className="py-3 px-4">
         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${tourist.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
           <Circle className={`h-1.5 w-1.5 fill-current ${tourist.isActive ? "text-emerald-500" : "text-slate-400"}`} />
           {tourist.isActive ? "Online" : "Offline"}
         </span>
-      </td>
-      <td className="py-3 px-4">
+      </div>
+      <div className="py-3 px-4">
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${riskColors[riskLevel]}`}>
           {tourist.riskScore}
         </span>
-      </td>
-      <td className="py-3 px-4 text-sm text-slate-500">{tourist.phoneNumber || "—"}</td>
-      <td className="py-3 px-4">
+      </div>
+      <div className="py-3 px-4 text-sm text-slate-500">{tourist.phoneNumber || "—"}</div>
+      <div className="py-3 px-4">
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(tourist)}>
             <Eye className="h-3.5 w-3.5" />
@@ -68,7 +68,7 @@ export function TouristTableRow({ tourist, onView, onContact, onTrack, isSelecte
             <MessageSquare className="h-3.5 w-3.5" />
           </Button>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }
