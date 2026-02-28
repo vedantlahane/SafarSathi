@@ -14,6 +14,7 @@ interface TouristsSectionProps {
   onTrackTourist: (tourist: Tourist) => void;
   onBroadcast: () => void;
   onRefresh: () => void;
+  globalSearch?: string;
 }
 
 const filterOptions = [
@@ -33,17 +34,22 @@ export function TouristsSection({
   onTrackTourist,
   onBroadcast,
   onRefresh,
+  globalSearch = "",
 }: TouristsSectionProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<TouristFilter>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
+
+  const effectiveSearch = search || globalSearch;
 
   const filteredTourists = useMemo(() => {
     return tourists.filter((tourist) => {
-      const matchesSearch = !search ||
-        tourist.name?.toLowerCase().includes(search.toLowerCase()) ||
-        tourist.email?.toLowerCase().includes(search.toLowerCase()) ||
-        tourist.phoneNumber?.includes(search);
+      const matchesSearch = !effectiveSearch ||
+        tourist.name?.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+        tourist.email?.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+        tourist.phoneNumber?.includes(effectiveSearch);
 
       let matchesFilter = true;
       if (filter === "online") matchesFilter = tourist.isActive === true;
@@ -54,7 +60,15 @@ export function TouristsSection({
 
       return matchesSearch && matchesFilter;
     });
-  }, [tourists, search, filter]);
+  }, [tourists, effectiveSearch, filter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTourists.length / pageSize));
+  const paginatedTourists = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredTourists.slice(start, start + pageSize);
+  }, [filteredTourists, currentPage]);
+
+  useMemo(() => { setCurrentPage(1); }, [effectiveSearch, filter]);
 
   const handleSelectAll = () => {
     if (selectedIds.size === filteredTourists.length) {
@@ -76,6 +90,25 @@ export function TouristsSection({
 
   const onlineCount = tourists.filter((t) => t.isActive).length;
   const highRiskCount = tourists.filter((t) => t.riskLevel === "high").length;
+
+  const handleExport = () => {
+    const headers = ["Name", "Email", "Phone", "Status", "Risk Level"];
+    const rows = filteredTourists.map(t => [
+      t.name || "Unknown",
+      t.email || "",
+      t.phoneNumber || "",
+      t.isActive ? "Online" : "Offline",
+      t.riskLevel || "low",
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tourists-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -115,14 +148,14 @@ export function TouristsSection({
         onRefresh={onRefresh}
         isRefreshing={isLoading}
         showExport={true}
-        onExport={() => console.log("Export tourists")}
+        onExport={handleExport}
       />
 
       {/* Tourist Table */}
       <div className="flex-1 overflow-hidden">
         <Card className="h-full m-4 flex flex-col bg-white/70 backdrop-blur-sm border-white/60">
           {/* Table Header */}
-          <div className="grid grid-cols-[40px_1fr_120px_100px_140px_120px_100px] gap-4 px-4 py-3 bg-white/50 backdrop-blur-sm border-b border-slate-200/60 text-sm font-medium text-slate-600">
+          <div className="grid grid-cols-[40px_1fr_100px_80px_120px_100px_100px] gap-3 px-4 py-3 bg-white/50 backdrop-blur-sm border-b border-slate-200/60 text-sm font-medium text-slate-600">
             <div>
               <input
                 type="checkbox"
@@ -141,9 +174,9 @@ export function TouristsSection({
 
           {/* Table Body */}
           <ScrollArea className="flex-1">
-            {filteredTourists.length > 0 ? (
+            {paginatedTourists.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {filteredTourists.map((tourist) => (
+                {paginatedTourists.map((tourist) => (
                   <TouristTableRow
                     key={tourist.id}
                     tourist={tourist}
@@ -168,9 +201,34 @@ export function TouristsSection({
             )}
           </ScrollArea>
 
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm text-sm text-slate-500">
-            Showing {filteredTourists.length} of {tourists.length} tourists
+          {/* Footer with Pagination */}
+          <div className="px-4 py-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm flex items-center justify-between">
+            <span className="text-sm text-slate-500">
+              Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredTourists.length)} of {filteredTourists.length} tourists
+            </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-slate-600 px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>

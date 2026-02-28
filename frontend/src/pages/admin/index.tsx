@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { LoginScreen } from "./components";
 import {
@@ -49,9 +49,24 @@ import { adminLogin } from "../../lib/api/admin";
 interface AdminIndexProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  globalSearch?: string;
+  onAlertCountUpdate?: (count: number) => void;
+  settingsOpen?: boolean;
+  onSettingsOpenChange?: (open: boolean) => void;
+  reportsOpen?: boolean;
+  onReportsOpenChange?: (open: boolean) => void;
 }
 
-export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
+export function AdminPanel({
+  activeTab,
+  onTabChange,
+  globalSearch = "",
+  onAlertCountUpdate,
+  settingsOpen: externalSettingsOpen,
+  onSettingsOpenChange,
+  reportsOpen: externalReportsOpen,
+  onReportsOpenChange,
+}: AdminIndexProps) {
   // Auth state
   const session = useAdminSession();
   const isAuthenticated = !!session?.token;
@@ -72,9 +87,21 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const [alertDetailOpen, setAlertDetailOpen] = useState(false);
   const [touristDetailOpen, setTouristDetailOpen] = useState(false);
   const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [reportsDialogOpen, setReportsDialogOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  // Use external settings/reports state from layout, or internal fallback
+  const settingsDialogOpen = externalSettingsOpen ?? false;
+  const setSettingsDialogOpen = onSettingsOpenChange ?? (() => {});
+  const reportsDialogOpen = externalReportsOpen ?? false;
+  const setReportsDialogOpen = onReportsOpenChange ?? (() => {});
+
+  // Push active alert count up to layout for the badge
+  useEffect(() => {
+    if (data.alerts && onAlertCountUpdate) {
+      const activeCount = data.alerts.filter((a) => a.status === "ACTIVE").length;
+      onAlertCountUpdate(activeCount);
+    }
+  }, [data.alerts, onAlertCountUpdate]);
 
   // Selected items
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -140,15 +167,20 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   }, []);
 
   const handleContactTourist = useCallback((tourist: Tourist) => {
-    toast.info(`Contacting ${tourist.name}...`);
-    // Implement contact logic (e.g. open mailto or tel)
-    window.location.href = `tel:${tourist.phoneNumber}`;
+    if (tourist.phoneNumber) {
+      window.open(`tel:${tourist.phoneNumber}`, "_blank");
+      toast.info(`Calling ${tourist.name}...`);
+    } else if (tourist.email) {
+      window.open(`mailto:${tourist.email}`, "_blank");
+      toast.info(`Emailing ${tourist.name}...`);
+    } else {
+      toast.error("No contact information available");
+    }
   }, []);
 
   const handleTrackTourist = useCallback((tourist: Tourist) => {
     onTabChange("zones");
-    toast.info(`Tracking ${tourist.name} on map`);
-    // Logic to focus map on tourist would go here
+    toast.info(`Switched to map — tracking ${tourist.name}`);
   }, [onTabChange]);
 
   // Zone handlers
@@ -187,10 +219,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (isAddingZone) {
       setNewZonePosition({ lat, lng });
-      setZoneDialogOpen(true); // Open dialog immediately after picking point? Or just set point? 
-      // Based on UI flow, usually selecting point then filling form.
-      // Let's open dialog if they click while adding.
-      // Actually usually user clicks "Add Zone", then clicks map.
+      setZoneDialogOpen(true);
     }
   }, [isAddingZone]);
 
@@ -223,8 +252,12 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
   }, []);
 
   const handleContactPolice = useCallback((police: PoliceDepartment) => {
-    toast.info(`Dispatching to ${police.name}...`);
-    window.location.href = `tel:${police.contactNumber}`;
+    if (police.contactNumber) {
+      window.open(`tel:${police.contactNumber}`, "_blank");
+      toast.info(`Calling ${police.name}...`);
+    } else {
+      toast.error("No contact number available");
+    }
   }, []);
 
   const handleSavePolice = useCallback(async (formData: PoliceFormData) => {
@@ -308,6 +341,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
             onBulkResolve={handleBulkResolve}
             onViewAlert={handleViewAlert}
             onRefresh={refresh}
+            globalSearch={globalSearch}
           />
         );
       case "tourists":
@@ -320,6 +354,7 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
             onTrackTourist={handleTrackTourist}
             onBroadcast={() => setBroadcastDialogOpen(true)}
             onRefresh={refresh}
+            globalSearch={globalSearch}
           />
         );
       case "zones":
@@ -392,7 +427,6 @@ export function AdminPanel({ activeTab, onTabChange }: AdminIndexProps) {
         return (
           <DashboardSection
             data={data}
-
             onNavigate={onTabChange}
             onAlertClick={handleViewAlert}
             onZoneClick={handleEditZone}

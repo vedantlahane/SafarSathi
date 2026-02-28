@@ -103,6 +103,7 @@ export function ActionBar({
             onClick={onRefresh}
             disabled={isRefreshing}
             className="border-slate-200"
+            aria-label="Refresh data"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>

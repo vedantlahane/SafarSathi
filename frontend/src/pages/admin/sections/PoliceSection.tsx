@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Shield, Plus, Phone } from "lucide-react";
+import { Shield, Plus, Phone, Download } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,6 +59,23 @@ export function PoliceSection({
   const activeCount = police.filter((p) => p.isActive).length;
   const totalStations = police.length;
 
+  const handleExport = () => {
+    const headers = ["Name", "Code", "City", "Status", "Phone", "Latitude", "Longitude"];
+    const rows = filteredPolice.map(s => [
+      s.name, s.departmentCode, s.city,
+      s.isActive ? "On Duty" : "Off Duty",
+      s.phone || "", String(s.location?.lat || ""), String(s.location?.lng || ""),
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `police-stations-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -95,6 +112,8 @@ export function PoliceSection({
         showAdd={true}
         addLabel="Add Station"
         onAdd={onAddPolice}
+        showExport={true}
+        onExport={handleExport}
       />
 
       {/* Main Content */}
@@ -153,18 +172,24 @@ export function PoliceSection({
           </ScrollArea>
 
           {/* Quick Actions */}
-          <div className="p-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm">
+          <div className="p-3 border-t border-slate-200/60 bg-white/40 backdrop-blur-sm space-y-2">
             <Button
               variant="outline"
               className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+              disabled={filteredPolice.filter(p => p.isActive).length === 0}
               onClick={() => {
-                if (filteredPolice.length > 0) {
-                  onContactPolice(filteredPolice[0]);
+                const activeStations = filteredPolice.filter(p => p.isActive);
+                if (activeStations.length === 0) return;
+                const nearest = activeStations[0];
+                if (confirm(`Dispatch to ${nearest.name} (${nearest.city})?`)) {
+                  onContactPolice(nearest);
                 }
               }}
             >
               <Phone className="w-4 h-4 mr-1.5" />
-              Quick Dispatch
+              Quick Dispatch {filteredPolice.filter(p => p.isActive).length > 0
+                ? `— ${filteredPolice.filter(p => p.isActive)[0].name}`
+                : "(No active stations)"}
             </Button>
           </div>
         </Card>

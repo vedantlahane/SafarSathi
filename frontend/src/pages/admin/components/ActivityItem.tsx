@@ -38,12 +38,20 @@ export function ActivityItem({
   onClick,
 }: ActivityItemProps) {
   const color = severityColors[severity] || severityColors.info;
-  const timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  let timeAgo: string;
+  try {
+    timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  } catch {
+    timeAgo = "unknown";
+  }
 
   return (
     <div
-      className={`flex items-start gap-3 p-3 rounded-xl border border-white/60 transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300" : ""} bg-white/60 backdrop-blur-sm`}
+      className={`flex items-start gap-3 p-3 rounded-xl border border-white/60 transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none" : ""} bg-white/60 backdrop-blur-sm`}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     >
       <div className={`p-2 rounded-lg ${color} border`}>
         {typeIcons[type]}

@@ -25,8 +25,11 @@ export function StatCard({ icon: Icon, label, value, change, changeType, color, 
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border ${c.border} ${c.bg} backdrop-blur-sm p-4 shadow-sm ${onClick ? "cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200" : "transition-all"}`}
+      className={`relative overflow-hidden rounded-xl border ${c.border} ${c.bg} backdrop-blur-sm p-4 shadow-sm ${onClick ? "cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none" : "transition-all"}`}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     >
       <div className={`absolute top-0 right-0 w-20 h-20 ${c.accent} opacity-5 rounded-full -translate-y-1/2 translate-x-1/2`} />
       <div className="flex items-start justify-between relative">
