@@ -5,3 +5,7 @@ export * from "./Alert.schema.js";
 export * from "./Notification.schema.js";
 export * from "./BlockchainLog.schema.js";
 export * from "./Hospital.schema.js";
+export * from "./TouristLocationLog.schema.js";
+export * from "./Incident.schema.js";
+export * from "./TravelAdvisory.schema.js";
+export * from "./AuditLog.schema.js";
