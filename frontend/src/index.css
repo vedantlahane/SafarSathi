@@ -44,7 +44,7 @@
   --theme-bg-to: oklch(0.97 0.02 180);
   --theme-primary: oklch(0.65 0.17 160);
   --theme-primary-foreground: oklch(0.99 0 0);
-  --theme-glow: oklch(0.65 0.17 160 / 0.15);
+  --theme-glow: oklch(0.65 0.17 160 / 0.10);
   --theme-card-bg: rgba(255, 255, 255, 0.70);
   --theme-card-border: rgba(16, 185, 129, 0.15);
   --sos-scale: 1;
@@ -63,20 +63,20 @@
 
 /* ─── Dark Mode Overrides ────────────────────────────── */
 .dark {
-  --color-background: hsl(222 47% 6%);
-  --color-foreground: hsl(210 40% 98%);
-  --color-card: hsl(222 47% 8%);
-  --color-card-foreground: hsl(210 40% 98%);
-  --color-popover: hsl(222 47% 8%);
-  --color-popover-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(217 33% 17%);
-  --color-secondary-foreground: hsl(210 40% 98%);
-  --color-muted: hsl(217 33% 17%);
-  --color-muted-foreground: hsl(215 20% 55%);
-  --color-accent: hsl(217 33% 17%);
-  --color-accent-foreground: hsl(210 40% 98%);
-  --color-border: hsl(217 33% 17%);
-  --color-input: hsl(217 33% 17%);
+  --color-background: hsl(220 20% 7%);
+  --color-foreground: hsl(210 20% 93%);
+  --color-card: hsl(220 20% 9%);
+  --color-card-foreground: hsl(210 20% 93%);
+  --color-popover: hsl(220 20% 9%);
+  --color-popover-foreground: hsl(210 20% 93%);
+  --color-secondary: hsl(220 14% 14%);
+  --color-secondary-foreground: hsl(210 20% 93%);
+  --color-muted: hsl(220 14% 14%);
+  --color-muted-foreground: hsl(215 12% 50%);
+  --color-accent: hsl(220 14% 14%);
+  --color-accent-foreground: hsl(210 20% 93%);
+  --color-border: hsl(220 12% 16%);
+  --color-input: hsl(220 12% 16%);
 }
 
 /* ─── Mobile-native Scrolling ────────────────────────── */
@@ -581,7 +581,7 @@ body {
 
 /* ─── Map Dark Mode Tile Filter ──────────────────────── */
 .dark .leaflet-tile-pane {
-  filter: brightness(0.95) contrast(1.05);
+  filter: brightness(0.85) contrast(1.02) saturate(0.85);
 }
 
 /* ─── Leaflet Popup Override for Glassmorphism ────────── */
