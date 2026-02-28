@@ -12,7 +12,6 @@ import {
   Pencil,
   RefreshCw,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -125,68 +124,60 @@ export function HospitalsSection({
     <div className="p-6 space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-blue-100/70 backdrop-blur-sm flex items-center justify-center">
-              <Hospital className="h-5 w-5 text-blue-600" />
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-blue-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-blue-200/40">
+            <Hospital className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-slate-900">{hospitals.length}</div>
+            <div className="text-xs text-slate-500 font-medium">Total Facilities</div>
+          </div>
+        </div>
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-red-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-red-200/40">
+            <Stethoscope className="h-5 w-5 text-red-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-slate-900">{emergencyCount}</div>
+            <div className="text-xs text-slate-500 font-medium">Emergency Ready</div>
+          </div>
+        </div>
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-emerald-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-emerald-200/40">
+            <Bed className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-slate-900">{availBeds}/{totalBeds}</div>
+            <div className="text-xs text-slate-500 font-medium">Beds Available</div>
+          </div>
+        </div>
+        <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-amber-500/10 backdrop-blur-sm flex items-center justify-center ring-1 ring-amber-200/40">
+            <Ambulance className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-slate-900">
+              {hospitals.filter((h) => h.ambulanceAvailable).length}
             </div>
-            <div>
-              <div className="text-2xl font-bold">{hospitals.length}</div>
-              <div className="text-xs text-muted-foreground">Total Facilities</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-red-100/70 backdrop-blur-sm flex items-center justify-center">
-              <Stethoscope className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{emergencyCount}</div>
-              <div className="text-xs text-muted-foreground">Emergency Ready</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-emerald-100/70 backdrop-blur-sm flex items-center justify-center">
-              <Bed className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{availBeds}/{totalBeds}</div>
-              <div className="text-xs text-muted-foreground">Beds Available</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-amber-100/70 backdrop-blur-sm flex items-center justify-center">
-              <Ambulance className="h-5 w-5 text-amber-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">
-                {hospitals.filter((h) => h.ambulanceAvailable).length}
-              </div>
-              <div className="text-xs text-muted-foreground">With Ambulance</div>
-            </div>
-          </CardContent>
-        </Card>
+            <div className="text-xs text-slate-500 font-medium">With Ambulance</div>
+          </div>
+        </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <div className="glass-thin rounded-2xl px-4 py-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between border border-white/40">
         <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search hospitals..."
-              className="pl-10"
+              className="pl-10 bg-white/50 border-white/40 rounded-xl focus:bg-white/70"
             />
           </div>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-36 bg-white/50 border-white/40 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -199,11 +190,11 @@ export function HospitalsSection({
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading} className="bg-white/50 border-white/40 rounded-xl hover:bg-white/70">
             <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Button size="sm" onClick={openAdd}>
+          <Button size="sm" onClick={openAdd} className="rounded-xl bg-blue-600/90 hover:bg-blue-600 backdrop-blur-sm">
             <Plus className="h-4 w-4 mr-1" />
             Add Hospital
           </Button>
@@ -214,71 +205,67 @@ export function HospitalsSection({
       <ScrollArea className="h-[calc(100vh-22rem)]">
         <div className="grid gap-3">
           {filtered.length === 0 && (
-            <Card>
-              <CardContent className="p-12 text-center text-muted-foreground">
-                No hospitals found
-              </CardContent>
-            </Card>
+            <div className="glass-card rounded-2xl p-12 text-center text-slate-500">
+              No hospitals found
+            </div>
           )}
           {filtered.map((h) => (
-            <Card key={h.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-sm truncate">{h.name}</h3>
-                      {h.emergency && (
-                        <Badge variant="destructive" className="text-[10px]">Emergency</Badge>
-                      )}
-                      <Badge variant="outline" className="text-[10px] capitalize">{h.type}</Badge>
-                      {h.tier && (
-                        <Badge variant="secondary" className="text-[10px] capitalize">{h.tier}</Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {h.contact}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {h.location.lat.toFixed(3)}, {h.location.lng.toFixed(3)}
-                      </span>
-                      {h.bedCapacity != null && (
-                        <span className="flex items-center gap-1">
-                          <Bed className="h-3 w-3" /> {h.availableBeds ?? "?"}/{h.bedCapacity} beds
-                        </span>
-                      )}
-                      {h.ambulanceAvailable && (
-                        <span className="flex items-center gap-1 text-amber-600">
-                          <Ambulance className="h-3 w-3" /> Ambulance
-                        </span>
-                      )}
-                    </div>
-                    {h.specialties && h.specialties.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {h.specialties.map((s) => (
-                          <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
-                        ))}
-                      </div>
+            <div key={h.id} className="glass-card rounded-2xl p-4 hover:bg-white/70 transition-all duration-200 border border-white/40">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-sm truncate text-slate-900">{h.name}</h3>
+                    {h.emergency && (
+                      <Badge variant="destructive" className="text-[10px] bg-red-500/80 backdrop-blur-sm">Emergency</Badge>
+                    )}
+                    <Badge variant="outline" className="text-[10px] capitalize border-white/40 bg-white/30">{h.type}</Badge>
+                    {h.tier && (
+                      <Badge variant="secondary" className="text-[10px] capitalize bg-slate-100/60">{h.tier}</Badge>
                     )}
                   </div>
-                  <div className="flex gap-1 ml-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(h)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => onDelete(h)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" /> {h.contact}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> {h.location.lat.toFixed(3)}, {h.location.lng.toFixed(3)}
+                    </span>
+                    {h.bedCapacity != null && (
+                      <span className="flex items-center gap-1">
+                        <Bed className="h-3 w-3" /> {h.availableBeds ?? "?"}/{h.bedCapacity} beds
+                      </span>
+                    )}
+                    {h.ambulanceAvailable && (
+                      <span className="flex items-center gap-1 text-amber-600">
+                        <Ambulance className="h-3 w-3" /> Ambulance
+                      </span>
+                    )}
                   </div>
+                  {h.specialties && h.specialties.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {h.specialties.map((s) => (
+                        <Badge key={s} variant="outline" className="text-[10px] border-white/40 bg-white/30">{s}</Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex gap-1 ml-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/50 rounded-lg" onClick={() => openEdit(h)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50/50 rounded-lg" onClick={() => onDelete(h)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </ScrollArea>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md glass-elevated border-white/30 rounded-2xl shadow-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Hospital" : "Add Hospital"}</DialogTitle>
           </DialogHeader>
