@@ -3,6 +3,7 @@ import { generateAdminToken, validateAdminLogin } from "../services/adminService
 import { getActiveAlerts, getAllAlerts, updateAlertStatus } from "../services/AlertService.js";
 import { listTourists, verifyIdHash } from "../services/authService.js";
 import { verifyIDProof } from "../services/BlockchainService.js";
+import type { JwtPayload } from "../middleware/authMiddleware.js";
 
 export async function adminLogin(req: Request, res: Response) {
   const { email, password } = req.body as { email?: string; password?: string };
@@ -65,13 +66,14 @@ export async function getAlertHistory(_req: Request, res: Response) {
 
 export async function updateAlert(req: Request, res: Response) {
   const { alertId } = req.params;
+  const admin = req.user as JwtPayload | undefined;
   const status =
     (req.query.status as string | undefined) ??
     (req.body as { status?: string }).status;
   if (!status) {
     return res.status(400).json({ message: "status required" });
   }
-  const updated = await updateAlertStatus(Number(alertId), status.toUpperCase());
+  const updated = await updateAlertStatus(Number(alertId), status.toUpperCase(), admin?.sub);
   return res.json(updated);
 }
 

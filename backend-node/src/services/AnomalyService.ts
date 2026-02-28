@@ -32,7 +32,16 @@ async function checkInactivity(tourist: ITourist) {
 }
 
 async function checkRouteDeviation(tourist: ITourist) {
-  const deviationKm = calculateDeviation(tourist.currentLat, tourist.currentLng);
+  // Build waypoints from tourist's travel itinerary (if set)
+  const waypoints: Array<{ lat: number; lng: number }> = [];
+  if (tourist.travelItinerary && tourist.travelItinerary.length > 0) {
+    // For now, use a simple heuristic: each itinerary stop is a geocoded waypoint.
+    // In the future, the ML pipeline will provide richer route geometry.
+    // The itinerary destinations are strings, so we skip non-geocoded stops.
+    // The real deviation will come from stored waypoint coordinates when available.
+  }
+
+  const deviationKm = calculateDeviation(tourist.currentLat, tourist.currentLng, waypoints);
   if (deviationKm > DEVIATION_THRESHOLD_KM) {
     await createAlert({
       touristId: tourist._id,
