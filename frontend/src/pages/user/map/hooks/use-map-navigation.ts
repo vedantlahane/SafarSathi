@@ -8,6 +8,7 @@ import {
   POLICE_PROXIMITY_RADIUS_M,
 } from "../constants";
 import {
+  isPointInZone,
   type Destination,
   type RiskZone,
   type PoliceStation,
@@ -78,20 +79,20 @@ function scoreRoute(
   stations: PoliceStation[]
 ): {
   score: number;
-  intersections: { high: number; medium: number; low: number };
+  intersections: { critical: number; high: number; medium: number; low: number };
   policeNearby: number;
 } {
-  const intersections = { high: 0, medium: 0, low: 0 };
+  const intersections = { critical: 0, high: 0, medium: 0, low: 0 };
   let policeNearby = 0;
 
   coordinates.forEach((point) => {
     const latLng = L.latLng(point);
 
     zones.forEach((zone) => {
-      const dist = latLng.distanceTo(L.latLng(zone.centerLat, zone.centerLng));
-      if (dist <= zone.radiusMeters) {
+      if (isPointInZone(point[0], point[1], zone)) {
         const level = zone.riskLevel?.toLowerCase();
-        if (level === "high") intersections.high++;
+        if (level === "critical") intersections.critical++;
+        else if (level === "high") intersections.high++;
         else if (level === "medium") intersections.medium++;
         else intersections.low++;
       }
@@ -108,6 +109,7 @@ function scoreRoute(
     Math.min(
       100,
       SAFE_ROUTE_WEIGHTS.baseScore -
+      intersections.critical * SAFE_ROUTE_WEIGHTS.criticalRiskPenalty -
       intersections.high * SAFE_ROUTE_WEIGHTS.highRiskPenalty -
       intersections.medium * SAFE_ROUTE_WEIGHTS.mediumRiskPenalty -
       intersections.low * SAFE_ROUTE_WEIGHTS.lowRiskPenalty +

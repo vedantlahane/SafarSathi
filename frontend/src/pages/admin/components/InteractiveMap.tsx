@@ -1,10 +1,10 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
-import { MapContainer, TileLayer, Circle, Marker, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, Polygon as LeafletPolygon, Polyline, Marker, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   Plus, X, Layers, ZoomIn, ZoomOut, Locate, Eye, EyeOff,
-  Shield, User, AlertTriangle, MapPin,
+  Shield, User, AlertTriangle, MapPin, Pentagon, Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RiskZone, Tourist, Alert, PoliceDepartment } from "../types";
@@ -92,14 +92,19 @@ function ResizeHandler() {
 }
 
 // ── Click handler for adding zones ───────────────────────
-function ClickHandler({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
+function ClickHandler({ onMapClick, drawMode, onPolygonVertex }: { onMapClick?: (lat: number, lng: number) => void; drawMode?: string; onPolygonVertex?: (lat: number, lng: number) => void }) {
   const map = useMap();
   useEffect(() => {
-    if (!onMapClick) return;
-    const handler = (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng);
+    const handler = (e: L.LeafletMouseEvent) => {
+      if (drawMode === "polygon" && onPolygonVertex) {
+        onPolygonVertex(e.latlng.lat, e.latlng.lng);
+      } else if (onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    };
     map.on("click", handler);
     return () => { map.off("click", handler); };
-  }, [map, onMapClick]);
+  }, [map, onMapClick, drawMode, onPolygonVertex]);
   return null;
 }
 
@@ -118,6 +123,13 @@ interface InteractiveMapProps {
   showPolice?: boolean;
   showTourists?: boolean;
   showAlerts?: boolean;
+  // Polygon drawing mode
+  drawMode?: "circle" | "polygon";
+  onDrawModeChange?: (mode: "circle" | "polygon") => void;
+  polygonVertices?: [number, number][];
+  onPolygonVertexAdd?: (lat: number, lng: number) => void;
+  onPolygonComplete?: () => void;
+  onPolygonUndo?: () => void;
 }
 
 // ── Zoom Controls ────────────────────────────────────────
@@ -155,7 +167,13 @@ function FitBoundsOnData({ zones, tourists, alerts, policeUnits }: { zones: Risk
   const map = useMap();
   useEffect(() => {
     const points: [number, number][] = [];
-    zones.forEach(z => points.push([z.center.lat, z.center.lng]));
+    zones.forEach(z => {
+      if (z.shape === "polygon" && z.polygonCoordinates) {
+        z.polygonCoordinates.forEach(c => points.push(c));
+      } else {
+        points.push([z.center.lat, z.center.lng]);
+      }
+    });
     tourists.filter(t => t.location).forEach(t => points.push([t.location!.lat, t.location!.lng]));
     alerts.filter(a => a.location).forEach(a => points.push([a.location!.lat, a.location!.lng]));
     policeUnits?.forEach(p => points.push([p.location.lat, p.location.lng]));
@@ -182,6 +200,12 @@ export function InteractiveMap({
   showPolice: initialShowPolice = true,
   showTourists: initialShowTourists = true,
   showAlerts: initialShowAlerts = true,
+  drawMode = "circle",
+  onDrawModeChange,
+  polygonVertices = [],
+  onPolygonVertexAdd,
+  onPolygonComplete,
+  onPolygonUndo,
 }: InteractiveMapProps) {
   const [layerToggles, setLayerToggles] = useState({
     zones: true,
@@ -229,24 +253,45 @@ export function InteractiveMap({
         <FitBoundsOnData zones={zones} tourists={tourists} alerts={alerts} policeUnits={policeUnits} />
 
         {/* Zone Add Click */}
-        {isAddingZone && <ClickHandler onMapClick={onMapClick} />}
+        {isAddingZone && <ClickHandler onMapClick={onMapClick} drawMode={drawMode} onPolygonVertex={onPolygonVertexAdd} />}
 
-        {/* Risk Zones */}
+        {/* Risk Zones — circles and polygons */}
         {layerToggles.zones && zones.map((zone) => {
           const c = severityColor[zone.severity] || severityColor.medium;
           const isSelected = selectedZone?.id === zone.id;
+          const pathOpts = {
+            color: c.stroke,
+            fillColor: c.fill,
+            fillOpacity: isSelected ? 0.25 : 0.12,
+            weight: isSelected ? 3 : 1.5,
+            dashArray: zone.isActive ? undefined : "6 4",
+          };
+
+          if (zone.shape === "polygon" && zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+            return (
+              <LeafletPolygon
+                key={zone.id}
+                positions={zone.polygonCoordinates}
+                pathOptions={pathOpts}
+                eventHandlers={{ click: () => onZoneClick?.(zone) }}
+              >
+                <Tooltip direction="center" permanent={false}>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold">{zone.name}</p>
+                    <p className="text-[10px] text-slate-500">{zone.severity} severity · polygon</p>
+                    {!zone.isActive && <p className="text-[10px] text-amber-600 font-medium">Inactive</p>}
+                  </div>
+                </Tooltip>
+              </LeafletPolygon>
+            );
+          }
+
           return (
             <Circle
               key={zone.id}
               center={[zone.center.lat, zone.center.lng]}
               radius={zone.radius}
-              pathOptions={{
-                color: c.stroke,
-                fillColor: c.fill,
-                fillOpacity: isSelected ? 0.25 : 0.12,
-                weight: isSelected ? 3 : 1.5,
-                dashArray: zone.isActive ? undefined : "6 4",
-              }}
+              pathOptions={pathOpts}
               eventHandlers={{ click: () => onZoneClick?.(zone) }}
             >
               <Tooltip direction="center" permanent={false}>
@@ -318,7 +363,41 @@ export function InteractiveMap({
             </Marker>
           ))}
 
-        {/* New Zone Marker */}
+        {/* Polygon Drawing Preview */}
+        {isAddingZone && drawMode === "polygon" && polygonVertices.length > 0 && (
+          <>
+            <Polyline
+              positions={polygonVertices}
+              pathOptions={{ color: "#2563eb", weight: 2.5, dashArray: "6 4" }}
+            />
+            {polygonVertices.length >= 3 && (
+              <LeafletPolygon
+                positions={polygonVertices}
+                pathOptions={{ color: "#2563eb", fillColor: "#2563eb", fillOpacity: 0.08, weight: 0, dashArray: "0" }}
+              />
+            )}
+            {polygonVertices.map((v, i) => (
+              <Marker
+                key={`vertex-${i}`}
+                position={v}
+                icon={L.divIcon({
+                  html: `<div style="width:${i === 0 ? 14 : 10}px;height:${i === 0 ? 14 : 10}px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);background:${i === 0 ? '#2563eb' : '#60a5fa'}"></div>`,
+                  className: "",
+                  iconSize: [i === 0 ? 14 : 10, i === 0 ? 14 : 10],
+                  iconAnchor: [i === 0 ? 7 : 5, i === 0 ? 7 : 5],
+                })}
+              >
+                <Tooltip direction="top" permanent={i === 0 && polygonVertices.length >= 3}>
+                  <span className="text-[10px] font-medium">
+                    {i === 0 && polygonVertices.length >= 3 ? "Click to close" : `Point ${i + 1}`}
+                  </span>
+                </Tooltip>
+              </Marker>
+            ))}
+          </>
+        )}
+
+        {/* New Zone Marker (circle mode) */}
         {newZonePosition && (
           <Marker
             position={[newZonePosition.lat, newZonePosition.lng]}
@@ -351,6 +430,50 @@ export function InteractiveMap({
               <><Plus className="h-3.5 w-3.5 mr-1" /> Add Zone</>
             )}
           </Button>
+        )}
+
+        {/* Draw mode toggle when adding */}
+        {isAddingZone && onDrawModeChange && (
+          <div className="glass-elevated rounded-xl border border-white/40 p-1.5 shadow-lg flex gap-1">
+            <button
+              onClick={() => onDrawModeChange("circle")}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                drawMode === "circle" ? "bg-blue-500/20 text-blue-700" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Target className="w-3 h-3" />
+              Circle
+            </button>
+            <button
+              onClick={() => onDrawModeChange("polygon")}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                drawMode === "polygon" ? "bg-blue-500/20 text-blue-700" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Pentagon className="w-3 h-3" />
+              Polygon
+            </button>
+          </div>
+        )}
+
+        {/* Polygon drawing controls */}
+        {isAddingZone && drawMode === "polygon" && polygonVertices.length > 0 && (
+          <div className="glass-elevated rounded-xl border border-white/40 p-2 shadow-lg space-y-1">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Drawing</p>
+            <p className="text-[11px] text-slate-600">{polygonVertices.length} point{polygonVertices.length !== 1 ? "s" : ""}</p>
+            <div className="flex gap-1">
+              {onPolygonUndo && (
+                <button onClick={onPolygonUndo} className="text-[10px] px-2 py-1 rounded-lg bg-slate-500/10 text-slate-600 hover:bg-slate-500/20">
+                  Undo
+                </button>
+              )}
+              {polygonVertices.length >= 3 && onPolygonComplete && (
+                <button onClick={onPolygonComplete} className="text-[10px] px-2 py-1 rounded-lg bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 font-semibold">
+                  Done
+                </button>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Live counters */}

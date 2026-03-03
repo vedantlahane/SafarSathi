@@ -23,6 +23,7 @@ export const SEARCH_DEBOUNCE_MS = 400;
 export const LOCATION_POST_INTERVAL_MS = 15_000;
 
 export const SAFE_ROUTE_WEIGHTS = {
+  criticalRiskPenalty: 50,
   highRiskPenalty: 30,
   mediumRiskPenalty: 15,
   lowRiskPenalty: 5,

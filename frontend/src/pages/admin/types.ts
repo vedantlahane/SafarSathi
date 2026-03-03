@@ -21,8 +21,10 @@ export interface RiskZone {
   id: number | string;
   name: string;
   description: string;
+  shape: "circle" | "polygon";
   center: { lat: number; lng: number };
   radius: number;
+  polygonCoordinates?: [number, number][];
   severity: "low" | "medium" | "high" | "critical";
   isActive: boolean;
   category?: string;
@@ -137,10 +139,14 @@ export interface ZoneFormData {
   name: string;
   description: string;
   severity: "low" | "medium" | "high" | "critical";
+  category: "flood" | "wildlife" | "crime" | "traffic" | "political_unrest" | "other" | "";
+  shape: "circle" | "polygon";
   radius: string;
   lat: string;
   lng: string;
+  polygonCoordinates: [number, number][];
   isActive: boolean;
+  expiresAt: string;
 }
 
 export interface PoliceFormData {

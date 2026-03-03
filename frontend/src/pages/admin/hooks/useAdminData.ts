@@ -66,8 +66,10 @@ const normalizeRiskZone = (z: any): RiskZone => ({
   id: z.zoneId || z.id,
   name: z.name,
   description: z.description || "",
+  shape: z.shapeType || (z.polygonCoordinates && z.polygonCoordinates.length >= 3 ? "polygon" : "circle"),
   center: { lat: z.centerLat || z.latitude || 0, lng: z.centerLng || z.longitude || 0 },
   radius: z.radiusMeters || z.radius || 0,
+  polygonCoordinates: z.polygonCoordinates || undefined,
   severity: (z.riskLevel || "LOW").toLowerCase() as any,
   isActive: Boolean(z.active),
   category: z.category,
@@ -317,15 +319,24 @@ export function useAlertActions(refetch: () => Promise<void>) {
 
 export function useZoneActions(refetch: () => Promise<void>) {
   const handleSaveZone = useCallback(async (formData: ZoneFormData, editingZoneId?: string | number) => {
+    const isPolygon = formData.shape === "polygon";
     const payload: any = {
       name: formData.name,
       description: formData.description,
       riskLevel: formData.severity.toUpperCase(),
-      radiusMeters: Number(formData.radius),
-      centerLat: Number(formData.lat),
-      centerLng: Number(formData.lng),
+      shapeType: formData.shape || "circle",
       active: formData.isActive,
+      ...(formData.category ? { category: formData.category } : {}),
+      ...(formData.expiresAt ? { expiresAt: new Date(formData.expiresAt).toISOString() } : {}),
     };
+
+    if (isPolygon) {
+      payload.polygonCoordinates = formData.polygonCoordinates;
+    } else {
+      payload.radiusMeters = Number(formData.radius);
+      payload.centerLat = Number(formData.lat);
+      payload.centerLng = Number(formData.lng);
+    }
 
     try {
       if (editingZoneId) {

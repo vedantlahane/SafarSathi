@@ -267,7 +267,7 @@ export function DashboardSection({
               </div>
             </CardTitle>
           </CardHeader>
-          <div className="h-96">
+          <div className="h-120">
             <InteractiveMap
               zones={zones}
               tourists={tourists}

@@ -113,6 +113,8 @@ export function AdminPanel({
   // Zone adding state
   const [isAddingZone, setIsAddingZone] = useState(false);
   const [newZonePosition, setNewZonePosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [zoneDrawMode, setZoneDrawMode] = useState<"circle" | "polygon">("circle");
+  const [zonePolygonVertices, setZonePolygonVertices] = useState<[number, number][]>([]);
 
   // Auth handlers
   const handleLogin = async (email: string, password: string) => {
@@ -210,6 +212,7 @@ export function AdminPanel({
       setSelectedZone(null);
       setIsAddingZone(false);
       setNewZonePosition(null);
+      setZonePolygonVertices([]);
       toast.success(selectedZone ? "Zone updated" : "Zone created");
     } else {
       toast.error("Failed to save zone");
@@ -217,16 +220,37 @@ export function AdminPanel({
   }, [zoneActions, selectedZone]);
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
-    if (isAddingZone) {
+    if (isAddingZone && zoneDrawMode === "circle") {
       setNewZonePosition({ lat, lng });
       setZoneDialogOpen(true);
     }
-  }, [isAddingZone]);
+  }, [isAddingZone, zoneDrawMode]);
+
+  const handleZoneDrawModeChange = useCallback((mode: "circle" | "polygon") => {
+    setZoneDrawMode(mode);
+    setZonePolygonVertices([]);
+    setNewZonePosition(null);
+  }, []);
+
+  const handlePolygonVertexAdd = useCallback((lat: number, lng: number) => {
+    setZonePolygonVertices((prev) => [...prev, [lat, lng]]);
+  }, []);
+
+  const handlePolygonUndo = useCallback(() => {
+    setZonePolygonVertices((prev) => prev.slice(0, -1));
+  }, []);
+
+  const handlePolygonComplete = useCallback(() => {
+    if (zonePolygonVertices.length >= 3) {
+      setZoneDialogOpen(true);
+    }
+  }, [zonePolygonVertices]);
 
   const handleToggleAddMode = useCallback(() => {
     setIsAddingZone((prev) => !prev);
     if (!isAddingZone) { // transitioning to true
       setNewZonePosition(null);
+      setZonePolygonVertices([]);
       toast.info("Click on map to place new zone");
     }
   }, [isAddingZone]);
@@ -373,6 +397,12 @@ export function AdminPanel({
             onMapClick={handleMapClick}
             newZonePosition={newZonePosition}
             onToggleAddMode={handleToggleAddMode}
+            drawMode={zoneDrawMode}
+            onDrawModeChange={handleZoneDrawModeChange}
+            polygonVertices={zonePolygonVertices}
+            onPolygonVertexAdd={handlePolygonVertexAdd}
+            onPolygonUndo={handlePolygonUndo}
+            onPolygonComplete={handlePolygonComplete}
           />
         );
       case "police":
@@ -450,6 +480,8 @@ export function AdminPanel({
         zone={selectedZone}
         onSave={handleSaveZone}
         initialPosition={newZonePosition}
+        polygonCoordinates={zonePolygonVertices}
+        drawMode={zoneDrawMode}
       />
 
       <PoliceDialog

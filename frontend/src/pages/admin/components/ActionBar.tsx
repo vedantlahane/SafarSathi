@@ -47,26 +47,26 @@ export function ActionBar({
   children,
 }: ActionBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-white/40 backdrop-blur-lg border-b border-white/60">
+    <div className="flex flex-wrap items-center gap-3 p-4 glass-thin border-b border-white/30">
       {/* Search */}
-      <div className="relative flex-1 min-w-[200px] max-w-md">
+      <div className="relative flex-1 min-w-50 max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="pl-9 bg-white/70 backdrop-blur-sm border-slate-200/60 rounded-xl"
+          className="pl-9 bg-white/40 backdrop-blur-sm border-white/40 rounded-2xl focus:bg-white/60 transition-colors"
         />
       </div>
 
       {/* Filter */}
       {showFilter && filterOptions && onFilterChange && (
         <Select value={filterValue} onValueChange={onFilterChange}>
-          <SelectTrigger className="w-[160px] bg-white/70 backdrop-blur-sm border-slate-200/60 rounded-xl">
+          <SelectTrigger className="w-40 bg-white/40 backdrop-blur-sm border-white/40 rounded-2xl">
             <Filter className="w-4 h-4 mr-2 text-slate-400" />
             <SelectValue placeholder={filterPlaceholder} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="glass-elevated border-white/30 rounded-xl">
             {filterOptions.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
@@ -82,7 +82,7 @@ export function ActionBar({
       <div className="flex items-center gap-2 ml-auto">
         {/* Add Button */}
         {showAdd && onAdd && (
-          <Button onClick={onAdd} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={onAdd} className="bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg shadow-blue-600/20">
             <Plus className="w-4 h-4 mr-1.5" />
             {addLabel}
           </Button>
@@ -90,7 +90,7 @@ export function ActionBar({
 
         {/* Export */}
         {showExport && onExport && (
-          <Button variant="outline" onClick={onExport} className="border-slate-200">
+          <Button variant="outline" onClick={onExport} className="border-white/40 bg-white/30 backdrop-blur-sm rounded-2xl hover:bg-white/50">
             <Download className="w-4 h-4 mr-1.5" />
             Export
           </Button>
@@ -102,7 +102,7 @@ export function ActionBar({
             variant="outline"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="border-slate-200"
+            className="border-white/40 bg-white/30 backdrop-blur-sm rounded-2xl hover:bg-white/50"
             aria-label="Refresh data"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
