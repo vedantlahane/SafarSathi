@@ -118,6 +118,92 @@ export async function deleteRiskZone(zoneId: number): Promise<boolean> {
   return !!result;
 }
 
+export async function getRiskZonesNearby(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+  riskLevel?: string
+): Promise<(IRiskZone & { distanceMeters: number })[]> {
+  const pipeline: any[] = [
+    {
+      $geoNear: {
+        near: { type: "Point", coordinates: [lng, lat] },
+        distanceField: "distanceMeters",
+        maxDistance: radiusKm * 1000,
+        spherical: true,
+        query: { active: true, ...(riskLevel ? { riskLevel } : {}) },
+      },
+    },
+    { $sort: { distanceMeters: 1 } },
+  ];
+  return RiskZoneModel.aggregate(pipeline);
+}
+
+export async function getRiskZoneStats(): Promise<{
+  total: number;
+  active: number;
+  inactive: number;
+  bySeverity: Record<string, number>;
+  byCategory: Record<string, number>;
+  bySource: Record<string, number>;
+  expiringSoon: number;
+}> {
+  const [counts, bySeverity, byCategory, bySource, expiringSoon] = await Promise.all([
+    RiskZoneModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          active: { $sum: { $cond: ["$active", 1, 0] } },
+          inactive: { $sum: { $cond: ["$active", 0, 1] } },
+        },
+      },
+    ]),
+    RiskZoneModel.aggregate([
+      { $group: { _id: "$riskLevel", count: { $sum: 1 } } },
+    ]),
+    RiskZoneModel.aggregate([
+      { $match: { category: { $ne: null } } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+    ]),
+    RiskZoneModel.aggregate([
+      { $group: { _id: "$source", count: { $sum: 1 } } },
+    ]),
+    RiskZoneModel.countDocuments({
+      expiresAt: {
+        $ne: null,
+        $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // next 7 days
+        $gt: new Date(),
+      },
+    }),
+  ]);
+
+  const c = counts[0] || { total: 0, active: 0, inactive: 0 };
+  const toRecord = (arr: { _id: string; count: number }[]) =>
+    Object.fromEntries(arr.map((r) => [r._id || "unknown", r.count]));
+
+  return {
+    total: c.total,
+    active: c.active,
+    inactive: c.inactive,
+    bySeverity: toRecord(bySeverity),
+    byCategory: toRecord(byCategory),
+    bySource: toRecord(bySource),
+    expiringSoon,
+  };
+}
+
+export async function bulkUpdateRiskZoneStatus(
+  zoneIds: number[],
+  active: boolean
+): Promise<number> {
+  const result = await RiskZoneModel.updateMany(
+    { zoneId: { $in: zoneIds } },
+    { $set: { active } }
+  );
+  return result.modifiedCount;
+}
+
 // ==================== POLICE DEPARTMENTS ====================
 
 export async function getAllPoliceDepartments(): Promise<IPoliceDepartment[]> {

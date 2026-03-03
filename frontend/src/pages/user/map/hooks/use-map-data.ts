@@ -15,6 +15,8 @@ import policeData from "./../../../../../../dataSets/assamPoliceStations.json";
 import { MAP_DEFAULTS, LOCATION_POST_INTERVAL_MS } from "../constants";
 import {
   formatETA,
+  getCategoryLabel,
+  isPointInZone,
   type RiskZone,
   type PoliceStation,
   type Hospital,
@@ -161,7 +163,7 @@ export function useMapData() {
     });
   }, [hospitals, showLayers.hospitals, userPosition]);
 
-  // ── Geofence alert: detect zone enter/leave ──
+  // ── Geofence alert: detect zone enter/leave with severity-aware notifications ──
   useEffect(() => {
     if (!userPosition) {
       setUserInZone(false);
@@ -171,29 +173,56 @@ export function useMapData() {
 
     const currentZoneIds = new Set<string | number>();
     let inAnyZone = false;
-    let zoneName: string | null = null;
+    let highestSeverityZoneName: string | null = null;
+    let highestSeverityLevel = -1;
+
+    const severityOrder: Record<string, number> = {
+      low: 0,
+      medium: 1,
+      high: 2,
+      critical: 3,
+    };
 
     zones.forEach((z) => {
-      const dist = L.latLng(userPosition).distanceTo(
-        L.latLng(z.centerLat, z.centerLng)
-      );
-      if (dist <= z.radiusMeters) {
+      if (isPointInZone(userPosition[0], userPosition[1], z)) {
         currentZoneIds.add(z.id);
         inAnyZone = true;
-        zoneName = z.name;
+        const s = severityOrder[z.riskLevel?.toLowerCase() ?? "medium"] ?? 1;
+        if (s > highestSeverityLevel) {
+          highestSeverityLevel = s;
+          highestSeverityZoneName = z.name;
+        }
       }
     });
 
-    // Detect newly entered zones
+    // Detect newly entered zones — show severity-appropriate notification
     currentZoneIds.forEach((id) => {
       if (!prevZonesRef.current.has(id)) {
         const zone = zones.find((z) => z.id === id);
         if (zone) {
-          hapticFeedback("heavy");
-          toast.warning(`Entered risk zone: ${zone.name}`, {
-            description: `${zone.riskLevel ?? "Medium"} risk — Stay alert`,
-            duration: 5000,
-          });
+          const level = zone.riskLevel?.toLowerCase();
+          const categoryLabel = getCategoryLabel(zone.category);
+          const isCritical = level === "critical";
+          const isHighOrCritical = isCritical || level === "high";
+
+          hapticFeedback(isHighOrCritical ? "heavy" : "medium");
+
+          if (isCritical) {
+            toast.error(`🔴 CRITICAL ZONE: ${zone.name}`, {
+              description: `${categoryLabel} — Leave this area immediately if possible. Stay alert and contact authorities if needed.`,
+              duration: 10000,
+            });
+          } else if (level === "high") {
+            toast.warning(`⚠️ High Risk Zone: ${zone.name}`, {
+              description: `${categoryLabel} — Exercise extreme caution. Keep emergency contacts ready.`,
+              duration: 7000,
+            });
+          } else {
+            toast.warning(`Entered risk zone: ${zone.name}`, {
+              description: `${zone.riskLevel ?? "Medium"} risk · ${categoryLabel} — Stay alert`,
+              duration: 5000,
+            });
+          }
         }
       }
     });
@@ -208,7 +237,7 @@ export function useMapData() {
 
     prevZonesRef.current = currentZoneIds;
     setUserInZone(inAnyZone);
-    setCurrentZoneName(zoneName);
+    setCurrentZoneName(highestSeverityZoneName);
   }, [userPosition, zones]);
 
   // ── Nearest police station ──

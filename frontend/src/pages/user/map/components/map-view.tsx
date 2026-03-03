@@ -113,7 +113,7 @@ export function MapView({
                     onResetBearing={data.resetBearing}
                 />
 
-                <ZoneOverlay zones={data.zones} onZoneClick={onZoneClick} />
+                <ZoneOverlay zones={data.zones} onZoneClick={onZoneClick} userPosition={data.userPosition} />
                 <StationMarkers stations={data.stations} />
                 <HospitalMarkers hospitals={data.hospitals} />
                 <RouteLines

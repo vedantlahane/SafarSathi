@@ -110,6 +110,14 @@ function DestinationBarInner({
                   {safest.intersections.high} high risk
                 </Badge>
               )}
+              {(safest.intersections as any).critical > 0 && (
+                <Badge
+                  className="text-[10px] gap-1 bg-purple-600 text-white hover:bg-purple-700"
+                >
+                  <AlertTriangle className="h-3 w-3" />
+                  {(safest.intersections as any).critical} critical
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -126,7 +134,7 @@ interface NearestStationBarProps {
 
 function NearestStationBarInner({ station }: NearestStationBarProps) {
   return (
-    <div className="absolute bottom-36 left-4 right-[65px] z-[1000] pointer-events-none">
+    <div className="absolute bottom-36 left-4 right-[65px] z-1000 pointer-events-none">
       <GlassCard level={2} className="overflow-hidden pointer-events-auto">
         <div className="p-3 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">

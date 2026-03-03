@@ -77,6 +77,7 @@ const Map = () => {
         onFlyTo={(p) => data.setFlyTo(p)}
         userPosition={data.userPosition}
         nearestStation={data.nearestStation}
+        nearestHospital={data.nearestHospital}
       />
     </div>
   );
