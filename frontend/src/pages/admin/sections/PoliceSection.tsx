@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Shield, Plus, Phone } from "lucide-react";
+import { Shield, Plus, Phone, Download } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,23 +59,40 @@ export function PoliceSection({
   const activeCount = police.filter((p) => p.isActive).length;
   const totalStations = police.length;
 
+  const handleExport = () => {
+    const headers = ["Name", "Code", "City", "Status", "Phone", "Latitude", "Longitude"];
+    const rows = filteredPolice.map(s => [
+      s.name, s.departmentCode, s.city,
+      s.isActive ? "On Duty" : "Off Duty",
+      s.phone || "", String(s.location?.lat || ""), String(s.location?.lng || ""),
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `police-stations-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b bg-white">
+      <div className="glass-bar px-6 py-4 border-b border-white/30">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Police Station Management</h2>
+            <h2 className="text-xl font-semibold text-slate-800 tracking-tight">Police Station Management</h2>
             <p className="text-sm text-slate-500">Manage and coordinate with police stations</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-sm font-medium text-emerald-700">{activeCount} On Duty</span>
+          <div className="flex items-center gap-3">
+            <div className="glass-thin flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-emerald-200/40">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+              <span className="text-sm font-semibold text-emerald-700">{activeCount} On Duty</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200">
+            <div className="glass-thin flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-slate-200/40">
               <Shield className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-sm font-medium text-slate-700">{totalStations} Total</span>
+              <span className="text-sm font-semibold text-slate-700">{totalStations} Total</span>
             </div>
           </div>
         </div>
@@ -95,19 +112,24 @@ export function PoliceSection({
         showAdd={true}
         addLabel="Add Station"
         onAdd={onAddPolice}
+        showExport={true}
+        onExport={handleExport}
       />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
         {/* Map */}
-        <Card className="lg:col-span-2 overflow-hidden">
-          <CardHeader className="py-2 px-4 border-b">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Shield className="w-4 h-4 text-blue-600" />
+        <Card className="lg:col-span-2 overflow-hidden min-h-130 glass-elevated border-white/30" style={{boxShadow:'inset 0 0.5px 0 0 rgba(255,255,255,0.8), 0 1px 2px 0 rgba(0,0,0,0.03), 0 4px 16px -4px rgba(0,0,0,0.06), 0 12px 40px -8px rgba(0,0,0,0.04)'}}>
+          <CardHeader className="py-2.5 px-4 border-b border-white/30 bg-white/20">
+            <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+              <div className="relative">
+                <Shield className="w-4 h-4 text-blue-600" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+              </div>
               Police Station Locations
             </CardTitle>
           </CardHeader>
-          <div className="h-[calc(100%-44px)]">
+          <div className="h-[calc(100%-44px)] min-h-115">
             <InteractiveMap
               zones={zones}
               tourists={tourists}
@@ -121,11 +143,11 @@ export function PoliceSection({
         </Card>
 
         {/* Station List */}
-        <Card className="flex flex-col">
-          <CardHeader className="py-2 px-4 border-b">
-            <CardTitle className="text-sm flex items-center justify-between">
+        <Card className="flex flex-col glass-card border-white/30" style={{boxShadow:'inset 0 0.5px 0 0 rgba(255,255,255,0.8), 0 1px 2px 0 rgba(0,0,0,0.03), 0 4px 16px -4px rgba(0,0,0,0.06), 0 12px 40px -8px rgba(0,0,0,0.04)'}}>
+          <CardHeader className="py-2.5 px-4 border-b border-white/30 bg-white/20">
+            <CardTitle className="text-sm flex items-center justify-between font-semibold">
               <span>Stations ({filteredPolice.length})</span>
-              <Button size="sm" variant="ghost" onClick={onAddPolice} className="text-blue-600">
+              <Button size="sm" variant="ghost" onClick={onAddPolice} className="text-blue-600 hover:bg-blue-500/10 rounded-xl">
                 <Plus className="w-3.5 h-3.5 mr-1" /> Add
               </Button>
             </CardTitle>
@@ -153,18 +175,24 @@ export function PoliceSection({
           </ScrollArea>
 
           {/* Quick Actions */}
-          <div className="p-3 border-t bg-slate-50">
+          <div className="p-3 border-t border-white/30 bg-white/20 backdrop-blur-sm space-y-2">
             <Button
               variant="outline"
-              className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+              className="w-full rounded-xl border-blue-200/50 text-blue-700 hover:bg-blue-500/10 backdrop-blur-sm"
+              disabled={filteredPolice.filter(p => p.isActive).length === 0}
               onClick={() => {
-                if (filteredPolice.length > 0) {
-                  onContactPolice(filteredPolice[0]);
+                const activeStations = filteredPolice.filter(p => p.isActive);
+                if (activeStations.length === 0) return;
+                const nearest = activeStations[0];
+                if (confirm(`Dispatch to ${nearest.name} (${nearest.city})?`)) {
+                  onContactPolice(nearest);
                 }
               }}
             >
               <Phone className="w-4 h-4 mr-1.5" />
-              Quick Dispatch
+              Quick Dispatch {filteredPolice.filter(p => p.isActive).length > 0
+                ? `— ${filteredPolice.filter(p => p.isActive)[0].name}`
+                : "(No active stations)"}
             </Button>
           </div>
         </Card>

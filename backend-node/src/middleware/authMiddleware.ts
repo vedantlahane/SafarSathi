@@ -28,6 +28,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
         req.user = decoded;
         next();
     } catch (error) {
+        console.error("JWT Verification Error:", error);
         res.status(401).json({ success: false, message: "Invalid or expired token" });
         return;
     }

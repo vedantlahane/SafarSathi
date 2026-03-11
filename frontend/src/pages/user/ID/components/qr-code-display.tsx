@@ -21,12 +21,6 @@ function QRCodeDisplayInner({ touristId, size = 120 }: QRCodeDisplayProps) {
                 level="M"
                 bgColor="#ffffff"
                 fgColor="#1e293b"
-                imageSettings={{
-                    src: "",
-                    height: 0,
-                    width: 0,
-                    excavate: false,
-                }}
             />
             {/* Center logo overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

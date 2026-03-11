@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FileText, Download, Calendar } from "lucide-react";
+import { FileText, Download, Calendar, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,10 +52,19 @@ export function ReportsDialog({ open, onOpenChange, onGenerate }: ReportsDialogP
     dateRange: "7days",
     format: "pdf",
   });
+  const [generating, setGenerating] = useState(false);
 
   const handleGenerate = () => {
-    onGenerate?.(config);
-    onOpenChange(false);
+    setGenerating(true);
+    // Simulate brief processing
+    setTimeout(() => {
+      onGenerate?.(config);
+      setGenerating(false);
+      toast.success(`${reportTypes.find(r => r.value === config.type)?.label} report queued for download`, {
+        description: `Format: ${config.format.toUpperCase()} • Period: ${dateRanges.find(r => r.value === config.dateRange)?.label}`,
+      });
+      onOpenChange(false);
+    }, 800);
   };
 
   const selectedReport = reportTypes.find((r) => r.value === config.type);
@@ -152,9 +162,12 @@ export function ReportsDialog({ open, onOpenChange, onGenerate }: ReportsDialogP
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleGenerate} className="bg-blue-600 hover:bg-blue-700">
-            <Download className="w-4 h-4 mr-1.5" />
-            Generate Report
+          <Button onClick={handleGenerate} className="bg-blue-600 hover:bg-blue-700" disabled={generating}>
+            {generating ? (
+              <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Generating...</>
+            ) : (
+              <><Download className="w-4 h-4 mr-1.5" /> Generate Report</>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

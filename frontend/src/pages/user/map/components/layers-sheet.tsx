@@ -92,13 +92,16 @@ function LayersSheetInner({
               Risk Level Filter
             </p>
             <div className="flex flex-wrap gap-2">
-              {(["all", "high", "medium", "low"] as const).map((level) => (
+              {(["all", "critical", "high", "medium", "low"] as const).map((level) => (
                 <Button
                   key={level}
                   variant={riskFilter === level ? "default" : "outline"}
                   size="sm"
                   className={cn(
                     "rounded-full capitalize h-10 px-4",
+                    riskFilter === level &&
+                      level === "critical" &&
+                      "bg-purple-600 hover:bg-purple-700 text-white",
                     riskFilter === level &&
                       level === "high" &&
                       "bg-red-500 hover:bg-red-600 text-white",
@@ -223,6 +226,10 @@ function LayersSheetInner({
             <p className="text-sm font-semibold mb-3 text-foreground">Legend</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50">
+                <div className="h-4 w-4 rounded-full bg-purple-600 opacity-60 ring-2 ring-purple-400 ring-offset-1" />
+                <span className="text-sm">Critical Risk</span>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50">
                 <div className="h-4 w-4 rounded-full bg-red-500 opacity-60" />
                 <span className="text-sm">High Risk</span>
               </div>
@@ -247,7 +254,7 @@ function LayersSheetInner({
                 <span className="text-sm">Safest Route</span>
               </div>
               <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50">
-                <div className="h-1 w-6 rounded bg-blue-500 border-dashed border-b-2 border-blue-500 bg-transparent" />
+                <div className="h-0 w-6 border-dashed border-b-2 border-blue-500" />
                 <span className="text-sm">Fastest Route</span>
               </div>
               <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50">

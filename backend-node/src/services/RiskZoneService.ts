@@ -5,6 +5,9 @@ import {
   createRiskZone as createZone,
   updateRiskZone as updateZone,
   deleteRiskZone as deleteZone,
+  getRiskZonesNearby,
+  getRiskZoneStats,
+  bulkUpdateRiskZoneStatus,
   type IRiskZone,
 } from "./mongoStore.js";
 
@@ -34,4 +37,21 @@ export async function toggleZoneStatus(id: number, active: boolean) {
 
 export async function deleteRiskZone(id: number) {
   return deleteZone(id);
+}
+
+export async function findNearbyZones(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+  riskLevel?: string
+) {
+  return getRiskZonesNearby(lat, lng, radiusKm, riskLevel);
+}
+
+export async function getZoneStats() {
+  return getRiskZoneStats();
+}
+
+export async function bulkToggleStatus(zoneIds: number[], active: boolean) {
+  return bulkUpdateRiskZoneStatus(zoneIds, active);
 }

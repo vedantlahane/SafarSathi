@@ -68,3 +68,15 @@ frontend/dev-dist/
 
 # Java compiled classes
 *.class
+
+# Additional common ignores
+.vite/
+.cache/
+*.tsbuildinfo
+pnpm-debug.log*
+pnpm-lock.yaml
+target/
+*.jar
+*.war
+*.ear
+*.iml

@@ -1,9 +1,17 @@
 import { getSession, getAdminSession } from "../session";
 
-const DEFAULT_BASE_URL = "http://localhost:8081";
-const API_BASE_URL =
-    (import.meta.env.VITE_BACKEND_NODE_URL as string | undefined) ??
-    DEFAULT_BASE_URL;
+function resolveBaseUrl(): string {
+    // Explicit override via env var
+    const envUrl = import.meta.env.VITE_BACKEND_NODE_URL as string | undefined; 
+    if (envUrl) return envUrl;
+
+    // Auto-detect: use the same hostname the browser loaded from,
+    // so LAN / remote devices hit the right backend.
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:8081`;
+}
+
+const API_BASE_URL = resolveBaseUrl();
 
 function buildUrl(path: string) {
     const trimmedBase = API_BASE_URL.replace(/\/$/, "");
@@ -26,17 +34,10 @@ export async function request<T>(
 
     // Choose appropriate token
     let token = "";
-    if (isAdminRoute && adminSession?.token) {
-        token = adminSession.token;
-    } else if (!isAdminRoute && touristSession?.token) {
-        token = touristSession.token;
-    } else if (touristSession?.token) {
-        // Fallback: if no admin token, but tourist token exists, send tourist token
-        // Wait, better: Just use whatever token if the specific one is missing,
-        // but prefer the right one based on role.
-        token = touristSession.token || adminSession?.token || "";
+    if (isAdminRoute) {
+        token = adminSession?.token || touristSession?.token || "";
     } else {
-        token = adminSession?.token || "";
+        token = touristSession?.token || adminSession?.token || "";
     }
 
     if (token) {

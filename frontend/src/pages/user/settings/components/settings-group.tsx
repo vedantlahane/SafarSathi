@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from "react";
+import { GlassCard } from "@/components/ui/glass-card";
 
 interface SettingsGroupProps {
     heading: string;
@@ -12,9 +13,9 @@ function SettingsGroupInner({ heading, children }: SettingsGroupProps) {
             <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold px-4">
                 {heading}
             </h3>
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <GlassCard level={2} className="overflow-hidden border-border/50">
                 {children}
-            </div>
+            </GlassCard>
         </div>
     );
 }
