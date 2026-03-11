@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { sha256 } from "../utils/hash.js";
+import { hashPassword } from "../utils/hash.js";
 import {
   getAllPoliceDepartments,
   getPoliceDepartmentById,
@@ -10,10 +10,11 @@ import {
 } from "./mongoStore.js";
 
 export async function createPoliceDepartment(payload: Partial<IPoliceDepartment> & { passwordHash: string }) {
+  const hashed = await hashPassword(payload.passwordHash);
   return createDept({
     ...payload,
     _id: randomUUID(),
-    passwordHash: sha256(payload.passwordHash),
+    passwordHash: hashed,
   });
 }
 

@@ -16,8 +16,8 @@ export function useTouristProfile(touristId?: string) {
       try {
         const data = await fetchTouristProfile(touristId);
         if (active) setProfile(data);
-      } catch {
-        // Silent: use existing profile state
+      } catch (err) {
+        console.error("Failed to fetch tourist profile:", err);
       }
     })();
 

@@ -15,45 +15,32 @@ function NavTabInner({ item }: NavTabProps) {
     <TabsTrigger
       value={item.value}
       className={cn(
-        "group relative flex flex-col items-center gap-0.5",
-        "rounded-xl px-4 py-2 min-w-[56px]",
-        "transition-all duration-200",
+        "group relative flex flex-1 flex-col items-center justify-center p-0",
+        "h-full rounded-[24px]",
+        "transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
         "bg-transparent shadow-none border-none",
-        "text-muted-foreground",
-        "active:scale-90",
-        "data-[state=active]:bg-transparent",
-        "data-[state=active]:shadow-none"
+        "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200",
+        "active:scale-[0.88]",
+        "data-[state=active]:bg-transparent data-[state=active]:text-primary",
+        
       )}
       onClick={() => hapticFeedback("light")}
       aria-label={item.label}
     >
-      <Icon
-        className={cn(
-          "h-5 w-5 transition-all duration-200",
-          "group-data-[state=active]:scale-110"
-        )}
-      />
-      <span
-        className={cn(
-          "text-[10px] font-semibold transition-colors duration-200",
-          "group-data-[state=active]:font-bold"
-        )}
-      >
-        {item.label}
-      </span>
+      <div className={cn(
+        "relative flex w-14 h-12 flex-col items-center justify-center overflow-hidden rounded-[18px] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
 
-      {/* Active indicator dot — uses group-data selector to read parent state */}
-      <span
-        className={cn(
-          "absolute -bottom-0.5 left-1/2 -translate-x-1/2",
-          "h-1 w-1 rounded-full",
-          "transition-all duration-200",
-          "scale-0 opacity-0",
-          "group-data-[state=active]:scale-100 group-data-[state=active]:opacity-100"
-        )}
-        style={{ backgroundColor: "var(--theme-primary)" }}
-        aria-hidden="true"
-      />
+        "group-data-[state=active]:shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),_0_8px_16px_-4px_var(--theme-glow)]",
+        "dark:group-data-[state=active]:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),_0_8px_16px_-4px_var(--theme-glow)]"
+      )}>
+        <Icon
+          className={cn(
+            "h-[22px] w-[22px] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
+            "group-data-[state=active]:scale-110",
+            "group-data-[state=active]:drop-shadow-[0_2px_4px_var(--theme-glow)]"
+          )}
+        />
+      </div>
     </TabsTrigger>
   );
 }

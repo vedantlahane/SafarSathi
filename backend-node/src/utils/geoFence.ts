@@ -1,8 +1,29 @@
-export function calculateDeviation(lat?: number, lng?: number) {
+/**
+ * Calculate deviation of a tourist's current position from their planned itinerary.
+ * Uses the nearest itinerary waypoint to compute distance in kilometers.
+ * If no waypoints are provided, returns 0 (no deviation detectable).
+ */
+export function calculateDeviation(
+  lat?: number,
+  lng?: number,
+  itineraryWaypoints?: Array<{ lat: number; lng: number }>
+) {
   if (typeof lat !== "number" || typeof lng !== "number") {
     return 0;
   }
-  return 0.0;
+  if (!itineraryWaypoints || itineraryWaypoints.length === 0) {
+    return 0;
+  }
+
+  // Find the minimum distance to any waypoint
+  let minDistanceKm = Infinity;
+  for (const wp of itineraryWaypoints) {
+    const distKm = haversineMeters(lat, lng, wp.lat, wp.lng) / 1000;
+    if (distKm < minDistanceKm) {
+      minDistanceKm = distKm;
+    }
+  }
+  return minDistanceKm === Infinity ? 0 : minDistanceKm;
 }
 
 export function isPointWithinRadius(

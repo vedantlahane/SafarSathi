@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CheckCircle2, Bell, MapPin, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glass-card";
 
 type PermissionState = "granted" | "denied" | "unknown";
 
@@ -27,7 +28,7 @@ function PermissionRow({
   onRequest: () => void;
 }) {
   return (
-    <div className="glass-2 rounded-2xl p-4">
+    <GlassCard level={2} className="rounded-2xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="mt-0.5">{icon}</div>
@@ -47,7 +48,7 @@ function PermissionRow({
           </Button>
         )}
       </div>
-    </div>
+    </GlassCard>
   );
 }
 

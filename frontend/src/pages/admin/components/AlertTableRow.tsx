@@ -27,41 +27,52 @@ export function AlertTableRow({ alert, onResolve, onView, isSelected, onSelect }
   const TypeIcon = typeIcons[alert.type as keyof typeof typeIcons] || AlertTriangle;
 
   return (
-    <tr className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
-      <td className="py-3 px-4">
+    <div className={`grid grid-cols-[40px_1fr_120px_140px_120px_100px_100px] gap-4 items-center border-b border-slate-100 hover:bg-white/50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+      <div className="py-3 px-4">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={() => onSelect(String(alert.id))}
           className="rounded border-slate-300"
+          aria-label={`Select alert ${alert.type}`}
         />
-      </td>
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-2">
-          <TypeIcon className="h-4 w-4 text-slate-400" />
-          <span className="font-medium text-slate-900 text-sm">{alert.type.replace("_", " ")}</span>
+      </div>
+      <div className="py-3 px-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shrink-0">
+            <TypeIcon className="h-3.5 w-3.5 text-slate-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-slate-900 text-sm truncate">{alert.touristName || "Unknown Tourist"}</p>
+            <p className="text-xs text-slate-500 truncate font-mono">{alert.touristId ? `${alert.touristId.slice(0, 10)}…` : "N/A"}</p>
+          </div>
         </div>
-      </td>
-      <td className="py-3 px-4">
+      </div>
+      <div className="py-3 px-4">
+        <span className="text-sm font-medium text-slate-700">{alert.type.replaceAll("_", " ")}</span>
+      </div>
+      <div className="py-3 px-4 text-sm text-slate-500 truncate">{new Date(alert.timestamp).toLocaleString()}</div>
+      <div className="py-3 px-4">
         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${cfg.color}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
           {alert.status}
         </span>
-      </td>
-      <td className="py-3 px-4 text-sm text-slate-600 font-mono">{alert.touristId?.slice(0, 12)}...</td>
-      <td className="py-3 px-4 text-sm text-slate-500">{new Date(alert.timestamp).toLocaleString()}</td>
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(alert)}>
+      </div>
+      <div className="py-3 px-4 text-xs text-slate-500 truncate">
+        {alert.location ? `${alert.location.lat.toFixed(2)}, ${alert.location.lng.toFixed(2)}` : "—"}
+      </div>
+      <div className="py-3 px-4">
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(alert)} title="View details">
             <Eye className="h-3.5 w-3.5" />
           </Button>
           {alert.status !== "RESOLVED" && (
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-600" onClick={() => onResolve(String(alert.id))}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-600" onClick={() => onResolve(String(alert.id))} title="Resolve alert">
               <CheckCircle2 className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }

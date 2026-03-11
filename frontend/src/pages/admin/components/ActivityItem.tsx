@@ -22,11 +22,11 @@ const typeIcons: Record<ActivityType, React.ReactNode> = {
 };
 
 const severityColors: Record<string, string> = {
-  critical: "bg-red-100 text-red-600 border-red-200",
-  high: "bg-orange-100 text-orange-600 border-orange-200",
-  medium: "bg-amber-100 text-amber-600 border-amber-200",
-  low: "bg-emerald-100 text-emerald-600 border-emerald-200",
-  info: "bg-blue-100 text-blue-600 border-blue-200",
+  critical: "bg-red-100/50 text-red-600 border-red-200/30",
+  high: "bg-orange-100/50 text-orange-600 border-orange-200/30",
+  medium: "bg-amber-100/50 text-amber-600 border-amber-200/30",
+  low: "bg-emerald-100/50 text-emerald-600 border-emerald-200/30",
+  info: "bg-blue-100/50 text-blue-600 border-blue-200/30",
 };
 
 export function ActivityItem({
@@ -38,23 +38,31 @@ export function ActivityItem({
   onClick,
 }: ActivityItemProps) {
   const color = severityColors[severity] || severityColors.info;
-  const timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  let timeAgo: string;
+  try {
+    timeAgo = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  } catch {
+    timeAgo = "unknown";
+  }
 
   return (
     <div
-      className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300" : ""} bg-white`}
+      className={`flex items-start gap-2.5 p-2.5 rounded-xl transition-all duration-200 ${onClick ? "cursor-pointer hover:bg-white/50 focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:outline-none" : ""} glass-thin border border-white/30`}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     >
-      <div className={`p-2 rounded-lg ${color} border`}>
+      <div className={`p-1.5 rounded-lg ${color} border`}>
         {typeIcons[type]}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm text-slate-800 truncate">{title}</p>
+        <p className="font-medium text-[13px] leading-tight text-slate-800 truncate">{title}</p>
         {description && (
-          <p className="text-xs text-slate-500 truncate mt-0.5">{description}</p>
+          <p className="text-[11px] text-slate-400 truncate mt-0.5">{description}</p>
         )}
-        <div className="flex items-center gap-1 mt-1.5 text-xs text-slate-400">
-          <Clock className="w-3 h-3" />
+        <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400/80">
+          <Clock className="w-2.5 h-2.5" />
           <span>{timeAgo}</span>
         </div>
       </div>

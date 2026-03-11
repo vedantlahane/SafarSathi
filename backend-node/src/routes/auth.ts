@@ -12,13 +12,16 @@ import {
 	biometricLoginVerify,
 } from "../controllers/authController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
+import { validate } from "../middleware/validate.js";
+import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetConfirmSchema } from "../middleware/validationSchemas.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/password-reset/request", requestPasswordReset);
-router.post("/password-reset/confirm", confirmPasswordReset);
+router.post("/register", authLimiter, validate(registerSchema), register);
+router.post("/login", authLimiter, validate(loginSchema), login);
+router.post("/password-reset/request", authLimiter, validate(passwordResetRequestSchema), requestPasswordReset);
+router.post("/password-reset/confirm", authLimiter, validate(passwordResetConfirmSchema), confirmPasswordReset);
 
 router.post("/biometric/register/options", requireAuth, biometricRegistrationOptions);
 router.post("/biometric/register/verify", requireAuth, biometricRegistrationVerify);

@@ -10,6 +10,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { registerWebSocketServer } from "./services/websocketHub.js";
 import { connectDatabase } from "./config/database.js";
 import { seedDatabase } from "./services/mongoStore.js";
+import { startCronJobs } from "./services/cronJobs.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ async function start() {
     
     if (connected) {
       await seedDatabase();
+      startCronJobs();
     }
     
     server.listen(env.port, "0.0.0.0", () => {

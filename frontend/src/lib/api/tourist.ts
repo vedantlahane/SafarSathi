@@ -3,6 +3,9 @@ import type {
     TouristRegistrationPayload,
     TouristProfile,
     TouristDashboard,
+    LocationPayload,
+    SOSPayload,
+    SOSResponse,
 } from "./types";
 
 export async function registerTourist(payload: TouristRegistrationPayload) {
@@ -59,7 +62,7 @@ export async function fetchTouristDashboard(touristId: string) {
 
 export async function postLocation(
     touristId: string,
-    payload: { lat: number; lng: number; accuracy?: number }
+    payload: LocationPayload
 ) {
     return request<void>(
         `/api/action/location/${encodeURIComponent(touristId)}`,
@@ -72,13 +75,46 @@ export async function postLocation(
 
 export async function postSOS(
     touristId: string,
-    payload: { lat?: number; lng?: number }
+    payload: SOSPayload
 ) {
-    return request<{ status: string }>(
+    return request<SOSResponse>(
         `/api/action/sos/${encodeURIComponent(touristId)}`,
         {
             method: "POST",
             body: JSON.stringify(payload),
         }
     );
+}
+
+export async function postPreAlert(
+    touristId: string,
+    payload: { lat?: number; lng?: number }
+) {
+    return request<SOSResponse>(
+        `/api/action/sos/${encodeURIComponent(touristId)}/pre-alert`,
+        {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }
+    );
+}
+
+export async function cancelSOSAlert(alertId: number) {
+    return request<{ status: string; alertId: number; alertStatus: string }>(
+        `/api/action/sos/${alertId}/cancel`,
+        { method: "POST" }
+    );
+}
+
+export async function getSOSAlertStatus(alertId: number) {
+    return request<{
+        alertId: number;
+        status: string;
+        priority: string;
+        escalationLevel: number;
+        nearestStationId?: string;
+        resolvedBy?: string;
+        resolvedAt?: string;
+        createdAt?: string;
+    }>(`/api/action/sos/${alertId}/status`);
 }

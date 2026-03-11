@@ -16,7 +16,7 @@ function GradientMeshInner() {
                 "pointer-events-none fixed inset-0 z-0 overflow-hidden",
                 "transition-opacity duration-2000 ease-in-out",
             )}
-            style={{ opacity: isDark ? 0.15 : 0.4 }}
+            style={{ opacity: isDark ? 0.40 : 0.85 }}
             aria-hidden="true"
         >
             {/* Blob 1 — top-left drift */}

@@ -55,40 +55,52 @@ export function LoginForm({
 }: LoginFormProps) {
   return (
     <div className="px-4 pb-8">
-      <div className="mt-6 space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-semibold">Email</label>
-          <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              placeholder="you@email.com"
-              className="h-12 rounded-xl pl-11"
-            />
-          </div>
-        </div>
+      <div className="mt-6 space-y-5">
 
-        <div className="space-y-2">
-          <label className="text-xs font-semibold">Password</label>
-          <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => onPasswordChange(e.target.value)}
-              placeholder="••••••••"
-              className="h-12 rounded-xl pl-11 pr-11"
-            />
+        {/* Grouped Input Block */}
+        <div className="overflow-hidden rounded-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+
+          {/* Email Row */}
+          <div className="relative flex items-center min-h-[64px] border-b border-black/5 dark:border-white/5 group transition-colors focus-within:bg-white/40 dark:focus-within:bg-slate-800/40">
+            <div className="w-[52px] flex justify-center items-center">
+              <Mail className="h-[20px] w-[20px] text-slate-400 group-focus-within:text-primary transition-colors" />
+            </div>
+            <div className="flex-1 flex flex-col justify-center h-full py-1 pr-4">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none pt-2">Email</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => onEmailChange(e.target.value)}
+                placeholder="you@email.com"
+                className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
+              />
+            </div>
+          </div>
+
+          {/* Password Row */}
+          <div className="relative flex items-center min-h-[64px] group transition-colors focus-within:bg-white/40 dark:focus-within:bg-slate-800/40">
+            <div className="w-[52px] flex justify-center items-center">
+              <Lock className="h-[20px] w-[20px] text-slate-400 group-focus-within:text-primary transition-colors" />
+            </div>
+            <div className="flex-1 flex flex-col justify-center h-full py-1 pr-12">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none pt-2">Password</label>
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => onPasswordChange(e.target.value)}
+                placeholder="••••••••"
+                className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
+              />
+            </div>
             <button
               type="button"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               onClick={onTogglePassword}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
             </button>
           </div>
+
         </div>
 
         <div className="flex items-center justify-between">
@@ -104,8 +116,8 @@ export function LoginForm({
           </div>
         </div>
 
-        <Button className="h-12 w-full rounded-xl" onClick={onSubmit} disabled={loading}>
-          <KeyRound className="mr-2 h-4 w-4" />
+        <Button className="h-[52px] w-full rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" onClick={onSubmit} disabled={loading}>
+          <KeyRound className="mr-2 h-[18px] w-[18px]" />
           {loading ? "Signing in..." : "Sign in"}
         </Button>
 

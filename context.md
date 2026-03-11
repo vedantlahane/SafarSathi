@@ -2304,8 +2304,8 @@ CRITICAL: The transition declaration on :root uses SPECIFIC property names, NOT 
 ### Section 5: .dark Overrides
 All dark mode color overrides for both shadcn tokens and custom theme variables. Safety theme glows increase from 15% to 25% opacity in dark mode.
 
-### Section 6: Glass Level Classes
-.glass-1, .glass-2, .glass-3 with their dark mode variants as specified in Section 5 of this context.
+### Section 6: Glass Component
+Use the `<GlassCard>` React component (from `@/components/ui/glass-card`) with `level={1|2|3}` instead of standalone CSS classes.
 
 ### Section 7: Gradient Mesh Background
 .gradient-mesh class with radial gradients, animation, opacity for light/dark.
