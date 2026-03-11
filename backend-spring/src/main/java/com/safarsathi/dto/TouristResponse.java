@@ -33,4 +33,10 @@ public class TouristResponse {
     private String lastSeen;
     private String idHash;
     private String idExpiry;
+    private Double safetyScore;
+    private String travelType;
+    private String preferredLanguage;
+    private String visaType;
+    private String visaExpiry;
+    private Boolean isActive;
 }

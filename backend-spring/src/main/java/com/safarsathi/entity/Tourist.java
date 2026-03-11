@@ -49,6 +49,13 @@ public class Tourist {
     private Double currentLat;
     private Double currentLng;
     private String lastSeen;
+    private String travelType;
+    private String preferredLanguage;
+    private String visaType;
+    private String visaExpiry;
+
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Builder.Default
     private Double safetyScore = 100.0;

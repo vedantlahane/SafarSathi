@@ -16,4 +16,6 @@ public interface NotificationRepository extends MongoRepository<Notification, St
     Optional<Notification> findByNotificationId(Integer notificationId);
 
     List<Notification> findByTouristIdAndReadFalse(String touristId);
+
+    void deleteByTouristId(String touristId);
 }

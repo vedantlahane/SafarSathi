@@ -13,4 +13,6 @@ public interface BlockchainLogRepository extends MongoRepository<BlockchainLog, 
     List<BlockchainLog> findByTouristId(String touristId, Sort sort);
 
     BlockchainLog findByDataHashAndStatus(String dataHash, String status);
+
+    void deleteByTouristId(String touristId);
 }
