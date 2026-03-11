@@ -87,6 +87,21 @@ public class AuthController {
     }
 
     /**
+     * DELETE /api/auth/profile/{touristId}
+     */
+    @DeleteMapping("/profile/{touristId}")
+    public ResponseEntity<?> deleteAccount(@PathVariable String touristId) {
+        if (!isValidUuid(touristId)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid tourist ID format."));
+        }
+        boolean deleted = authService.deleteAccount(touristId);
+        if (!deleted) {
+            return ResponseEntity.status(404).body(Map.of("message", "Tourist not found."));
+        }
+        return ResponseEntity.ok(Map.of("acknowledged", true, "message", "Account deleted successfully."));
+    }
+
+    /**
      * POST /api/auth/password-reset/request
      */
     @PostMapping("/password-reset/request")

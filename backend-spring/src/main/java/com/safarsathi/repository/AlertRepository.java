@@ -18,4 +18,6 @@ public interface AlertRepository extends MongoRepository<Alert, String> {
     List<Alert> findByStatus(String status, Sort sort);
 
     List<Alert> findAll(Sort sort);
+
+    void deleteByTouristId(String touristId);
 }

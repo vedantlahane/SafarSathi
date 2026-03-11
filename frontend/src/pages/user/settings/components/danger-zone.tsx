@@ -3,14 +3,17 @@ import { LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { hapticFeedback } from "@/lib/store";
+import { deleteAccount } from "@/lib/api/tourist";
 
 interface DangerZoneProps {
     onLogout: () => void;
+    touristId?: string;
 }
 
-function DangerZoneInner({ onLogout }: DangerZoneProps) {
+function DangerZoneInner({ onLogout, touristId }: DangerZoneProps) {
     const [showLogout, setShowLogout] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     return (
         <>
@@ -60,7 +63,17 @@ function DangerZoneInner({ onLogout }: DangerZoneProps) {
                     </DialogHeader>
                     <div className="flex gap-3 mt-6">
                         <Button variant="outline" className="flex-1 h-12 rounded-xl font-semibold" onClick={() => setShowDelete(false)}>Cancel</Button>
-                        <Button variant="destructive" className="flex-1 h-12 rounded-xl font-semibold" onClick={() => setShowDelete(false)}>Delete</Button>
+                        <Button variant="destructive" className="flex-1 h-12 rounded-xl font-semibold" disabled={deleting} onClick={async () => {
+                            if (!touristId) return;
+                            setDeleting(true);
+                            try {
+                                await deleteAccount(touristId);
+                                setShowDelete(false);
+                                onLogout();
+                            } catch {
+                                setDeleting(false);
+                            }
+                        }}>{deleting ? "Deleting…" : "Delete"}</Button>
                     </div>
                 </DialogContent>
             </Dialog>

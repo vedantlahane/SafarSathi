@@ -54,6 +54,13 @@ export async function updateTouristProfile(
     );
 }
 
+export async function deleteAccount(touristId: string) {
+    return request<{ acknowledged: boolean; message: string }>(
+        `/api/auth/profile/${encodeURIComponent(touristId)}`,
+        { method: "DELETE" }
+    );
+}
+
 export async function fetchTouristDashboard(touristId: string) {
     return request<TouristDashboard>(
         `/api/tourist/${encodeURIComponent(touristId)}/dashboard`

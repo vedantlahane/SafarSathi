@@ -88,7 +88,7 @@ function LoggedInViewInner({ s }: { s: S }) {
                 </SettingsGroup>
 
                 {/* Danger Zone */}
-                <DangerZone onLogout={s.handleLogout} />
+                <DangerZone onLogout={s.handleLogout} touristId={s.session?.touristId} />
 
                 <p className="text-center text-xs text-muted-foreground pb-4">
                     Made with ❤️ for safe travels

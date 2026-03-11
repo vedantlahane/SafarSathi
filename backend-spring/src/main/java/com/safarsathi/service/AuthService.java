@@ -27,6 +27,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final BlockchainService blockchainService;
     private final AnomalyService anomalyService;
+    private final com.safarsathi.repository.AlertRepository alertRepository;
+    private final com.safarsathi.repository.BlockchainLogRepository blockchainLogRepository;
+    private final com.safarsathi.repository.NotificationRepository notificationRepository;
 
     /**
      * Register a new tourist.
@@ -68,6 +71,11 @@ public class AuthService {
                 .currentLat(request.getCurrentLat())
                 .currentLng(request.getCurrentLng())
                 .lastSeen(Instant.now().toString())
+                .travelType(request.getTravelType())
+                .preferredLanguage(request.getPreferredLanguage())
+                .visaType(request.getVisaType())
+                .visaExpiry(request.getVisaExpiry())
+                .isActive(true)
                 .safetyScore(100.0)
                 .build();
 
@@ -230,6 +238,20 @@ public class AuthService {
     }
 
     /**
+     * Delete a tourist account and all associated data.
+     */
+    public boolean deleteAccount(String touristId) {
+        Tourist tourist = touristRepository.findById(touristId).orElse(null);
+        if (tourist == null) return false;
+
+        alertRepository.deleteByTouristId(touristId);
+        blockchainLogRepository.deleteByTouristId(touristId);
+        notificationRepository.deleteByTouristId(touristId);
+        touristRepository.deleteById(touristId);
+        return true;
+    }
+
+    /**
      * Convert Tourist entity to TouristResponse DTO.
      */
     public TouristResponse toResponse(Tourist tourist) {
@@ -259,6 +281,12 @@ public class AuthService {
                 .lastSeen(tourist.getLastSeen())
                 .idHash(tourist.getIdHash())
                 .idExpiry(tourist.getIdExpiry())
+                .safetyScore(tourist.getSafetyScore())
+                .travelType(tourist.getTravelType())
+                .preferredLanguage(tourist.getPreferredLanguage())
+                .visaType(tourist.getVisaType())
+                .visaExpiry(tourist.getVisaExpiry())
+                .isActive(tourist.getIsActive())
                 .build();
     }
 }

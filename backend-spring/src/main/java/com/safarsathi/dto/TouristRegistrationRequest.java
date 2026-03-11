@@ -28,4 +28,8 @@ public class TouristRegistrationRequest {
     private List<String> medicalConditions;
     private Double currentLat;
     private Double currentLng;
+    private String travelType;
+    private String preferredLanguage;
+    private String visaType;
+    private String visaExpiry;
 }
