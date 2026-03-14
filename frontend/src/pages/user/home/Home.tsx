@@ -19,7 +19,7 @@ import { OfflineBanner } from "./components/offline-banner";
  * Max 40 lines. Zero logic.
  */
 export default function Home() {
-  const { data, loading, refresh, hasSession } = useDashboard();
+  const { data, realTimeSafety, loading, refresh, hasSession } = useDashboard();
   const locationShare = useLocationShare();
   const notifications = useNotifications(data.alerts);
   const { isOnline } = useAppState();
@@ -38,11 +38,11 @@ export default function Home() {
           onMarkAllNotificationsRead={notifications.markAllRead}
         />
         <SafetyScoreHero
-          score={data.safetyScore}
-          status={data.status}
-          recommendation={data.recommendation}
+          dangerScore={realTimeSafety.dangerScore}
+          recommendation={realTimeSafety.recommendation}
           factors={data.factors}
           loading={loading}
+          scanning={realTimeSafety.scanning}
         />
         <QuickActions locationShare={locationShare} hasSession={hasSession} />
         <EmergencyStrip />

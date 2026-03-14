@@ -80,3 +80,9 @@ target/
 *.war
 *.ear
 *.iml
+
+
+application-dev.properties
+
+# Local ML model artifact (too large for GitHub)
+danger_model.pkl

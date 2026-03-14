@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   connectWebSocket,
+  fetchRealTimeSafety,
   fetchTouristDashboard,
+  type RealTimeSafety,
   type TouristAlert,
   type WSAlertPayload,
   type WSBroadcastPayload,
@@ -15,6 +17,8 @@ import { useThemeColors } from "@/lib/theme/use-theme-colors";
 import type { DashboardData, SafetyStatus, AlertView } from "../types";
 
 const REFRESH_INTERVAL = 30_000;
+const REALTIME_MIN_RECHECK_MS = 12_000;
+const REALTIME_MIN_MOVE_METERS = 30;
 
 const EMPTY_DATA: DashboardData = {
   safetyScore: 100,
@@ -26,6 +30,35 @@ const EMPTY_DATA: DashboardData = {
   broadcasts: [],
   advisories: [],
 };
+
+const EMPTY_REALTIME_SAFETY: RealTimeSafety = {
+  dangerScore: 0.0,
+  isNearAdminZone: false,
+  recommendation: "Scanning...",
+  riskLabel: "Low Risk",
+  scanning: true,
+};
+
+type GpsLocation = {
+  lat: number;
+  lon: number;
+};
+
+function haversineMeters(a: GpsLocation, b: GpsLocation): number {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusMeters = 6371000;
+
+  const latDelta = toRad(b.lat - a.lat);
+  const lonDelta = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const h =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(lonDelta / 2) ** 2;
+
+  return 2 * earthRadiusMeters * Math.asin(Math.sqrt(h));
+}
 
 /** Derive safety status from numeric score */
 function deriveStatus(score: number): SafetyStatus {
@@ -48,9 +81,22 @@ export function useDashboard() {
   const { setSafetyScore } = useThemeColors();
 
   const [data, setData] = useState<DashboardData>(EMPTY_DATA);
+  const [realTimeSafety, setRealTimeSafety] =
+    useState<RealTimeSafety>(EMPTY_REALTIME_SAFETY);
+  const [gpsLocation, setGpsLocation] = useState<GpsLocation | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const gpsLocationRef = useRef<GpsLocation | null>(null);
+  const lastSafetyFetchRef = useRef<{
+    at: number;
+    location: GpsLocation;
+  } | null>(null);
+
   const hasSession = Boolean(session?.touristId);
+
+  useEffect(() => {
+    gpsLocationRef.current = gpsLocation;
+  }, [gpsLocation]);
 
   const loadDashboard = useCallback(async () => {
     if (!session?.touristId) return;
@@ -84,16 +130,107 @@ export function useDashboard() {
     }
   }, [session?.touristId, setSafetyScore]);
 
+  const loadRealTimeSafety = useCallback(
+    async (location: GpsLocation | null, force = false) => {
+      if (!location) {
+        setRealTimeSafety((prev) => ({
+          ...prev,
+          dangerScore: 0.0,
+          recommendation: "Scanning...",
+          scanning: true,
+        }));
+        return;
+      }
+
+      const now = Date.now();
+      const lastFetch = lastSafetyFetchRef.current;
+
+      if (!force && lastFetch) {
+        const elapsed = now - lastFetch.at;
+        const movedMeters = haversineMeters(lastFetch.location, location);
+        if (
+          elapsed < REALTIME_MIN_RECHECK_MS &&
+          movedMeters < REALTIME_MIN_MOVE_METERS
+        ) {
+          return;
+        }
+      }
+
+      lastSafetyFetchRef.current = { at: now, location };
+
+      setRealTimeSafety((prev) => ({ ...prev, scanning: true }));
+
+      const aiSafety = await fetchRealTimeSafety(location.lat, location.lon);
+      const dangerScore = Math.max(0, Math.min(1, aiSafety.dangerScore ?? 0));
+
+      setRealTimeSafety({
+        ...aiSafety,
+        dangerScore,
+      });
+
+      if (!aiSafety.scanning) {
+        // Theme score uses "higher is safer". AI score uses "higher is more dangerous".
+        setSafetyScore(Math.round((1 - dangerScore) * 100));
+      }
+    },
+    [setSafetyScore]
+  );
+
+  useEffect(() => {
+    if (!hasSession) {
+      setGpsLocation(null);
+      setRealTimeSafety(EMPTY_REALTIME_SAFETY);
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setRealTimeSafety(EMPTY_REALTIME_SAFETY);
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        };
+        setGpsLocation(location);
+        void loadRealTimeSafety(location);
+      },
+      () => {
+        setGpsLocation(null);
+        setRealTimeSafety(EMPTY_REALTIME_SAFETY);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 20_000,
+        maximumAge: 10_000,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [hasSession, loadRealTimeSafety]);
+
   // Auto-refresh on interval
   useEffect(() => {
     if (!hasSession) {
       setData(EMPTY_DATA);
+      setRealTimeSafety(EMPTY_REALTIME_SAFETY);
       return;
     }
-    loadDashboard();
-    const id = setInterval(loadDashboard, REFRESH_INTERVAL);
+
+    const refreshAll = async () => {
+      await loadDashboard();
+      await loadRealTimeSafety(gpsLocationRef.current, true);
+    };
+
+    void refreshAll();
+    const id = setInterval(() => {
+      void refreshAll();
+    }, REFRESH_INTERVAL);
+
     return () => clearInterval(id);
-  }, [hasSession, loadDashboard]);
+  }, [hasSession, loadDashboard, loadRealTimeSafety]);
 
   // WebSocket real-time events (room-based)
   useEffect(() => {
@@ -194,7 +331,8 @@ export function useDashboard() {
   const refresh = useCallback(async () => {
     hapticFeedback("light");
     await loadDashboard();
-  }, [loadDashboard]);
+    await loadRealTimeSafety(gpsLocationRef.current, true);
+  }, [loadDashboard, loadRealTimeSafety]);
 
-  return { data, loading, refresh, hasSession };
+  return { data, realTimeSafety, loading, refresh, hasSession };
 }

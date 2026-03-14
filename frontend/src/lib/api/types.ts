@@ -20,6 +20,22 @@ export type TouristRegistrationPayload = {
     visaExpiry?: string;
 };
 
+export type ApiResponse<T> = {
+    success: boolean;
+    data?: T;
+    message?: string;
+    error?: string;
+    timestamp?: string;
+};
+
+export type RealTimeSafety = {
+    dangerScore: number;
+    isNearAdminZone: boolean;
+    recommendation: string;
+    riskLabel: "Low Risk" | "Caution" | "High Danger";
+    scanning: boolean;
+};
+
 export type TouristProfile = {
     id: string;
     name: string;
