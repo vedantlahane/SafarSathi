@@ -53,9 +53,24 @@ export function LoginForm({
   onBiometricLogin,
   onSwitchToRegister,
 }: LoginFormProps) {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSubmit();
+  };
+
+  const handleResetRequestSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onResetRequest();
+  };
+
+  const handleResetSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onResetSubmit();
+  };
+
   return (
     <div className="px-4 pb-8">
-      <div className="mt-6 space-y-5">
+      <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
 
         {/* Grouped Input Block */}
         <div className="overflow-hidden rounded-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
@@ -105,6 +120,7 @@ export function LoginForm({
 
         <div className="flex items-center justify-between">
           <button
+            type="button"
             className="text-xs text-primary"
             onClick={() => onOpenReset(true)}
           >
@@ -116,13 +132,14 @@ export function LoginForm({
           </div>
         </div>
 
-        <Button className="h-[52px] w-full rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" onClick={onSubmit} disabled={loading}>
+        <Button type="submit" className="h-[52px] w-full rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" disabled={loading}>
           <KeyRound className="mr-2 h-[18px] w-[18px]" />
           {loading ? "Signing in..." : "Sign in"}
         </Button>
 
         {biometricSupported && biometricEnabled && (
           <Button
+            type="button"
             variant="outline"
             className="h-12 w-full rounded-xl"
             onClick={onBiometricLogin}
@@ -134,12 +151,13 @@ export function LoginForm({
         )}
 
         <button
+          type="button"
           className="w-full text-xs text-muted-foreground"
           onClick={onSwitchToRegister}
         >
           New here? Create an account
         </button>
-      </div>
+      </form>
 
       <Sheet open={showReset} onOpenChange={onOpenReset}>
         <SheetContent side="bottom" className="h-[45vh] rounded-t-3xl">
@@ -150,7 +168,7 @@ export function LoginForm({
             <p className="text-xs text-muted-foreground">
               We will send reset instructions to your email.
             </p>
-            <div className="mt-4">
+            <form className="mt-4" onSubmit={handleResetRequestSubmit}>
               <Input
                 type="email"
                 value={email}
@@ -158,12 +176,12 @@ export function LoginForm({
                 placeholder="you@email.com"
                 className="h-12 rounded-xl"
               />
-            </div>
-            <Button className="mt-4 h-12 w-full rounded-xl" onClick={onResetRequest}>
-              Send reset link
-            </Button>
+              <Button type="submit" className="mt-4 h-12 w-full rounded-xl">
+                Send reset link
+              </Button>
+            </form>
 
-            <div className="mt-5 space-y-3">
+            <form className="mt-5 space-y-3" onSubmit={handleResetSubmit}>
               <Input
                 value={resetToken}
                 onChange={(e) => onResetTokenChange(e.target.value)}
@@ -177,10 +195,10 @@ export function LoginForm({
                 placeholder="New password"
                 className="h-12 rounded-xl"
               />
-              <Button className="h-12 w-full rounded-xl" onClick={onResetSubmit}>
+              <Button type="submit" className="h-12 w-full rounded-xl">
                 Update password
               </Button>
-            </div>
+            </form>
           </div>
         </SheetContent>
       </Sheet>

@@ -1,14 +1,30 @@
 import { getSession, getAdminSession } from "../session";
 
+const DEFAULT_PRODUCTION_API_URL = "https://safarsathi-1.onrender.com";
+
+function isLocalHostname(hostname: string): boolean {
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
+function isPrivateHostname(hostname: string): boolean {
+    return hostname.endsWith(".local") ||
+        /^10\./.test(hostname) ||
+        /^192\.168\./.test(hostname) ||
+        /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
+}
+
 function resolveBaseUrl(): string {
     // Explicit override via env var
-    const envUrl = import.meta.env.VITE_BACKEND_NODE_URL as string | undefined; 
-    if (envUrl) return envUrl;
+    const envUrl = import.meta.env.VITE_BACKEND_NODE_URL as string | undefined;
+    if (envUrl?.trim()) return envUrl.trim();
 
-    // Auto-detect: use the same hostname the browser loaded from,
-    // so LAN / remote devices hit the right backend.
+    // Only use port 8081 automatically for local/LAN development.
     const { protocol, hostname } = window.location;
-    return `${protocol}//${hostname}:8081`;
+    if (isLocalHostname(hostname) || isPrivateHostname(hostname)) {
+        return `${protocol}//${hostname}:8081`;
+    }
+
+    return DEFAULT_PRODUCTION_API_URL;
 }
 
 const API_BASE_URL = resolveBaseUrl();

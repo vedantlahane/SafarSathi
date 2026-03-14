@@ -23,8 +23,13 @@ export function RegisterStep1({
   onChange,
   onNext,
 }: RegisterStep1Props) {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onNext();
+  };
+
   return (
-    <div className="space-y-5 px-1">
+    <form className="space-y-5 px-1" onSubmit={handleSubmit}>
       <div className="overflow-hidden rounded-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
 
         {/* Name Row */}
@@ -93,9 +98,9 @@ export function RegisterStep1({
         </ul>
       </div>
 
-      <Button className="h-[52px] w-full rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" onClick={onNext} disabled={!canContinue}>
+      <Button type="submit" className="h-[52px] w-full rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" disabled={!canContinue}>
         Continue
       </Button>
-    </div>
+    </form>
   );
 }
