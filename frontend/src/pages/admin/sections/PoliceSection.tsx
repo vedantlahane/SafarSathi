@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Shield, Plus, Phone, Download } from "lucide-react";
+import { Shield, Plus, Phone } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -64,7 +64,7 @@ export function PoliceSection({
     const rows = filteredPolice.map(s => [
       s.name, s.departmentCode, s.city,
       s.isActive ? "On Duty" : "Off Duty",
-      s.phone || "", String(s.location?.lat || ""), String(s.location?.lng || ""),
+      s.contactNumber || "", String(s.location?.lat || ""), String(s.location?.lng || ""),
     ]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
