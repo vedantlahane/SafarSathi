@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/password-reset/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/safety/**").permitAll()
                         .requestMatchers("/api/risk-zones/active").permitAll()
                         .requestMatchers("/api/police-stations").permitAll()
                         .requestMatchers("/api/hospitals").permitAll()
