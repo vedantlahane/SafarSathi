@@ -7,6 +7,8 @@ import com.safarsathi.repository.TouristRepository;
 import com.safarsathi.security.JwtService;
 import com.safarsathi.util.HashUtil;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     private final TouristRepository touristRepository;
     private final PasswordEncoder passwordEncoder;
@@ -180,7 +184,11 @@ public class AuthService {
         tourist.setCurrentLng(lng);
         tourist.setLastSeen(Instant.now().toString());
         tourist = touristRepository.save(tourist);
-        anomalyService.processLocation(tourist);
+        try {
+            anomalyService.processLocation(tourist);
+        } catch (Exception ex) {
+            logger.warn("Anomaly detection failed for tourist {}, location update still succeeded", touristId, ex);
+        }
     }
 
     /**
