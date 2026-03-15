@@ -1,0 +1,32 @@
+{
+  "assamPoliceStations": {
+    "Kapurthala": [
+      { "id": 101, "position": [31.2223, 75.7678], "name": "Phagwara City Police Station", "contact": "01824-260033", "available": true, "responseTime": "5-15 min" },
+      { "id": 102, "position": [31.2450, 75.7620], "name": "Guru Nanak Industrial Area Police Post", "contact": "112", "available": true, "responseTime": "8-18 min" },
+      { "id": 103, "position": [31.2100, 75.7920], "name": "Rurka Kalan Police Station", "contact": "112", "available": true, "responseTime": "10-20 min" },
+      { "id": 104, "position": [31.1765, 75.6821], "name": "Bholath Police Station", "contact": "01822-234567", "available": true, "responseTime": "10-25 min" },
+      { "id": 105, "position": [31.1274, 75.4746], "name": "Nakodar Police Station", "contact": "01821-244100", "available": true, "responseTime": "10-20 min" },
+      { "id": 106, "position": [31.3812, 75.3800], "name": "Kapurthala Sadar Police Station", "contact": "01822-232100", "available": true, "responseTime": "8-15 min" },
+      { "id": 107, "position": [31.2147, 75.1985], "name": "Sultanpur Lodhi Police Station", "contact": "01823-222026", "available": true, "responseTime": "15-30 min" },
+      { "id": 108, "position": [31.2800, 75.7000], "name": "Alawalpur Police Post", "contact": "112", "available": true, "responseTime": "10-20 min" },
+      { "id": 109, "position": [31.2461, 75.7235], "name": "Chaheru Police Chowki", "contact": "112", "available": true, "responseTime": "5-12 min" }
+    ],
+    "Jalandhar": [
+      { "id": 201, "position": [31.3260, 75.5762], "name": "Jalandhar Division 1 (Police Lines)", "contact": "0181-2222200", "available": true, "responseTime": "5-10 min" },
+      { "id": 202, "position": [31.3090, 75.5645], "name": "Model Town Police Station", "contact": "0181-2224400", "available": true, "responseTime": "5-10 min" },
+      { "id": 203, "position": [31.2964, 75.6205], "name": "Focal Point Police Station", "contact": "0181-2670100", "available": true, "responseTime": "5-12 min" },
+      { "id": 204, "position": [31.2934, 75.6321], "name": "Jalandhar Cantonment Police Station", "contact": "0181-2240100", "available": true, "responseTime": "5-12 min" },
+      { "id": 205, "position": [31.2885, 75.6135], "name": "Rama Mandi Police Station", "contact": "0181-2660100", "available": true, "responseTime": "5-10 min" },
+      { "id": 206, "position": [31.3450, 75.5200], "name": "Adam Nagar Police Station", "contact": "112", "available": true, "responseTime": "8-15 min" },
+      { "id": 207, "position": [31.3145, 75.5945], "name": "Bus Stand Police Post, Jalandhar", "contact": "112", "available": true, "responseTime": "3-8 min" },
+      { "id": 208, "position": [31.1978, 75.6289], "name": "Bhogpur Police Station", "contact": "01822-255100", "available": true, "responseTime": "10-20 min" },
+      { "id": 209, "position": [31.0765, 75.6543], "name": "Lohian Khas Police Station", "contact": "112", "available": true, "responseTime": "15-25 min" },
+      { "id": 210, "position": [31.0890, 75.4578], "name": "Shahkot Police Station", "contact": "112", "available": true, "responseTime": "15-25 min" },
+      { "id": 211, "position": [31.1049, 75.5375], "name": "Nurmahal Police Station", "contact": "112", "available": true, "responseTime": "12-22 min" }
+    ],
+    "Ludhiana_East": [
+      { "id": 301, "position": [31.0124, 75.7651], "name": "Khanna Police Station", "contact": "01628-220100", "available": true, "responseTime": "10-20 min" },
+      { "id": 302, "position": [30.9500, 75.7300], "name": "Doraha Police Station", "contact": "112", "available": true, "responseTime": "12-22 min" }
+    ]
+  }
+}

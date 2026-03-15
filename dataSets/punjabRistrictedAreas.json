@@ -1,0 +1,204 @@
+{
+  "restrictedZones": [
+    {
+      "id": 1,
+      "position": [31.2554, 75.7048],
+      "radius": 280,
+      "name": "LPU Front Gate — Traffic Danger Zone",
+      "description": "Extremely high traffic on GT Road at LPU gate. Highway vehicles + student pedestrians = frequent accidents. High risk for women walking alone at night.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 2,
+      "position": [31.2580, 75.7015],
+      "radius": 320,
+      "name": "Law Gate Market — High Risk (Women)",
+      "description": "Crowded evening market outside LPU. Pickpocketing, eve teasing, and bag snatching reported. Women advised not to walk alone here after 8 PM.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 3,
+      "position": [31.2600, 75.7130],
+      "radius": 350,
+      "name": "LPU Back Gate — Isolated Night Road",
+      "description": "Poorly lit service road behind LPU. Very isolated after 10 PM. Multiple harassment incidents reported. Avoid alone at night.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 4,
+      "position": [31.2655, 75.6855],
+      "radius": 580,
+      "name": "Khajurla Village Road",
+      "description": "Narrow unlit road from LPU toward Khajurla. No streetlights after sunset. Used as student shortcut but highly unsafe. No emergency services nearby.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 5,
+      "position": [31.2630, 75.6810],
+      "radius": 500,
+      "name": "Haveli Khajurla Crossroads",
+      "description": "Remote intersection near Haveli Khajurla. Vehicle theft and robbery incidents reported after dark. Avoid after 9 PM.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 6,
+      "position": [31.2615, 75.6750],
+      "radius": 450,
+      "name": "Haveli Village Inner Roads",
+      "description": "Deserted village lanes around Haveli area west of LPU. Poorly lit, no police presence. Avoid walking alone here.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 7,
+      "position": [31.2640, 75.6920],
+      "radius": 700,
+      "name": "Kajrula Road — Unlit Stretch",
+      "description": "Dark isolated road toward Kajrula from LPU area. Known for bike theft and lone-traveler incidents at night. No CCTV coverage.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 8,
+      "position": [31.2670, 75.6870],
+      "radius": 400,
+      "name": "Khajurla Fields Road",
+      "description": "Agricultural road near Khajurla passing through open fields. Completely isolated after dark. Multiple incidents of harassment reported near this stretch.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 9,
+      "position": [31.2590, 75.6975],
+      "radius": 350,
+      "name": "LPU West Boundary Road",
+      "description": "Road running along the western edge of LPU campus. Poorly lit, limited CCTV. Isolated stretches used by motorcycle riders at speed at night.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 10,
+      "position": [31.2411, 75.7350],
+      "radius": 1600,
+      "name": "GT Road (NH44) — Night Danger Zone",
+      "description": "High-speed highway LPU to Phagwara. Rash driving frequent at night. Women should never walk alone on this stretch after 9 PM.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 11,
+      "position": [31.2180, 75.7920],
+      "radius": 1000,
+      "name": "Rurka Kalan Highway Stretch",
+      "description": "Unlit section of NH44 near Rurka Kalan. Unmarked speed bumps and stray animals cause accidents after 9 PM.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 12,
+      "position": [31.2490, 75.7120],
+      "radius": 600,
+      "name": "LPU–Phagwara GT Road Stretch",
+      "description": "Intermediate stretch of GT Road between LPU and Phagwara. Frequent overspeeding, no pedestrian pathway. Multiple road accident hotspot.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 13,
+      "position": [31.2461, 75.7235],
+      "radius": 420,
+      "name": "Chaheru Railway Crossing",
+      "description": "Dimly lit crossing and station area. Isolated after 10 PM. Harassment incidents near the crossing. Arrange transport instead of walking here at night.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 14,
+      "position": [31.2223, 75.7678],
+      "radius": 380,
+      "name": "Phagwara Railway Station",
+      "description": "Busy transit hub. Active theft and scams targeting travelers. Women traveling alone should stay in well-lit areas and use official transport.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 15,
+      "position": [31.2300, 75.7500],
+      "radius": 500,
+      "name": "Phagwara City Market",
+      "description": "Congested commercial lanes. Bag snatching, motorcycle theft, and eve teasing incidents. Avoid alone in the evening.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 16,
+      "position": [31.2150, 75.7900],
+      "radius": 750,
+      "name": "Phagwara Industrial Area — Night Zone",
+      "description": "Industrial outskirts with minimal foot traffic after 11 PM. Vehicle theft and robbery reported. Women should not be here alone at night.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 17,
+      "position": [31.3145, 75.5945],
+      "radius": 520,
+      "name": "Jalandhar Bus Stand (SBS ISBT)",
+      "description": "Major bus terminal with active pickpockets and luggage thieves. High risk for solo female travelers. Extra vigilance during boarding.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 18,
+      "position": [31.2885, 75.6135],
+      "radius": 460,
+      "name": "Rama Mandi Chowk, Jalandhar",
+      "description": "Chaotic intersection. High accident rate and chain snatching near the chowk. Be alert, especially on two-wheelers.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 19,
+      "position": [31.3260, 75.5762],
+      "radius": 620,
+      "name": "Jyoti Chowk Market, Jalandhar",
+      "description": "Dense market. Pickpocketing in crowded lanes. Women report frequent eve teasing in narrow alleys. Avoid isolated lanes here.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 20,
+      "position": [31.3090, 75.5645],
+      "radius": 700,
+      "name": "Model Town Market, Jalandhar",
+      "description": "Crowded weekend market. Car break-ins and snatching near parking areas. Guard valuables.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 21,
+      "position": [31.2934, 75.6321],
+      "radius": 400,
+      "name": "Jalandhar Cantt Station Area",
+      "description": "Surroundings become deserted on late-night trains. Exercise caution if arriving or departing after midnight.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 22,
+      "position": [31.3550, 75.4650],
+      "radius": 2100,
+      "name": "Kapurthala Road — Isolated Stretch",
+      "description": "Poorly lit and low-traffic sections between Jalandhar and Kapurthala at night. Avoid traveling alone after dark.",
+      "riskLevel": "medium"
+    },
+    {
+      "id": 23,
+      "position": [31.1274, 75.4746],
+      "radius": 500,
+      "name": "Nakodar Town Centre",
+      "description": "Narrow lanes and high footfall during market hours. Pickpocketing during festive season. Generally safe in daylight.",
+      "riskLevel": "low"
+    },
+    {
+      "id": 24,
+      "position": [31.2520, 75.7060],
+      "radius": 200,
+      "name": "LPU Main Gate Pedestrian Crossing",
+      "description": "GT Road crossing directly at LPU main gate. Extremely dangerous for pedestrians — vehicles rarely stop. Multiple student accident fatalities recorded here.",
+      "riskLevel": "high"
+    },
+    {
+      "id": 25,
+      "position": [31.2565, 75.6900],
+      "radius": 300,
+      "name": "LPU Side Road toward Haveli",
+      "description": "Road branching from LPU toward Haveli area. Gets very dark after 9 PM. Students returning late from Phagwara or Law Gate area should avoid this route alone.",
+      "riskLevel": "high"
+    }
+  ]
+}
