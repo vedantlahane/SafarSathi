@@ -133,12 +133,6 @@ export function useDashboard() {
   const loadRealTimeSafety = useCallback(
     async (location: GpsLocation | null, force = false) => {
       if (!location) {
-        setRealTimeSafety((prev) => ({
-          ...prev,
-          dangerScore: 0.0,
-          recommendation: "Scanning...",
-          scanning: true,
-        }));
         return;
       }
 
@@ -160,17 +154,20 @@ export function useDashboard() {
 
       setRealTimeSafety((prev) => ({ ...prev, scanning: true }));
 
-      const aiSafety = await fetchRealTimeSafety(location.lat, location.lon);
-      const dangerScore = Math.max(0, Math.min(1, aiSafety.dangerScore ?? 0));
+      try {
+        const aiSafety = await fetchRealTimeSafety(location.lat, location.lon);
+        const dangerScore = Math.max(0, Math.min(1, aiSafety.dangerScore ?? 0));
 
-      setRealTimeSafety({
-        ...aiSafety,
-        dangerScore,
-      });
+        setRealTimeSafety({
+          ...aiSafety,
+          dangerScore,
+          scanning: false,
+        });
 
-      if (!aiSafety.scanning) {
         // Theme score uses "higher is safer". AI score uses "higher is more dangerous".
         setSafetyScore(Math.round((1 - dangerScore) * 100));
+      } catch {
+        setRealTimeSafety((prev) => ({ ...prev, scanning: false }));
       }
     },
     [setSafetyScore]
@@ -179,12 +176,18 @@ export function useDashboard() {
   useEffect(() => {
     if (!hasSession) {
       setGpsLocation(null);
-      setRealTimeSafety(EMPTY_REALTIME_SAFETY);
+      setRealTimeSafety({ ...EMPTY_REALTIME_SAFETY, scanning: false });
       return;
     }
 
     if (!navigator.geolocation) {
-      setRealTimeSafety(EMPTY_REALTIME_SAFETY);
+      setRealTimeSafety({
+        dangerScore: 0.0,
+        isNearAdminZone: false,
+        recommendation: "Geolocation is not supported by this browser.",
+        riskLabel: "Low Risk",
+        scanning: false,
+      });
       return;
     }
 
@@ -197,9 +200,18 @@ export function useDashboard() {
         setGpsLocation(location);
         void loadRealTimeSafety(location);
       },
-      () => {
+      (error) => {
         setGpsLocation(null);
-        setRealTimeSafety(EMPTY_REALTIME_SAFETY);
+        setRealTimeSafety({
+          dangerScore: 0.0,
+          isNearAdminZone: false,
+          recommendation:
+            error.code === error.PERMISSION_DENIED
+              ? "Enable location permission for real-time safety analysis."
+              : "Location unavailable. Safety analysis paused.",
+          riskLabel: "Low Risk",
+          scanning: false,
+        });
       },
       {
         enableHighAccuracy: true,

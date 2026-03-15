@@ -22,7 +22,7 @@ function SafetyScoreHeroInner({
   loading,
   scanning,
 }: SafetyScoreHeroProps) {
-  const normalizedDangerScore = Math.max(0, Math.min(1, dangerScore || 0));
+  const normalizedDangerScore = Math.max(0, Math.min(1, dangerScore ?? 0));
   const riskPercent = Math.round(normalizedDangerScore * 100);
 
   const riskState = useMemo(() => {

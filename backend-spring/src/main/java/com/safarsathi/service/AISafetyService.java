@@ -4,25 +4,35 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
+
+import java.net.SocketTimeoutException;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
 public class AISafetyService {
 
     private static final Logger logger = LoggerFactory.getLogger(AISafetyService.class);
-    private static final String PREDICT_SAFETY_URL =
-            "http://localhost:5000/predict-safety?lat={lat}&lon={lon}&hour={hour}";
+
+    @Value("${AI_API_URL:http://localhost:5000}")
+    private String aiApiUrl;
 
     private final RestTemplateBuilder restTemplateBuilder;
 
     public double getRealTimeSafetyScore(double lat, double lon, int hour) {
         try {
-            RestTemplate restTemplate = restTemplateBuilder.build();
+            String url = aiApiUrl + "/predict-safety?lat={lat}&lon={lon}&hour={hour}";
+            RestTemplate restTemplate = restTemplateBuilder
+                    .connectTimeout(Duration.ofMillis(5000))
+                    .readTimeout(Duration.ofMillis(5000))
+                    .build();
             JsonNode response = restTemplate.getForObject(
-                    PREDICT_SAFETY_URL,
+                    url,
                     JsonNode.class,
                     lat,
                     lon,
@@ -35,9 +45,14 @@ public class AISafetyService {
             }
 
             logger.warn("Python AI API returned an invalid response for lat={}, lon={}, hour={}", lat, lon, hour);
+        } catch (ResourceAccessException ex) {
+            if (ex.getCause() instanceof SocketTimeoutException) {
+                logger.warn("Python AI API timed out (5s). Returning default safety score for lat={}, lon={}, hour={}", lat, lon, hour);
+            } else {
+                logger.warn("Python AI API unreachable. Returning default safety score for lat={}, lon={}, hour={}", lat, lon, hour, ex);
+            }
         } catch (Exception ex) {
-            logger.warn("Python AI API unavailable. Returning default safety score for lat={}, lon={}, hour={}",
-                    lat, lon, hour, ex);
+            logger.warn("Python AI API error. Returning default safety score for lat={}, lon={}, hour={}", lat, lon, hour, ex);
         }
 
         return 0.0;

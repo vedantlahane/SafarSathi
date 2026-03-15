@@ -109,15 +109,14 @@ public class SecurityConfig {
      * - When FRONTEND_URL is absent, "*" is used so local dev works without any config.
      */
     private List<String> buildAllowedOrigins() {
+        List<String> origins = new ArrayList<>();
+        origins.add("https://yatrax.vercel.app");  // production frontend
+        origins.add("http://localhost:5173");        // Vite dev server
+        origins.add("https://localhost:5173");
+        origins.add("http://localhost:3000");        // fallback CRA / Next dev
         if (frontendUrl != null && !frontendUrl.isBlank()) {
-            List<String> origins = new ArrayList<>();
-            origins.add(frontendUrl.strip());          // e.g. https://safarsathi.vercel.app
-            origins.add("http://localhost:5173");       // Vite dev server
-            origins.add("https://localhost:5173");
-            origins.add("http://localhost:3000");       // fallback CRA / Next dev
-            return origins;
+            origins.add(frontendUrl.strip());        // any additional override via FRONTEND_URL
         }
-        // No FRONTEND_URL set — development mode, allow everything
-        return List.of("*");
+        return origins;
     }
 }

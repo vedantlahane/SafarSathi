@@ -51,5 +51,7 @@ def predict_safety():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    # GCP Cloud Run sets PORT=8080 automatically.
+    # Default is 5000 so local dev doesn't clash with Spring Boot (8081).
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
