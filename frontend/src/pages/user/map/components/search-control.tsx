@@ -36,8 +36,8 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          q + ", Assam, India"
-        )}&limit=6&addressdetails=1`,
+          q + ", Punjab, India"
+        )}&limit=6&addressdetails=1&viewbox=73.8,29.5,76.9,32.5&bounded=0`,
         { signal: abortRef.current.signal }
       );
       const data = await res.json();

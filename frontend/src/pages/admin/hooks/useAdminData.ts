@@ -374,8 +374,8 @@ export function usePoliceActions(refetch: () => Promise<void>) {
       departmentCode: formData.departmentCode,
       city: formData.city,
       contactNumber: formData.contactNumber,
-      latitude: formData.lat ? Number(formData.lat) : 26.1445,
-      longitude: formData.lng ? Number(formData.lng) : 91.7362,
+      latitude: formData.lat ? Number(formData.lat) : 31.2554,
+      longitude: formData.lng ? Number(formData.lng) : 75.7048,
       isActive: true,
     };
 

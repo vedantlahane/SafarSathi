@@ -10,8 +10,8 @@ import {
 } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
-import assamData from "./../../../../../../dataSets/assamRistrictedAreas.json";
-import policeData from "./../../../../../../dataSets/assamPoliceStations.json";
+import assamData from "./../../../../../../dataSets/punjabRistrictedAreas.json";
+import policeData from "./../../../../../../dataSets/punjabPoliceStations.json";
 import { MAP_DEFAULTS, LOCATION_POST_INTERVAL_MS } from "../constants";
 import {
   formatETA,

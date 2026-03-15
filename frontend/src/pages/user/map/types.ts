@@ -113,15 +113,15 @@ export function getZoneColor(level: string | null): { stroke: string; fill: stri
 export function getZoneOpacity(level: string | null): number {
   switch (level?.toLowerCase()) {
     case "critical":
-      return 0.22;
+      return 0.50;
     case "high":
-      return 0.18;
+      return 0.40;
     case "medium":
-      return 0.12;
+      return 0.28;
     case "low":
-      return 0.08;
+      return 0.16;
     default:
-      return 0.12;
+      return 0.28;
   }
 }
 

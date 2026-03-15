@@ -1,7 +1,7 @@
 // src/pages/user/map/constants.ts
 
 export const MAP_DEFAULTS = {
-  center: [26.1445, 91.7362] as [number, number],
+  center: [31.2554, 75.7048] as [number, number], // LPU, Phagwara, Punjab
   zoom: 13,
   minZoom: 8,
   maxZoom: 18,
