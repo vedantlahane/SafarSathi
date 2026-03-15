@@ -3,6 +3,7 @@ package com.safarsathi.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,7 +15,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -25,6 +29,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    /**
+     * Vercel production URL, e.g. https://safarsathi.vercel.app
+     * Set via the FRONTEND_URL environment variable in Cloud Run.
+     * Leave unset (or empty) for local development — falls back to wildcard.
+     */
+    @Value("${FRONTEND_URL:}")
+    private String frontendUrl;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -34,10 +46,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(request -> {
-                    var config = new org.springframework.web.cors.CorsConfiguration();
-                    config.setAllowedOriginPatterns(java.util.List.of("*"));
-                    config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(java.util.List.of("*"));
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOriginPatterns(buildAllowedOrigins());
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
                     return config;
                 }))
@@ -88,5 +100,24 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Builds the allowed-origins list for CORS:
+     * - Local dev origins are always included.
+     * - When FRONTEND_URL is set (production), it is added and the wildcard is dropped.
+     * - When FRONTEND_URL is absent, "*" is used so local dev works without any config.
+     */
+    private List<String> buildAllowedOrigins() {
+        if (frontendUrl != null && !frontendUrl.isBlank()) {
+            List<String> origins = new ArrayList<>();
+            origins.add(frontendUrl.strip());          // e.g. https://safarsathi.vercel.app
+            origins.add("http://localhost:5173");       // Vite dev server
+            origins.add("https://localhost:5173");
+            origins.add("http://localhost:3000");       // fallback CRA / Next dev
+            return origins;
+        }
+        // No FRONTEND_URL set — development mode, allow everything
+        return List.of("*");
     }
 }
