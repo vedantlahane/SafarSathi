@@ -1,0 +1,303 @@
+# YatraX Safety ML v2 - Setup and Integration Guide
+
+This guide explains how to train and run the new safety-score model and connect it to both backends.
+
+## What this model does
+
+The new model combines:
+
+1. Rule engine with environment-aware weighting (`urban/suburban/rural/remote/wilderness`).
+2. ML regressor trained on multi-factor synthetic + legacy data.
+3. Forecasting for next `1h/3h/6h` score drift.
+
+Output includes:
+
+- `safety_score` (0-100, higher is safer)
+- `danger_score` (0-1, higher is more dangerous)
+- `status` (`safe`, `caution`, `danger`)
+- factor-level explanations
+- short recommendation
+- future forecasts
+
+## Framework choice (Colab)
+
+Current implementation uses `scikit-learn` (`RandomForestRegressor`) because:
+
+1. It is stable for tabular, mixed-scale safety features.
+2. It trains quickly for Phase-1/2 on synthetic + weakly labeled data.
+3. It is easy to deploy and debug in backend services.
+
+TensorFlow and PyTorch are both valid future options, especially when you add:
+
+1. Sequence models for time-series forecasting (1h/3h/6h trajectories).
+2. Multi-task learning (safety score + risk-type heads).
+3. Learned embeddings for location clusters and place categories.
+
+Suggested roadmap:
+
+1. Phase-1/2: `scikit-learn` (current).
+2. Phase-3: XGBoost/LightGBM for stronger tabular performance.
+3. Phase-4+: PyTorch or TensorFlow for temporal and multi-modal models.
+
+## Files added
+
+- `model/schemas.py`: typed feature schema and prediction output schema.
+- `model/environment.py`: urban/remote/wilderness detector.
+- `model/rule_engine.py`: weighted factor scoring with hard safety caps.
+- `model/feature_builder.py`: ML feature engineering.
+- `model/synthetic_data.py`: synthetic dataset generator + legacy dataset mapper.
+- `model/train_pipeline.py`: full training pipeline.
+- `model/predictor.py`: model loader + blended inference + forecasting.
+- `model/api.py`: Flask API endpoints.
+- `model/data_sources.py`: source catalog with official links and feature-to-source mapping.
+- `danger_api.py`: now delegates to `model/api.py` app.
+- `train_danger_model.py`: now delegates to `model/train_pipeline.py`.
+
+## Prerequisites
+
+- Python 3.11+
+- Existing backend Python virtual environment (do not install globally)
+
+## Important workflow constraints
+
+1. Use only the backend virtual environment for all Python commands.
+2. Do not run `pip install` in the system/global interpreter.
+3. Do model training on Laude (cloud), not on your local PC.
+
+## Activate backend virtual environment
+
+Use your already-created backend venv path.
+
+Windows PowerShell example:
+
+```powershell
+# Example path, replace with your real backend venv path
+& "<backend-venv-path>\Scripts\Activate.ps1"
+python -m pip install -r requirements.txt
+```
+
+Linux/macOS example:
+
+```bash
+# Example path, replace with your real backend venv path
+source <backend-venv-path>/bin/activate
+python -m pip install -r requirements.txt
+```
+
+## Train the model (Laude cloud)
+
+Run this on your Laude/cloud machine after activating the backend venv:
+
+```bash
+python -m model.train_pipeline --synthetic-samples 42000
+```
+
+This writes the trained artifact to:
+
+- `danger_model.pkl`
+
+Optional training flags:
+
+```bash
+python -m model.train_pipeline \
+  --synthetic-samples 60000 \
+  --seed 123 \
+  --legacy-csv SafarSathi_Punjab_Data.csv \
+  --model-path danger_model.pkl
+```
+
+Disable legacy CSV contribution:
+
+```bash
+python -m model.train_pipeline --disable-legacy
+```
+
+### Suggested Laude workflow
+
+```bash
+# 1) SSH to Laude machine and enter repo
+cd /path/to/YatraX
+
+# 2) Activate existing backend venv
+source <backend-venv-path>/bin/activate
+
+# 3) Install/update dependencies in that venv only
+python -m pip install -r requirements.txt
+
+# 4) Train model artifact
+python -m model.train_pipeline --synthetic-samples 42000 --seed 42
+
+# 5) Optional: retrain without legacy bootstrap data
+python -m model.train_pipeline --disable-legacy
+```
+
+After training on Laude, deploy the generated `danger_model.pkl` with the Python API service.
+
+## Run inference API
+
+From repository root, with backend venv activated:
+
+```bash
+python danger_api.py
+```
+
+Service default:
+
+- `http://localhost:5000`
+
+For deployment, replace localhost with your Laude/public API base URL.
+
+Health check:
+
+```bash
+curl http://localhost:5000/health
+```
+
+## API endpoints
+
+### 1) Backward-compatible endpoint for Spring
+
+`GET /predict-safety?lat=<float>&lon=<float>&hour=<0-23>`
+
+Example:
+
+```bash
+curl "http://localhost:5000/predict-safety?lat=26.17&lon=91.74&hour=22"
+```
+
+Response contains at least:
+
+- `danger_score`
+- `dangerScore`
+
+So existing Spring parser remains compatible.
+
+### 2) Rich endpoint for full-factor prediction
+
+`POST /v2/predict-safety`
+
+Example:
+
+```bash
+curl -X POST http://localhost:5000/v2/predict-safety \
+  -H "Content-Type: application/json" \
+  -d '{
+    "features": {
+      "latitude": 26.17,
+      "longitude": 91.74,
+      "hour": 21,
+      "month": 7,
+      "minutes_to_sunset": -40,
+      "network_type": "2g",
+      "distance_to_settlement_km": 11,
+      "distance_to_road_km": 3.5,
+      "hospital_eta_min": 65,
+      "police_eta_min": 38,
+      "weather_severity": 62,
+      "rainfall_mmph": 22,
+      "aqi": 112,
+      "in_risk_zone": true,
+      "risk_zone_level": "HIGH",
+      "active_alerts_nearby": 3,
+      "historical_incidents_30d": 4,
+      "nearby_place_count": 2,
+      "open_business_count": 0,
+      "wildlife_sanctuary_distance_km": 1.2,
+      "snake_activity_index": 0.7
+    },
+    "forecast_hours": [1, 3, 6]
+  }'
+```
+
+### 3) Reload model after re-training
+
+`POST /v2/reload-model`
+
+```bash
+curl -X POST http://localhost:5000/v2/reload-model
+```
+
+### 4) Data source catalog and links
+
+`GET /v2/data-sources`
+
+```bash
+curl http://localhost:5000/v2/data-sources
+```
+
+This returns:
+
+- `sources`: source key -> `{name, url, access, notes}`
+- `feature_sources`: model feature -> list of source links used for that feature
+
+You can also read the in-code mapping directly in:
+
+- `model/data_sources.py`
+
+## Spring integration
+
+Current Spring already calls:
+
+- `GET /predict-safety?lat=...&lon=...&hour=...`
+
+So no code change is required for basic compatibility.
+
+If you want richer data in Spring:
+
+1. Add a new method in `AISafetyService` to call `POST /v2/predict-safety`.
+2. Pass additional context from your safety endpoint (ETA, alerts, risk zone, weather).
+3. Use returned `data.safety_score`, `data.factors`, and `data.forecast` for better UI decisions.
+
+## Node integration
+
+`backend-node` is already integrated to call ML v2 as primary scoring with automatic phase1 fallback.
+
+Set these env vars in `backend-node`:
+
+- `SAFETY_ML_API_URL=https://<your-laude-ml-host>`
+- `SAFETY_ML_TIMEOUT_MS=2500`
+
+Behavior:
+
+- If `SAFETY_ML_API_URL` is set and reachable, `backend-node` uses `POST /v2/predict-safety`.
+- If ML API times out/fails, it falls back to local phase1 scoring automatically.
+
+## Feature coverage strategy
+
+This implementation is built for phased rollout:
+
+- Phase 1 now: use available factors and defaults.
+- Phase 2+: progressively fill more features from APIs and your databases.
+
+Any missing factor is safely defaulted, so the API still returns a valid score.
+
+### Current coverage snapshot
+
+- Master taxonomy target: `153` factors
+- Currently implemented model inputs: `66` features (`SafetyFeatures`)
+- Active weighted rule factors: `18` (environment-adjusted)
+
+So, **not all 153 factors are covered yet**. The implementation is intentionally phase-based and expandable.
+
+## Recommended production workflow
+
+1. Retrain model daily/weekly with updated incident and alert data.
+2. Keep one stable model artifact (`danger_model.pkl`) for serving.
+3. Version models in CI/CD by copying artifacts to dated paths.
+4. Monitor drift by tracking average error against real incident outcomes.
+
+## Troubleshooting
+
+- If `/health` says `model_loaded=false`:
+  1. Run training command.
+  2. Confirm `danger_model.pkl` exists in repository root.
+  3. Call `/v2/reload-model`.
+
+- If Spring returns default score:
+  1. Verify Python service is up on port `5000`.
+  2. Verify `AI_API_URL` in Spring config.
+  3. Test legacy endpoint directly via curl.
+
+- If scores look too conservative in remote areas:
+  1. Provide real `minutes_to_sunset`, ETA, connectivity, and weather severity.
+  2. Avoid leaving all advanced factors at defaults.

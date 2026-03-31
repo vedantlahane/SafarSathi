@@ -1,0 +1,120 @@
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_MODEL_PATH = ROOT_DIR / "danger_model.pkl"
+DEFAULT_LEGACY_CSV = ROOT_DIR / "SafarSathi_Punjab_Data.csv"
+
+RISK_ZONE_LEVELS = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
+NETWORK_TYPES = ("wifi", "5g", "4g", "3g", "2g", "none")
+ENVIRONMENTS = ("urban", "suburban", "rural", "remote", "wilderness")
+
+STATUS_THRESHOLDS = {
+    "safe": 80,
+    "caution": 50,
+}
+
+FORECAST_HOURS_DEFAULT = [1, 3, 6]
+
+# Environment-specific factor weights. All rows sum to ~1.
+ENVIRONMENT_WEIGHTS = {
+    "urban": {
+        "time_of_day": 0.10,
+        "daylight": 0.03,
+        "police_eta": 0.12,
+        "hospital_eta": 0.08,
+        "area_density": 0.08,
+        "connectivity": 0.03,
+        "risk_zone": 0.12,
+        "weather": 0.04,
+        "history": 0.10,
+        "terrain": 0.00,
+        "wildlife": 0.00,
+        "shelter": 0.00,
+        "water_risk": 0.00,
+        "crime": 0.12,
+        "crowd": 0.08,
+        "active_alerts": 0.08,
+        "air_quality": 0.03,
+        "flood_risk": 0.03,
+    },
+    "suburban": {
+        "time_of_day": 0.09,
+        "daylight": 0.05,
+        "police_eta": 0.11,
+        "hospital_eta": 0.09,
+        "area_density": 0.07,
+        "connectivity": 0.04,
+        "risk_zone": 0.11,
+        "weather": 0.05,
+        "history": 0.09,
+        "terrain": 0.01,
+        "wildlife": 0.01,
+        "shelter": 0.01,
+        "water_risk": 0.01,
+        "crime": 0.10,
+        "crowd": 0.07,
+        "active_alerts": 0.08,
+        "air_quality": 0.03,
+        "flood_risk": 0.08,
+    },
+    "rural": {
+        "time_of_day": 0.08,
+        "daylight": 0.07,
+        "police_eta": 0.10,
+        "hospital_eta": 0.10,
+        "area_density": 0.05,
+        "connectivity": 0.06,
+        "risk_zone": 0.10,
+        "weather": 0.08,
+        "history": 0.05,
+        "terrain": 0.03,
+        "wildlife": 0.03,
+        "shelter": 0.02,
+        "water_risk": 0.00,
+        "crime": 0.06,
+        "crowd": 0.03,
+        "active_alerts": 0.08,
+        "air_quality": 0.02,
+        "flood_risk": 0.12,
+    },
+    "remote": {
+        "time_of_day": 0.12,
+        "daylight": 0.12,
+        "police_eta": 0.06,
+        "hospital_eta": 0.14,
+        "area_density": 0.02,
+        "connectivity": 0.12,
+        "risk_zone": 0.08,
+        "weather": 0.12,
+        "history": 0.02,
+        "terrain": 0.08,
+        "wildlife": 0.08,
+        "shelter": 0.06,
+        "water_risk": 0.04,
+        "crime": 0.02,
+        "crowd": 0.00,
+        "active_alerts": 0.05,
+        "air_quality": 0.01,
+        "flood_risk": 0.06,
+    },
+    "wilderness": {
+        "time_of_day": 0.15,
+        "daylight": 0.18,
+        "police_eta": 0.02,
+        "hospital_eta": 0.18,
+        "area_density": 0.00,
+        "connectivity": 0.18,
+        "risk_zone": 0.03,
+        "weather": 0.15,
+        "history": 0.00,
+        "terrain": 0.12,
+        "wildlife": 0.15,
+        "shelter": 0.12,
+        "water_risk": 0.08,
+        "crime": 0.00,
+        "crowd": 0.00,
+        "active_alerts": 0.02,
+        "air_quality": 0.00,
+        "flood_risk": 0.02,
+    },
+}
