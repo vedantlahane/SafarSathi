@@ -47,6 +47,7 @@ const EMPTY_FORM: AdvisoryFormData = {
   description: "",
   severity: "info",
   region: "",
+  effectiveFrom: "",
   expiresAt: "",
   affectedDistricts: "",
 };
@@ -101,7 +102,8 @@ export function AdvisoriesSection({
       description: a.description,
       severity: a.severity,
       region: a.region,
-      expiresAt: a.expiresAt ?? "",
+      effectiveFrom: a.effectiveFrom ? a.effectiveFrom.slice(0, 16) : "",
+      expiresAt: a.expiresAt ? a.expiresAt.slice(0, 16) : "",
       affectedDistricts: a.affectedDistricts?.join(", ") ?? "",
     });
     setDialogOpen(true);
@@ -292,13 +294,23 @@ export function AdvisoriesSection({
                 <Input value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} placeholder="e.g. Assam" />
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Expires At</Label>
-              <Input
-                type="datetime-local"
-                value={form.expiresAt}
-                onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label>Effective From</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.effectiveFrom}
+                  onChange={(e) => setForm({ ...form, effectiveFrom: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Expires At</Label>
+                <Input
+                  type="datetime-local"
+                  value={form.expiresAt}
+                  onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Affected Districts (comma-separated)</Label>

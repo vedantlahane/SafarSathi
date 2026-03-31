@@ -31,12 +31,13 @@ interface AuditLogSectionProps {
 }
 
 const ACTION_COLORS: Record<string, string> = {
-  CREATE: "bg-emerald-100 text-emerald-700",
-  UPDATE: "bg-blue-100 text-blue-700",
-  DELETE: "bg-red-100 text-red-700",
-  LOGIN: "bg-purple-100 text-purple-700",
-  RESOLVE: "bg-amber-100 text-amber-700",
-  BROADCAST: "bg-cyan-100 text-cyan-700",
+  created: "bg-emerald-100 text-emerald-700",
+  updated: "bg-blue-100 text-blue-700",
+  deleted: "bg-red-100 text-red-700",
+  login: "bg-purple-100 text-purple-700",
+  status_changed: "bg-amber-100 text-amber-700",
+  broadcast: "bg-cyan-100 text-cyan-700",
+  score_recalculated: "bg-slate-100 text-slate-700",
 };
 
 export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionProps) {
@@ -71,8 +72,8 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
   const handleSearch = useCallback(() => {
     fetchPage(1, {
       action: actionFilter !== "all" ? actionFilter : undefined,
-      performedBy: search || undefined,
-      entityType: entityFilter !== "all" ? entityFilter : undefined,
+      actor: search || undefined,
+      targetCollection: entityFilter !== "all" ? entityFilter : undefined,
     });
   }, [fetchPage, actionFilter, search, entityFilter]);
 
@@ -80,8 +81,8 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
     (newPage: number) => {
       fetchPage(newPage, {
         action: actionFilter !== "all" ? actionFilter : undefined,
-        performedBy: search || undefined,
-        entityType: entityFilter !== "all" ? entityFilter : undefined,
+        actor: search || undefined,
+        targetCollection: entityFilter !== "all" ? entityFilter : undefined,
       });
     },
     [fetchPage, actionFilter, search, entityFilter]
@@ -151,12 +152,12 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Actions</SelectItem>
-              <SelectItem value="CREATE">Create</SelectItem>
-              <SelectItem value="UPDATE">Update</SelectItem>
-              <SelectItem value="DELETE">Delete</SelectItem>
-              <SelectItem value="LOGIN">Login</SelectItem>
-              <SelectItem value="RESOLVE">Resolve</SelectItem>
-              <SelectItem value="BROADCAST">Broadcast</SelectItem>
+              <SelectItem value="created">Create</SelectItem>
+              <SelectItem value="updated">Update</SelectItem>
+              <SelectItem value="deleted">Delete</SelectItem>
+              <SelectItem value="login">Login</SelectItem>
+              <SelectItem value="status_changed">Resolve</SelectItem>
+              <SelectItem value="broadcast">Broadcast</SelectItem>
             </SelectContent>
           </Select>
           <Select value={entityFilter} onValueChange={setEntityFilter}>
@@ -165,12 +166,12 @@ export function AuditLogSection({ initialLogs, initialTotal }: AuditLogSectionPr
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Entities</SelectItem>
-              <SelectItem value="Alert">Alert</SelectItem>
-              <SelectItem value="Tourist">Tourist</SelectItem>
-              <SelectItem value="RiskZone">Risk Zone</SelectItem>
-              <SelectItem value="Hospital">Hospital</SelectItem>
-              <SelectItem value="Advisory">Advisory</SelectItem>
-              <SelectItem value="PoliceDepartment">Police</SelectItem>
+              <SelectItem value="alerts">Alert</SelectItem>
+              <SelectItem value="tourists">Tourist</SelectItem>
+              <SelectItem value="riskzones">Risk Zone</SelectItem>
+              <SelectItem value="hospitals">Hospital</SelectItem>
+              <SelectItem value="traveladvisories">Advisory</SelectItem>
+              <SelectItem value="policedepartments">Police</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={handleSearch} disabled={loading} className="bg-white/50 border-white/40 rounded-xl hover:bg-white/70">

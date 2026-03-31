@@ -112,13 +112,16 @@ const normalizePolice = (p: any): PoliceDepartment => ({
 });
 
 const normalizeHospital = (h: any): HospitalAdmin => ({
-  id: h.hospitalId || h.id || h._id,
+  id: String(h.hospitalId ?? h.id ?? h._id ?? ""),
   name: h.name,
   contact: h.contact || h.contactNumber || "",
   type: h.type || "hospital",
   emergency: Boolean(h.emergency),
   location: { lat: h.latitude || 0, lng: h.longitude || 0 },
   isActive: h.isActive !== false,
+  city: h.city,
+  district: h.district,
+  state: h.state,
   tier: h.tier,
   specialties: h.specialties,
   bedCapacity: h.bedCapacity,
@@ -128,25 +131,26 @@ const normalizeHospital = (h: any): HospitalAdmin => ({
 });
 
 const normalizeAdvisory = (a: any): TravelAdvisoryAdmin => ({
-  id: a.id || a._id,
+  id: String(a.advisoryId ?? a.id ?? a._id ?? ""),
   title: a.title,
-  description: a.description,
+  description: a.body || a.description || "",
   severity: a.severity || "info",
   region: a.region || "",
-  isActive: a.isActive !== false,
+  isActive: a.active !== false && a.isActive !== false,
   issuedBy: a.issuedBy || "Admin",
-  issuedAt: a.issuedAt || a.createdAt || new Date().toISOString(),
-  expiresAt: a.expiresAt,
+  issuedAt: a.createdAt || a.issuedAt || new Date().toISOString(),
+  effectiveFrom: a.effectiveFrom ? new Date(a.effectiveFrom).toISOString() : undefined,
+  expiresAt: a.effectiveTo ? new Date(a.effectiveTo).toISOString() : (a.expiresAt ? new Date(a.expiresAt).toISOString() : undefined),
   affectedDistricts: a.affectedDistricts,
 });
 
 const normalizeAuditLog = (l: any): AuditLogEntry => ({
-  id: l.id || l._id,
+  id: String(l.logId ?? l.id ?? l._id ?? ""),
   action: l.action,
-  performedBy: l.performedBy,
-  entityType: l.entityType,
-  entityId: l.entityId,
-  details: l.details,
+  performedBy: l.actor || l.performedBy || "",
+  entityType: l.targetCollection || l.entityType || "",
+  entityId: l.targetId || l.entityId || "",
+  details: l.changes ? (typeof l.changes === "string" ? l.changes : JSON.stringify(l.changes)) : (l.details || ""),
   ipAddress: l.ipAddress,
   timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
 });
@@ -178,7 +182,7 @@ export function useAdminData(isAuthenticated: boolean) {
         getPoliceDepartments().catch(() => []),
         getHospitals().catch(() => []),
         getAdvisories().catch(() => []),
-        getAuditLogs(1, 50).catch(() => ({ logs: [], total: 0, page: 1, limit: 50 })),
+        getAuditLogs(1, 50).catch(() => ({ items: [], total: 0, page: 1, pages: 1 })),
       ]);
 
       setData({
@@ -195,7 +199,7 @@ export function useAdminData(isAuthenticated: boolean) {
         policeUnits: (policeData || []).map(normalizePolice),
         hospitals: (hospitalsData || []).map(normalizeHospital),
         advisories: (advisoriesData || []).map(normalizeAdvisory),
-        auditLogs: ((auditData as any)?.logs || []).map(normalizeAuditLog),
+        auditLogs: ((auditData as any)?.items || []).map(normalizeAuditLog),
         auditLogTotal: (auditData as any)?.total || 0,
       });
     } catch (err) {
@@ -442,6 +446,9 @@ export function useHospitalActions(refetch: () => Promise<void>) {
       emergency: formData.emergency,
       latitude: Number(formData.lat),
       longitude: Number(formData.lng),
+      city: formData.city || "Unknown",
+      district: formData.district || "Unknown",
+      state: formData.state || "Unknown",
       tier: formData.tier || undefined,
       specialties: formData.specialties ? formData.specialties.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
       bedCapacity: formData.bedCapacity ? Number(formData.bedCapacity) : undefined,
@@ -480,14 +487,21 @@ export function useHospitalActions(refetch: () => Promise<void>) {
 
 export function useAdvisoryActions(refetch: () => Promise<void>) {
   const handleSaveAdvisory = useCallback(async (formData: AdvisoryFormData, editingId?: string) => {
+    const now = new Date().toISOString();
+    const defaultExpiryDays = 7;
+    const defaultExpiry = new Date(Date.now() + defaultExpiryDays * 24 * 60 * 60 * 1000).toISOString();
     const payload: any = {
       title: formData.title,
-      description: formData.description,
+      body: formData.description,
       severity: formData.severity,
       region: formData.region,
-      expiresAt: formData.expiresAt || undefined,
-      affectedDistricts: formData.affectedDistricts ? formData.affectedDistricts.split(",").map((d) => d.trim()).filter(Boolean) : undefined,
-      isActive: true,
+      active: true,
+      effectiveFrom: formData.effectiveFrom
+        ? new Date(formData.effectiveFrom).toISOString()
+        : now,
+      effectiveTo: formData.expiresAt
+        ? new Date(formData.expiresAt).toISOString()
+        : defaultExpiry,
     };
 
     try {
@@ -551,12 +565,12 @@ export function useAuditLogPagination() {
 
   const fetchPage = useCallback(async (
     pageNum: number,
-    filters?: { action?: string; performedBy?: string; entityType?: string; startDate?: string; endDate?: string }
+    filters?: { action?: string; actor?: string; targetCollection?: string; startDate?: string; endDate?: string }
   ) => {
     setLoading(true);
     try {
       const result = await getAuditLogs(pageNum, 50, filters);
-      setLogs((result as any).logs?.map(normalizeAuditLog) || []);
+      setLogs((result as any).items?.map(normalizeAuditLog) || []);
       setTotal((result as any).total || 0);
       setPage(pageNum);
     } catch {
