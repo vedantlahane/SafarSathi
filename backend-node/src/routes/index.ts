@@ -13,6 +13,7 @@ import healthRoutes from "./health.js";
 import notificationRoutes from "./notifications.js";
 import advisoryRoutes from "./advisories.js";
 import auditLogRoutes from "./auditLog.js";
+import safetyRoutes from "./safety.js";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use("/api/hospitals", publicHospitalsRoutes);
 router.use("/api/advisories", advisoryRoutes);
 router.use("/api/health", healthRoutes);
 router.use("/api", notificationRoutes);
+router.use("/api/v1/safety", safetyRoutes);
 
 export default router;
