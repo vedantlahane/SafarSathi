@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 from .constants import DEFAULT_MODEL_PATH
 from .data_sources import feature_source_links, source_catalog_dict
-from .factor_registry import FACTOR_KEYS, TOTAL_FACTOR_COUNT, canonical_factor_key
+from .factor_registry import FACTOR_KEYS, TOTAL_FACTOR_COUNT, canonical_factor_key, factor_category_map
 from .predictor import SafetyPredictor
 from .schemas import SafetyFeatures
 
@@ -50,14 +50,68 @@ def _minutes_to_sunset_default(hour: int) -> float:
     return float(240 - abs(hour - 13) * 48)
 
 
-def _features_from_payload(payload: dict[str, Any]) -> tuple[SafetyFeatures, int]:
-    now = datetime.now(timezone.utc)
+def _factor_overrides_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    overrides: dict[str, Any] = {}
 
-    extra_factors: dict[str, Any] = {}
+    factors_block = payload.get("factors")
+    if isinstance(factors_block, dict):
+        for raw_key, raw_value in factors_block.items():
+            key = canonical_factor_key(str(raw_key))
+            if key is not None:
+                overrides[key] = raw_value
+
     for raw_key, raw_value in payload.items():
         key = canonical_factor_key(str(raw_key))
         if key is not None:
-            extra_factors[key] = raw_value
+            overrides[key] = raw_value
+
+    return overrides
+
+
+def _provided_factor_keys(payload: dict[str, Any]) -> set[str]:
+    return set(_factor_overrides_from_payload(payload).keys())
+
+
+def _factor_completeness_report(payload: dict[str, Any], include_lists: bool = True) -> dict[str, Any]:
+    provided = _provided_factor_keys(payload)
+    missing = [key for key in FACTOR_KEYS if key not in provided]
+    provided_sorted = sorted(provided)
+    coverage_pct = round((len(provided_sorted) / float(TOTAL_FACTOR_COUNT)) * 100.0, 2)
+
+    categories = factor_category_map()
+    provided_by_category: dict[str, int] = {}
+    missing_by_category: dict[str, int] = {}
+    for key in FACTOR_KEYS:
+        cat = categories.get(key, "unknown")
+        if key in provided:
+            provided_by_category[cat] = provided_by_category.get(cat, 0) + 1
+        else:
+            missing_by_category[cat] = missing_by_category.get(cat, 0) + 1
+
+    report: dict[str, Any] = {
+        "factor_count": TOTAL_FACTOR_COUNT,
+        "provided_count": len(provided_sorted),
+        "defaulted_count": len(missing),
+        "coverage_pct": coverage_pct,
+        "is_complete": len(missing) == 0,
+        "provided_by_category": provided_by_category,
+        "defaulted_by_category": missing_by_category,
+    }
+
+    if include_lists:
+        report["provided_factors"] = provided_sorted
+        report["defaulted_factors"] = missing
+    else:
+        report["provided_factor_sample"] = provided_sorted[:12]
+        report["defaulted_factor_sample"] = missing[:12]
+
+    return report
+
+
+def _features_from_payload(payload: dict[str, Any]) -> tuple[SafetyFeatures, int, set[str]]:
+    now = datetime.now(timezone.utc)
+
+    extra_factors = _factor_overrides_from_payload(payload)
 
     features = SafetyFeatures(
         latitude=_to_float(payload, "latitude", _to_float(payload, "lat", 26.2006)),
@@ -152,9 +206,10 @@ def _features_from_payload(payload: dict[str, Any]) -> tuple[SafetyFeatures, int
         "weatherSeverity",
         "aqi",
     }
-    provided_count = len(extra_factors) + sum(1 for key in core_signal_keys if key in payload)
+    explicit_factor_count = len(extra_factors)
+    provided_count = explicit_factor_count + sum(1 for key in core_signal_keys if key in payload)
     provided_count = int(min(TOTAL_FACTOR_COUNT, max(0, provided_count)))
-    return features, provided_count
+    return features, provided_count, set(extra_factors.keys())
 
 
 def create_app() -> Flask:
@@ -195,6 +250,36 @@ def create_app() -> Flask:
             }
         )
 
+    @app.post("/v2/factor-completeness")
+    def factor_completeness() -> Any:
+        payload = request.get_json(silent=True) or {}
+        if not isinstance(payload, dict):
+            return jsonify({"error": "JSON body must be an object."}), 400
+
+        features_payload = payload.get("features", payload)
+        if not isinstance(features_payload, dict):
+            return jsonify({"error": "'features' must be an object if provided."}), 400
+
+        strict = _to_bool(payload, "strict", False)
+        min_coverage_pct = _to_float(payload, "min_coverage_pct", 100.0 if strict else 0.0)
+        report = _factor_completeness_report(features_payload, include_lists=True)
+
+        meets_threshold = report["coverage_pct"] >= max(0.0, min(100.0, min_coverage_pct))
+        is_valid = (not strict) or meets_threshold
+        status_code = 200 if is_valid else 400
+
+        return jsonify(
+            {
+                "success": is_valid,
+                "strict": strict,
+                "min_coverage_pct": max(0.0, min(100.0, min_coverage_pct)),
+                "message": (
+                    "All factors provided." if report["is_complete"] else "Some factors are defaulted."
+                ),
+                "data": report,
+            }
+        ), status_code
+
     @app.get("/predict-safety")
     def predict_safety_legacy() -> Any:
         lat = request.args.get("lat", type=float)
@@ -221,7 +306,7 @@ def create_app() -> Flask:
             "hospital_eta_min": request.args.get("hospitalEtaMin", default=28.0, type=float),
         }
 
-        features, provided_count = _features_from_payload(payload)
+        features, provided_count, _ = _features_from_payload(payload)
         result = predictor.predict(features, provided_feature_count=provided_count, forecast_hours=[])
 
         return jsonify(
@@ -249,7 +334,8 @@ def create_app() -> Flask:
         if not isinstance(forecast_hours, list):
             forecast_hours = [1, 3, 6]
 
-        features, provided_count = _features_from_payload(features_payload)
+        features, provided_count, provided_factor_keys = _features_from_payload(features_payload)
+        completeness = _factor_completeness_report(features_payload, include_lists=False)
         result = predictor.predict(
             features,
             provided_feature_count=provided_count,
@@ -262,6 +348,8 @@ def create_app() -> Flask:
             {
                 "success": True,
                 "model_version": predictor.model_version,
+                "provided_factor_count": len(provided_factor_keys),
+                "factor_completeness": completeness,
                 "data": data,
                 # Legacy aliases for old parsers
                 "danger_score": data["danger_score"],
