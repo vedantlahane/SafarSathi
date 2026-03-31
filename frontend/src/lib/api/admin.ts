@@ -247,16 +247,16 @@ export async function fetchAuditLogs(
     limit = 50,
     filters?: {
         action?: string;
-        performedBy?: string;
-        entityType?: string;
+        actor?: string;
+        targetCollection?: string;
         startDate?: string;
         endDate?: string;
     }
 ) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (filters?.action) params.set("action", filters.action);
-    if (filters?.performedBy) params.set("performedBy", filters.performedBy);
-    if (filters?.entityType) params.set("entityType", filters.entityType);
+    if (filters?.actor) params.set("actor", filters.actor);
+    if (filters?.targetCollection) params.set("targetCollection", filters.targetCollection);
     if (filters?.startDate) params.set("startDate", filters.startDate);
     if (filters?.endDate) params.set("endDate", filters.endDate);
     return request<AuditLogPage>(`/api/admin/audit-logs?${params.toString()}`);
@@ -272,7 +272,7 @@ export async function sendBroadcast(payload: {
     zoneId?: string;
     district?: string;
 }) {
-    return request<{ success: boolean; recipientCount: number }>(
+    return request<{ acknowledged: boolean; target: string; recipientCount: number }>(
         "/api/admin/broadcast",
         {
             method: "POST",
