@@ -223,6 +223,11 @@ curl -X POST http://localhost:5000/v2/predict-safety \
   }'
 ```
 
+This response now also includes:
+
+- `provided_factor_count`
+- `factor_completeness` (summary with provided/defaulted counts and coverage percentage)
+
 ### 3) Reload model after re-training
 
 `POST /v2/reload-model`
@@ -249,6 +254,57 @@ This returns:
 You can also read the in-code mapping directly in:
 
 - `model/data_sources.py`
+
+### 5) Strict factor completeness checker
+
+`POST /v2/factor-completeness`
+
+Use this endpoint to validate whether all `153` canonical factors are present in a payload before scoring.
+
+Non-strict example (always `200`, returns report):
+
+```bash
+curl -X POST http://localhost:5000/v2/factor-completeness \
+  -H "Content-Type: application/json" \
+  -d '{
+    "features": {
+      "latitude": 26.17,
+      "longitude": 91.74,
+      "hour": 21,
+      "hospital_eta_min": 45,
+      "weather_severity": 58
+    }
+  }'
+```
+
+Strict example (returns `400` if below threshold):
+
+```bash
+curl -X POST http://localhost:5000/v2/factor-completeness \
+  -H "Content-Type: application/json" \
+  -d '{
+    "strict": true,
+    "min_coverage_pct": 100,
+    "features": {
+      "factors": {
+        "elevation_m": 360,
+        "rainfall_intensity_mmph": 14
+      }
+    }
+  }'
+```
+
+Response fields:
+
+- `data.factor_count`
+- `data.provided_count`
+- `data.defaulted_count`
+- `data.coverage_pct`
+- `data.is_complete`
+- `data.provided_factors`
+- `data.defaulted_factors`
+- `data.provided_by_category`
+- `data.defaulted_by_category`
 
 ## Spring integration
 
