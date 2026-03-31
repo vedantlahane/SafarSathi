@@ -88,3 +88,7 @@ application-dev.properties
 
 # Local ML model artifact (too large for GitHub)
 danger_model.pkl
+
+# Python caches
+__pycache__/
+*.py[cod]

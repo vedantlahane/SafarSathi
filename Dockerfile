@@ -23,6 +23,7 @@ COPY --from=builder /install /usr/local
 # Copy only the files needed at runtime
 COPY danger_api.py .
 COPY danger_model.pkl .
+COPY model ./model
 
 # Non-root user for security
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
