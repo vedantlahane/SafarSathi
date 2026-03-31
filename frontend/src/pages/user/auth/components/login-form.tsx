@@ -71,6 +71,9 @@ export function LoginForm({
   return (
     <div className="px-4 pb-8">
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+        <p className="text-xs text-muted-foreground">
+          Use the same email and password you used while creating your YatraX account.
+        </p>
 
         {/* Grouped Input Block */}
         <div className="overflow-hidden rounded-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
@@ -87,6 +90,7 @@ export function LoginForm({
                 value={email}
                 onChange={(e) => onEmailChange(e.target.value)}
                 placeholder="you@email.com"
+                autoComplete="email"
                 className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
               />
             </div>
@@ -104,6 +108,7 @@ export function LoginForm({
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
               />
             </div>
@@ -111,6 +116,7 @@ export function LoginForm({
               type="button"
               className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               onClick={onTogglePassword}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
             </button>
@@ -164,16 +170,18 @@ export function LoginForm({
           <SheetHeader>
             <SheetTitle>Password reset</SheetTitle>
           </SheetHeader>
-          <div className="px-4 pb-6">
+          <div className="space-y-4 px-4 pb-6">
             <p className="text-xs text-muted-foreground">
-              We will send reset instructions to your email.
+              Step 1: Request reset link. Step 2: Enter your token and new password.
             </p>
             <form className="mt-4" onSubmit={handleResetRequestSubmit}>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Step 1 - Request token</p>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => onEmailChange(e.target.value)}
                 placeholder="you@email.com"
+                autoComplete="email"
                 className="h-12 rounded-xl"
               />
               <Button type="submit" className="mt-4 h-12 w-full rounded-xl">
@@ -181,7 +189,8 @@ export function LoginForm({
               </Button>
             </form>
 
-            <form className="mt-5 space-y-3" onSubmit={handleResetSubmit}>
+            <form className="space-y-3" onSubmit={handleResetSubmit}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Step 2 - Set new password</p>
               <Input
                 value={resetToken}
                 onChange={(e) => onResetTokenChange(e.target.value)}
@@ -193,6 +202,7 @@ export function LoginForm({
                 value={resetPassword}
                 onChange={(e) => onResetPasswordChange(e.target.value)}
                 placeholder="New password"
+                autoComplete="new-password"
                 className="h-12 rounded-xl"
               />
               <Button type="submit" className="h-12 w-full rounded-xl">

@@ -13,6 +13,8 @@ interface RegisterFormProps {
   passportNumber: string;
   emergencyName: string;
   emergencyPhone: string;
+  primaryPhone: string;
+  sameAsPrimaryPhone: boolean;
   bloodType: string;
   allergies: string;
   medicalConditions: string;
@@ -21,6 +23,7 @@ interface RegisterFormProps {
   canProceedStep2: boolean;
   canProceedStep3: boolean;
   onChange: (field: string, value: string) => void;
+  onToggleSameAsPrimaryPhone: (value: boolean) => void;
   onNext: () => void;
   onBack: () => void;
   onSubmit: () => void;
@@ -59,11 +62,14 @@ export function RegisterForm(props: RegisterFormProps) {
     <RegisterStep3
       emergencyName={props.emergencyName}
       emergencyPhone={props.emergencyPhone}
+      primaryPhone={props.primaryPhone}
+      sameAsPrimaryPhone={props.sameAsPrimaryPhone}
       bloodType={props.bloodType}
       allergies={props.allergies}
       medicalConditions={props.medicalConditions}
       canContinue={props.canProceedStep3}
       onChange={(field, value) => props.onChange(field, value)}
+      onToggleSameAsPrimaryPhone={props.onToggleSameAsPrimaryPhone}
       onBack={props.onBack}
       onSubmit={props.onSubmit}
     />
