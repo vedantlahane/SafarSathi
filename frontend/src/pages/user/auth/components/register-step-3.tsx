@@ -1,6 +1,7 @@
 import { HeartPulse, AlertTriangle, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,8 @@ import {
 interface RegisterStep3Props {
   emergencyName: string;
   emergencyPhone: string;
+  primaryPhone: string;
+  sameAsPrimaryPhone: boolean;
   bloodType: string;
   allergies: string;
   medicalConditions: string;
@@ -25,6 +28,7 @@ interface RegisterStep3Props {
       | "medicalConditions",
     value: string
   ) => void;
+  onToggleSameAsPrimaryPhone: (value: boolean) => void;
   onBack: () => void;
   onSubmit: () => void;
 }
@@ -34,17 +38,35 @@ const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 export function RegisterStep3({
   emergencyName,
   emergencyPhone,
+  primaryPhone,
+  sameAsPrimaryPhone,
   bloodType,
   allergies,
   medicalConditions,
   canContinue,
   onChange,
+  onToggleSameAsPrimaryPhone,
   onBack,
   onSubmit,
 }: RegisterStep3Props) {
+  const resolvedEmergencyPhone = sameAsPrimaryPhone ? primaryPhone : emergencyPhone;
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSubmit();
+  };
+
   return (
-    <div className="space-y-5 px-1">
+    <form className="space-y-5 px-1" onSubmit={handleSubmit}>
       <div className="overflow-hidden rounded-[24px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+
+        <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-xs text-muted-foreground dark:border-white/10">
+          <span>Emergency details (optional)</span>
+          <div className="flex items-center gap-2">
+            Use account phone
+            <Switch checked={sameAsPrimaryPhone} onCheckedChange={onToggleSameAsPrimaryPhone} />
+          </div>
+        </div>
 
         {/* Em. Name Row */}
         <div className="relative flex items-center min-h-[64px] border-b border-black/5 dark:border-white/5 group transition-colors focus-within:bg-white/40 dark:focus-within:bg-slate-800/40">
@@ -70,9 +92,12 @@ export function RegisterStep3({
           <div className="flex-1 flex flex-col justify-center h-full py-1 pr-4">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none pt-2">Emergency Phone</label>
             <Input
-              value={emergencyPhone}
+              type="tel"
+              inputMode="tel"
+              value={resolvedEmergencyPhone}
               onChange={(e) => onChange("emergencyPhone", e.target.value)}
               placeholder="Phone number"
+              disabled={sameAsPrimaryPhone}
               className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
             />
           </div>
@@ -133,14 +158,27 @@ export function RegisterStep3({
         </div>
       </div>
 
+      <p className="text-[11px] text-muted-foreground">
+        If you add emergency contact details, include both name and phone.
+      </p>
+
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" className="h-[52px] rounded-[20px] text-[15px] font-bold shadow-sm" onClick={onBack}>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-[52px] rounded-[20px] text-[15px] font-bold shadow-sm"
+          onClick={onBack}
+        >
           Back
         </Button>
-        <Button className="h-[52px] rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]" onClick={onSubmit} disabled={!canContinue}>
+        <Button
+          type="submit"
+          className="h-[52px] rounded-[20px] text-[15px] font-bold shadow-[0_8px_16px_-4px_var(--theme-glow)] transition-all active:scale-[0.98]"
+          disabled={!canContinue}
+        >
           Create account
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

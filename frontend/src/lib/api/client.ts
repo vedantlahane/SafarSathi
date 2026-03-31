@@ -1,7 +1,5 @@
 import { getSession, getAdminSession } from "../session";
 
-const DEFAULT_PRODUCTION_API_URL = "https://safarsathi-1.onrender.com";
-
 function isLocalHostname(hostname: string): boolean {
     return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
 }
@@ -18,13 +16,18 @@ function resolveBaseUrl(): string {
     const envUrl = import.meta.env.VITE_BACKEND_NODE_URL as string | undefined;
     if (envUrl?.trim()) return envUrl.trim();
 
+    if (typeof window === "undefined") {
+        return "http://localhost:8081";
+    }
+
     // Only use port 8081 automatically for local/LAN development.
-    const { protocol, hostname } = window.location;
+    const { protocol, hostname, origin } = window.location;
     if (isLocalHostname(hostname) || isPrivateHostname(hostname)) {
         return `${protocol}//${hostname}:8081`;
     }
 
-    return DEFAULT_PRODUCTION_API_URL;
+    // Deployed frontend should use same-origin API unless env override is set.
+    return origin;
 }
 
 const API_BASE_URL = resolveBaseUrl();
