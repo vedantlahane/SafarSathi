@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from .environment import detect_environment
-from .feature_builder import build_model_features
+from .feature_builder import build_factor_values, build_model_features
 from .rule_engine import calculate_rule_score
 from .schemas import SafetyFeatures
 
@@ -177,6 +177,7 @@ def _sample_by_environment(rng: np.random.Generator, env: str) -> SafetyFeatures
 def _safety_target(features: SafetyFeatures, environment: str, rng: np.random.Generator) -> float:
     rule_result = calculate_rule_score(features, environment)
     score = rule_result.safety_score
+    factor_values = build_factor_values(features, environment)
 
     # Non-linear interactions to make the ML model learn beyond weighted sums.
     if features.hour >= 21 or features.hour < 5:
@@ -193,6 +194,20 @@ def _safety_target(features: SafetyFeatures, environment: str, rng: np.random.Ge
 
     if features.in_risk_zone and features.risk_zone_level in {"HIGH", "CRITICAL"}:
         score -= 6.0
+
+    # Additional interactions sourced from the full taxonomy space.
+    score -= float(factor_values["similar_event_global_incidents_risk"]) * 8.0
+    score -= float(factor_values["social_media_risk_signals"]) * 6.0
+    score -= float(factor_values["ferry_safety_risk"]) * 4.5
+    score -= float(factor_values["altitude_sickness_risk"]) * 7.0
+    score -= float(factor_values["cash_payment_vulnerability_risk"]) * 5.0
+    score -= float(factor_values["curfew_status_risk"]) * 7.5
+    score -= float(factor_values["soil_stability_risk"]) * 4.0
+
+    # Positive stabilizers.
+    score += (float(factor_values["emergency_broadcast_reach_score"]) - 50.0) * 0.05
+    score += (float(factor_values["tourist_review_sentiment_score"]) - 50.0) * 0.04
+    score += (float(factor_values["safety_equipment_availability_score"]) - 50.0) * 0.03
 
     # Add calibrated noise.
     score += rng.normal(0, 4.2)
