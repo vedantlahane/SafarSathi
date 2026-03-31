@@ -28,12 +28,24 @@ export type ApiResponse<T> = {
     timestamp?: string;
 };
 
+export type RealTimeSafetyFactor = {
+    label: string;
+    score: number;
+    trend: "up" | "down" | "stable";
+    detail?: string;
+};
+
 export type RealTimeSafety = {
     dangerScore: number;
     isNearAdminZone: boolean;
     recommendation: string;
     riskLabel: "Low Risk" | "Caution" | "High Danger";
     scanning: boolean;
+    /** Phase 1 enrichments — present when the backend Phase 1 calculator responds */
+    overallScore?: number;
+    status?: "safe" | "caution" | "danger";
+    cappedBy?: string | null;
+    factors?: RealTimeSafetyFactor[];
 };
 
 export type TouristProfile = {

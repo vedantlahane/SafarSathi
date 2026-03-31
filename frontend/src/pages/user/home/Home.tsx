@@ -40,7 +40,7 @@ export default function Home() {
         <SafetyScoreHero
           dangerScore={realTimeSafety.dangerScore}
           recommendation={realTimeSafety.recommendation}
-          factors={data.factors}
+          factors={realTimeSafety.factors ?? data.factors}
           loading={loading}
           scanning={realTimeSafety.scanning}
         />

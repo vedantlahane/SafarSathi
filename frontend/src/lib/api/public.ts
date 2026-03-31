@@ -6,6 +6,7 @@ import type {
     HospitalResponse,
     TravelAdvisory,
     RealTimeSafety,
+    RealTimeSafetyFactor,
 } from "./types";
 
 const REALTIME_SAFETY_FALLBACK: RealTimeSafety = {
@@ -52,6 +53,13 @@ function getDangerScoreFromNode(node: unknown): number | null {
     return null;
 }
 
+const VALID_TRENDS = ["up", "down", "stable"] as const;
+type Trend = (typeof VALID_TRENDS)[number];
+
+function isValidTrend(v: unknown): v is Trend {
+    return VALID_TRENDS.includes(v as Trend);
+}
+
 function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
     const dangerScore = getDangerScoreFromNode(payload);
     if (dangerScore === null) {
@@ -73,12 +81,43 @@ function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
                     ? "Proceed with caution and stay aware of your surroundings."
                     : "Low risk detected. Continue with normal precautions.";
 
+    // Phase 1 enrichments (optional — absent when served by legacy Python model)
+    const rawFactors = Array.isArray(node.factors) ? node.factors : undefined;
+    const factors: RealTimeSafetyFactor[] | undefined = rawFactors
+        ? rawFactors
+            .filter(
+                (f): f is Record<string, unknown> =>
+                    f !== null && typeof f === "object"
+            )
+            .map((f) => ({
+                label: typeof f.label === "string" ? f.label : "Unknown",
+                score: typeof f.score === "number" ? f.score : 50,
+                trend: isValidTrend(f.trend) ? f.trend : "stable",
+                detail: typeof f.detail === "string" ? f.detail : undefined,
+            }))
+        : undefined;
+
+    const overallScore =
+        typeof node.overallScore === "number" ? node.overallScore : undefined;
+    const status =
+        (["safe", "caution", "danger"] as const).includes(
+            node.status as "safe" | "caution" | "danger"
+        )
+            ? (node.status as "safe" | "caution" | "danger")
+            : undefined;
+    const cappedBy =
+        typeof node.cappedBy === "string" ? node.cappedBy : null;
+
     return {
         dangerScore,
         isNearAdminZone: Boolean(node.isNearAdminZone),
         recommendation,
         riskLabel,
         scanning: false,
+        overallScore,
+        status,
+        cappedBy,
+        factors,
     };
 }
 
