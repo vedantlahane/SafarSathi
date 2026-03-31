@@ -49,7 +49,10 @@ const EMPTY_FORM: HospitalFormData = {
   emergency: true,
   lat: "",
   lng: "",
-  tier: "district",
+  city: "",
+  district: "",
+  state: "",
+  tier: "DH",
   specialties: "",
   bedCapacity: "",
   ambulanceAvailable: false,
@@ -101,7 +104,10 @@ export function HospitalsSection({
       emergency: h.emergency,
       lat: String(h.location.lat),
       lng: String(h.location.lng),
-      tier: h.tier || "district",
+      city: h.city || "",
+      district: h.district || "",
+      state: h.state || "",
+      tier: h.tier || "DH",
       specialties: h.specialties?.join(", ") || "",
       bedCapacity: h.bedCapacity ? String(h.bedCapacity) : "",
       ambulanceAvailable: h.ambulanceAvailable ?? false,
@@ -295,11 +301,10 @@ export function HospitalsSection({
                 <Select value={form.tier} onValueChange={(v) => setForm({ ...form, tier: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="district">District</SelectItem>
-                    <SelectItem value="state">State</SelectItem>
-                    <SelectItem value="national">National</SelectItem>
-                    <SelectItem value="primary">Primary</SelectItem>
-                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="PHC">PHC (Primary)</SelectItem>
+                    <SelectItem value="CHC">CHC (Community)</SelectItem>
+                    <SelectItem value="DH">DH (District)</SelectItem>
+                    <SelectItem value="Medical_College">Medical College</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -312,6 +317,20 @@ export function HospitalsSection({
               <div className="grid gap-2">
                 <Label>Longitude</Label>
                 <Input type="number" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-2">
+                <Label>City</Label>
+                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" />
+              </div>
+              <div className="grid gap-2">
+                <Label>District</Label>
+                <Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} placeholder="District" />
+              </div>
+              <div className="grid gap-2">
+                <Label>State</Label>
+                <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="State" />
               </div>
             </div>
             <div className="grid gap-2">
@@ -333,7 +352,7 @@ export function HospitalsSection({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !form.name || !form.contact || !form.lat || !form.lng}>
+            <Button onClick={handleSave} disabled={saving || !form.name || !form.contact || !form.lat || !form.lng || !form.city || !form.district || !form.state}>
               {saving ? "Saving..." : editing ? "Update" : "Create"}
             </Button>
           </DialogFooter>

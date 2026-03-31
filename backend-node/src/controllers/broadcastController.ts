@@ -21,8 +21,11 @@ export async function sendBroadcast(req: Request, res: Response) {
   const resolvedPriority = priority ?? "normal";
 
   // Create in-app notifications for affected tourists
+  let recipientCount = 0;
+
   if (resolvedTarget === "all") {
     const tourists = await getAllTourists();
+    recipientCount = tourists.length;
     const notifPromises = tourists.map((t) =>
       createNotification({
         touristId: t._id,
@@ -43,6 +46,7 @@ export async function sendBroadcast(req: Request, res: Response) {
       payload: { title, message, priority: resolvedPriority },
     });
   } else if (resolvedTarget.startsWith("tourist:")) {
+    recipientCount = 1;
     const touristId = resolvedTarget.replace("tourist:", "");
     await createNotification({
       touristId,
@@ -71,7 +75,7 @@ export async function sendBroadcast(req: Request, res: Response) {
     await writeAuditLog({
       actor: admin.sub,
       actorType: "admin",
-      action: "broadcast_sent",
+      action: "broadcast",
       targetCollection: "notifications",
       targetId: resolvedTarget,
       changes: { title, message, target: resolvedTarget, priority: resolvedPriority },
@@ -80,5 +84,5 @@ export async function sendBroadcast(req: Request, res: Response) {
     });
   }
 
-  return res.json({ acknowledged: true, target: resolvedTarget });
+  return res.json({ acknowledged: true, target: resolvedTarget, recipientCount });
 }
