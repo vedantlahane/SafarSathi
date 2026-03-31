@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from .constants import NETWORK_TYPES, RISK_ZONE_LEVELS
+from .factor_registry import canonical_factor_key, clamp_factor_value
 
 
 @dataclass
@@ -104,6 +105,9 @@ class SafetyFeatures:
     # Optional true label for training
     safety_score_label: float | None = None
 
+    # Optional full taxonomy overrides (any of the 153 canonical factor keys)
+    extra_factors: dict[str, Any] = field(default_factory=dict)
+
     def normalize(self) -> "SafetyFeatures":
         self.hour = int(max(0, min(23, self.hour)))
         self.day_of_week = int(max(0, min(6, self.day_of_week)))
@@ -173,6 +177,14 @@ class SafetyFeatures:
         self.safety_place_count = int(max(0, self.safety_place_count))
         self.risky_place_count = int(max(0, self.risky_place_count))
         self.open_business_count = int(max(0, self.open_business_count))
+
+        normalized_extra: dict[str, float] = {}
+        for raw_key, raw_value in self.extra_factors.items():
+            key = canonical_factor_key(str(raw_key))
+            if key is None:
+                continue
+            normalized_extra[key] = clamp_factor_value(key, raw_value)
+        self.extra_factors = normalized_extra
 
         return self
 

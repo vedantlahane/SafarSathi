@@ -1,4 +1,4 @@
-# YatraX Safety ML v2 - Setup and Integration Guide
+# YatraX Safety ML v3 - Setup and Integration Guide
 
 This guide explains how to train and run the new safety-score model and connect it to both backends.
 
@@ -7,7 +7,7 @@ This guide explains how to train and run the new safety-score model and connect 
 The new model combines:
 
 1. Rule engine with environment-aware weighting (`urban/suburban/rural/remote/wilderness`).
-2. ML regressor trained on multi-factor synthetic + legacy data.
+2. TensorFlow regressor trained on full 153-factor synthetic + legacy data.
 3. Forecasting for next `1h/3h/6h` score drift.
 
 Output includes:
@@ -21,27 +21,18 @@ Output includes:
 
 ## Framework choice (Colab)
 
-Current implementation uses `scikit-learn` (`RandomForestRegressor`) because:
+Current implementation is TensorFlow-first:
 
-1. It is stable for tabular, mixed-scale safety features.
-2. It trains quickly for Phase-1/2 on synthetic + weakly labeled data.
-3. It is easy to deploy and debug in backend services.
+1. Input space includes the complete 153-factor taxonomy.
+2. Numeric preprocessing + deep MLP handles non-linear cross-factor interactions.
+3. Artifact format is deployment-friendly (`danger_model.pkl` metadata + `.tf.keras` weights + preprocessor file).
 
-TensorFlow and PyTorch are both valid future options, especially when you add:
-
-1. Sequence models for time-series forecasting (1h/3h/6h trajectories).
-2. Multi-task learning (safety score + risk-type heads).
-3. Learned embeddings for location clusters and place categories.
-
-Suggested roadmap:
-
-1. Phase-1/2: `scikit-learn` (current).
-2. Phase-3: XGBoost/LightGBM for stronger tabular performance.
-3. Phase-4+: PyTorch or TensorFlow for temporal and multi-modal models.
+PyTorch remains a valid alternative for future sequence-heavy experiments, but the production path here is TensorFlow.
 
 ## Files added
 
 - `model/schemas.py`: typed feature schema and prediction output schema.
+- `model/factor_registry.py`: canonical 153-factor taxonomy with bounds, aliases, and source mapping.
 - `model/environment.py`: urban/remote/wilderness detector.
 - `model/rule_engine.py`: weighted factor scoring with hard safety caps.
 - `model/feature_builder.py`: ML feature engineering.
@@ -62,7 +53,7 @@ Suggested roadmap:
 
 1. Use only the backend virtual environment for all Python commands.
 2. Do not run `pip install` in the system/global interpreter.
-3. Do model training on Laude (cloud), not on your local PC.
+3. Do model training on Google Colab (or another cloud runtime), not on your local PC.
 
 ## Activate backend virtual environment
 
@@ -84,17 +75,19 @@ source <backend-venv-path>/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-## Train the model (Laude cloud)
+## Train the model (Google Colab / cloud)
 
-Run this on your Laude/cloud machine after activating the backend venv:
+Run this in Colab (or another cloud runtime):
 
 ```bash
 python -m model.train_pipeline --synthetic-samples 42000
 ```
 
-This writes the trained artifact to:
+This writes artifacts to:
 
 - `danger_model.pkl`
+- `danger_model.tf.keras`
+- `danger_model.preprocessor.pkl`
 
 Optional training flags:
 
@@ -112,10 +105,31 @@ Disable legacy CSV contribution:
 python -m model.train_pipeline --disable-legacy
 ```
 
-### Suggested Laude workflow
+### Suggested Colab workflow
+
+```python
+# Cell 1: clone repo and install dependencies in Colab runtime
+!git clone https://github.com/vedantlahane/YatraX.git
+%cd YatraX
+!python -m pip install -r requirements.txt
+```
+
+```python
+# Cell 2: train model artifact
+!python -m model.train_pipeline --synthetic-samples 42000 --seed 42
+```
+
+```python
+# Cell 3 (optional): train without legacy bootstrap CSV
+!python -m model.train_pipeline --disable-legacy
+```
+
+Download all three files (`danger_model.pkl`, `danger_model.tf.keras`, and `danger_model.preprocessor.pkl`) from Colab and deploy them together with the Python API service.
+
+### Suggested cloud-VM workflow
 
 ```bash
-# 1) SSH to Laude machine and enter repo
+# 1) SSH to cloud machine and enter repo
 cd /path/to/YatraX
 
 # 2) Activate existing backend venv
@@ -131,7 +145,7 @@ python -m model.train_pipeline --synthetic-samples 42000 --seed 42
 python -m model.train_pipeline --disable-legacy
 ```
 
-After training on Laude, deploy the generated `danger_model.pkl` with the Python API service.
+After training on Colab/cloud, deploy all generated model artifact files with the Python API service.
 
 ## Run inference API
 
@@ -145,7 +159,7 @@ Service default:
 
 - `http://localhost:5000`
 
-For deployment, replace localhost with your Laude/public API base URL.
+For deployment, replace localhost with your deployed ML API base URL.
 
 Health check:
 
@@ -229,6 +243,8 @@ This returns:
 
 - `sources`: source key -> `{name, url, access, notes}`
 - `feature_sources`: model feature -> list of source links used for that feature
+- `factor_count`: full taxonomy count (`153`)
+- `factor_keys`: canonical factor key list
 
 You can also read the in-code mapping directly in:
 
@@ -254,7 +270,7 @@ If you want richer data in Spring:
 
 Set these env vars in `backend-node`:
 
-- `SAFETY_ML_API_URL=https://<your-laude-ml-host>`
+- `SAFETY_ML_API_URL=https://<your-ml-host>`
 - `SAFETY_ML_TIMEOUT_MS=2500`
 
 Behavior:
@@ -264,25 +280,21 @@ Behavior:
 
 ## Feature coverage strategy
 
-This implementation is built for phased rollout:
+This implementation now includes complete taxonomy coverage.
 
-- Phase 1 now: use available factors and defaults.
-- Phase 2+: progressively fill more features from APIs and your databases.
-
-Any missing factor is safely defaulted, so the API still returns a valid score.
+Any factor missing from request payload is safely defaulted/derived, so the API still returns a valid score.
 
 ### Current coverage snapshot
 
 - Master taxonomy target: `153` factors
-- Currently implemented model inputs: `66` features (`SafetyFeatures`)
+- Implemented taxonomy registry: `153` factors (`model/factor_registry.py`)
+- TensorFlow model input: all 153 factors + derived robustness features
 - Active weighted rule factors: `18` (environment-adjusted)
-
-So, **not all 153 factors are covered yet**. The implementation is intentionally phase-based and expandable.
 
 ## Recommended production workflow
 
 1. Retrain model daily/weekly with updated incident and alert data.
-2. Keep one stable model artifact (`danger_model.pkl`) for serving.
+2. Keep one stable artifact bundle (`danger_model.pkl` + `.tf.keras` + preprocessor) for serving.
 3. Version models in CI/CD by copying artifacts to dated paths.
 4. Monitor drift by tracking average error against real incident outcomes.
 
@@ -291,7 +303,8 @@ So, **not all 153 factors are covered yet**. The implementation is intentionally
 - If `/health` says `model_loaded=false`:
   1. Run training command.
   2. Confirm `danger_model.pkl` exists in repository root.
-  3. Call `/v2/reload-model`.
+  3. Confirm `danger_model.tf.keras` and `danger_model.preprocessor.pkl` exist in repository root.
+  4. Call `/v2/reload-model`.
 
 - If Spring returns default score:
   1. Verify Python service is up on port `5000`.

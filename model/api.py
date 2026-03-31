@@ -9,6 +9,7 @@ from flask_cors import CORS
 
 from .constants import DEFAULT_MODEL_PATH
 from .data_sources import feature_source_links, source_catalog_dict
+from .factor_registry import FACTOR_KEYS, TOTAL_FACTOR_COUNT, canonical_factor_key
 from .predictor import SafetyPredictor
 from .schemas import SafetyFeatures
 
@@ -51,6 +52,12 @@ def _minutes_to_sunset_default(hour: int) -> float:
 
 def _features_from_payload(payload: dict[str, Any]) -> tuple[SafetyFeatures, int]:
     now = datetime.now(timezone.utc)
+
+    extra_factors: dict[str, Any] = {}
+    for raw_key, raw_value in payload.items():
+        key = canonical_factor_key(str(raw_key))
+        if key is not None:
+            extra_factors[key] = raw_value
 
     features = SafetyFeatures(
         latitude=_to_float(payload, "latitude", _to_float(payload, "lat", 26.2006)),
@@ -119,9 +126,34 @@ def _features_from_payload(payload: dict[str, Any]) -> tuple[SafetyFeatures, int
         open_business_count=_to_int(payload, "open_business_count", _to_int(payload, "openBusinessCount", 6)),
         ndma_alert_level=_to_float(payload, "ndma_alert_level", 0.0),
         travel_advisory_level=_to_float(payload, "travel_advisory_level", 0.0),
+        extra_factors=extra_factors,
     ).normalize()
 
-    provided_count = len(payload)
+    core_signal_keys = {
+        "latitude",
+        "lat",
+        "longitude",
+        "lon",
+        "hour",
+        "day_of_week",
+        "month",
+        "minutes_to_sunset",
+        "network_type",
+        "networkType",
+        "in_risk_zone",
+        "inRiskZone",
+        "risk_zone_level",
+        "riskZoneLevel",
+        "active_alerts_nearby",
+        "activeAlertsNearby",
+        "historical_incidents_30d",
+        "historicalIncidents30d",
+        "weather_severity",
+        "weatherSeverity",
+        "aqi",
+    }
+    provided_count = len(extra_factors) + sum(1 for key in core_signal_keys if key in payload)
+    provided_count = int(min(TOTAL_FACTOR_COUNT, max(0, provided_count)))
     return features, provided_count
 
 
@@ -156,6 +188,8 @@ def create_app() -> Flask:
         return jsonify(
             {
                 "success": True,
+                "factor_count": TOTAL_FACTOR_COUNT,
+                "factor_keys": list(FACTOR_KEYS),
                 "sources": source_catalog_dict(),
                 "feature_sources": feature_source_links(),
             }
