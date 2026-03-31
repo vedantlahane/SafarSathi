@@ -74,6 +74,9 @@ export interface HospitalAdmin {
   emergency: boolean;
   location: { lat: number; lng: number };
   isActive: boolean;
+  city?: string;
+  district?: string;
+  state?: string;
   tier?: string;
   specialties?: string[];
   bedCapacity?: number;
@@ -91,6 +94,7 @@ export interface TravelAdvisoryAdmin {
   isActive: boolean;
   issuedBy: string;
   issuedAt: string;
+  effectiveFrom?: string;
   expiresAt?: string;
   affectedDistricts?: string[];
 }
@@ -166,6 +170,9 @@ export interface HospitalFormData {
   emergency: boolean;
   lat: string;
   lng: string;
+  city: string;
+  district: string;
+  state: string;
   tier: string;
   specialties: string;
   bedCapacity: string;
@@ -177,6 +184,7 @@ export interface AdvisoryFormData {
   description: string;
   severity: "info" | "warning" | "critical";
   region: string;
+  effectiveFrom: string;
   expiresAt: string;
   affectedDistricts: string;
 }
