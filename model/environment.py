@@ -1,3 +1,4 @@
+# path: model/environment.py
 from __future__ import annotations
 
 from .schemas import SafetyFeatures
