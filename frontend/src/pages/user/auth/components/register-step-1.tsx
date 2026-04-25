@@ -1,4 +1,5 @@
-import { Mail, User, Lock } from "lucide-react";
+import { useState } from "react";
+import { Mail, User, Lock, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ export function RegisterStep1({
   onChange,
   onNext,
 }: RegisterStep1Props) {
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onNext();
@@ -43,6 +46,7 @@ export function RegisterStep1({
               value={name}
               onChange={(e) => onChange("name", e.target.value)}
               placeholder="First Last"
+              autoComplete="name"
               className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
             />
           </div>
@@ -60,6 +64,7 @@ export function RegisterStep1({
               value={email}
               onChange={(e) => onChange("email", e.target.value)}
               placeholder="you@email.com"
+              autoComplete="email"
               className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
             />
           </div>
@@ -70,16 +75,25 @@ export function RegisterStep1({
           <div className="w-[52px] flex justify-center items-center">
             <Lock className="h-[20px] w-[20px] text-slate-400 group-focus-within:text-primary transition-colors" />
           </div>
-          <div className="flex-1 flex flex-col justify-center h-full py-1 pr-4">
+          <div className="flex-1 flex flex-col justify-center h-full py-1 pr-12">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none pt-2">Password</label>
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => onChange("password", e.target.value)}
               placeholder="Create secure password"
+              autoComplete="new-password"
               className="h-8 border-none bg-transparent shadow-none px-0 py-0 text-[16px] font-medium focus-visible:ring-0 placeholder:text-slate-300"
             />
           </div>
+          <button
+            type="button"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+          </button>
         </div>
       </div>
 

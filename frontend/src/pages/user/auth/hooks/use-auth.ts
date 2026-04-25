@@ -61,6 +61,7 @@ export function useAuth() {
     allergies: "",
     medicalConditions: "",
   });
+  const [sameAsPrimaryPhone, setSameAsPrimaryPhone] = useState(false);
 
   const [pendingSession, setPendingSession] = useState<{
     touristId: string;
@@ -86,15 +87,20 @@ export function useAuth() {
   }, [form.name, form.email, passwordStatus]);
 
   const canProceedStep2 = useMemo(() => {
-    if (!form.nationality.trim()) return false;
     if (!form.phone.replace(/\D/g, "")) return false;
     if (!form.passportNumber.trim()) return false;
     return form.phone.replace(/\D/g, "").length >= 8;
-  }, [form.nationality, form.phone, form.passportNumber]);
+  }, [form.phone, form.passportNumber]);
 
   const canProceedStep3 = useMemo(() => {
-    return form.emergencyPhone.replace(/\D/g, "").length >= 8;
-  }, [form.emergencyPhone]);
+    const emergencyName = form.emergencyName.trim();
+    const emergencyPhone = (sameAsPrimaryPhone ? form.phone : form.emergencyPhone)
+      .replace(/\D/g, "");
+
+    if (!emergencyName && !emergencyPhone) return true;
+    if (!emergencyName) return false;
+    return emergencyPhone.length >= 8;
+  }, [form.emergencyName, form.emergencyPhone, form.phone, sameAsPrimaryPhone]);
 
   const handleLogin = useCallback(async () => {
     if (!EMAIL_RE.test(loginEmail) || !loginPassword) {
@@ -129,6 +135,7 @@ export function useAuth() {
   const goToRegister = useCallback(() => {
     setMode("register");
     setRegisterStep(1);
+    setSameAsPrimaryPhone(false);
     setMessage(null);
   }, []);
 
@@ -143,11 +150,11 @@ export function useAuth() {
       return;
     }
     if (registerStep === 2 && !canProceedStep2) {
-      setMessage("Nationality is required. Phone must be valid if provided.");
+      setMessage("Please enter a valid phone number and passport/ID.");
       return;
     }
     if (registerStep === 3 && !canProceedStep3) {
-      setMessage("Emergency contact phone is required.");
+      setMessage("Add both emergency name and valid phone, or leave both fields empty.");
       return;
     }
     setRegisterStep((prev) => (prev === 3 ? 3 : ((prev + 1) as RegisterStep)));
@@ -159,8 +166,11 @@ export function useAuth() {
   }, []);
 
   const submitRegister = useCallback(async () => {
+    const emergencyName = form.emergencyName.trim();
+    const emergencyPhone = (sameAsPrimaryPhone ? form.phone : form.emergencyPhone).trim();
+
     if (!canProceedStep3) {
-      setMessage("Emergency contact phone is required.");
+      setMessage("Add both emergency name and valid phone, or leave both fields empty.");
       return;
     }
 
@@ -169,16 +179,19 @@ export function useAuth() {
 
     try {
       const result = await registerTourist({
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        passportNumber: form.passportNumber,
-        nationality: form.nationality,
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        passportNumber: form.passportNumber.trim(),
+        nationality: form.nationality.trim() || undefined,
         passwordHash: form.password,
-        emergencyContact: {
-          name: form.emergencyName,
-          phone: form.emergencyPhone,
-        },
+        emergencyContact:
+          emergencyName || emergencyPhone
+            ? {
+                name: emergencyName || undefined,
+                phone: emergencyPhone || undefined,
+              }
+            : undefined,
         bloodType: form.bloodType || undefined,
         allergies: parseList(form.allergies),
         medicalConditions: parseList(form.medicalConditions),
@@ -201,7 +214,7 @@ export function useAuth() {
     } finally {
       setLoading(false);
     }
-  }, [form, canProceedStep3]);
+  }, [form, canProceedStep3, sameAsPrimaryPhone]);
 
   const completeRegistration = useCallback(() => {
     if (!pendingSession) return;
@@ -314,6 +327,8 @@ export function useAuth() {
     setResetPassword,
     form,
     setForm,
+    sameAsPrimaryPhone,
+    setSameAsPrimaryPhone,
     passwordStatus,
     canProceedStep1,
     canProceedStep2,
