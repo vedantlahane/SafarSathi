@@ -19,6 +19,8 @@ import {
 } from "../services/mongoStore.js";
 import { AlertModel } from "../schemas/Alert.schema.js";
 import { IncidentModel } from "../schemas/Incident.schema.js";
+import { env } from "../config/env.js";
+import { predictSafetyFromMl } from "../services/safetyMlService.js";
 
 // Radius within which we look for context data
 const ZONE_RADIUS_KM = 2;
@@ -207,26 +209,97 @@ export async function safetyCheck(req: Request, res: Response): Promise<void> {
     airQualityIndex,
   };
 
-  // ── Run calculator ──────────────────────────────────────────────────
-  const result = calculatePhase1Score(input);
+  // ── Run local phase-1 calculator (always available fallback) ───────
+  const localResult = calculatePhase1Score(input);
 
-  // Convert safety score (0–100, higher = safer) to danger score (0–1, higher = more dangerous)
-  const dangerScore = Math.round((100 - result.overall) * 100) / 10000; // keeps 2 dp
+  let overallScore = localResult.overall;
+  let status = localResult.status;
+  let cappedBy = localResult.cappedBy;
+  let recommendation = localResult.recommendation;
+  let dangerScore = Math.round((100 - localResult.overall) * 100) / 10000;
+  let modelEnvironment: string | null = null;
+  let forecast: Array<{
+    horizonHours: number;
+    safetyScore: number;
+    dangerScore: number;
+    status: "safe" | "caution" | "danger";
+    rationale: string;
+  }> = [];
 
-  const riskLabel: "Low Risk" | "Caution" | "High Danger" =
-    result.status === "safe"
-      ? "Low Risk"
-      : result.status === "caution"
-        ? "Caution"
-        : "High Danger";
+  let scoringSource: "ml_v2" | "phase1_fallback" = "phase1_fallback";
+  let mlApiUsed = false;
 
   // Map factors for the frontend SafetyFactor interface
-  const frontendFactors = result.factors.map((f) => ({
+  let frontendFactors = localResult.factors.map((f) => ({
     label: f.label,
     score: f.score,
     trend: mapTrend(f.trend),
     detail: f.detail,
   }));
+
+  // ── Optional ML v2 scoring via Python API ───────────────────────────
+  if (env.safetyMlApiUrl) {
+    const mlFeatures: Record<string, unknown> = {
+      latitude: lat,
+      longitude: lon,
+      hour: currentHour,
+      day_of_week: now.getUTCDay(),
+      month: now.getUTCMonth() + 1,
+      minutes_to_sunset: minutesToSunset,
+
+      network_type: networkType,
+      weather_severity: weatherSeverity,
+      aqi: airQualityIndex,
+
+      in_risk_zone: inRiskZone,
+      risk_zone_level: riskZoneLevel ?? "LOW",
+      active_alerts_nearby: activeAlertsNearby,
+      historical_incidents_30d: historicalIncidents30d,
+
+      nearby_place_count: DEFAULT_NEARBY_PLACE_COUNT,
+      safety_place_count: DEFAULT_SAFETY_PLACE_COUNT,
+      risky_place_count: DEFAULT_RISKY_PLACE_COUNT,
+      open_business_count: DEFAULT_OPEN_BUSINESS_COUNT,
+
+      police_eta_min: policeETASeconds / 60,
+      hospital_eta_min: hospitalETASeconds / 60,
+    };
+
+    const mlPrediction = await predictSafetyFromMl(
+      mlFeatures,
+      env.safetyMlApiUrl,
+      env.safetyMlTimeoutMs,
+    );
+
+    if (mlPrediction) {
+      mlApiUsed = true;
+      scoringSource = "ml_v2";
+
+      overallScore = Number(mlPrediction.safetyScore.toFixed(2));
+      status = mlPrediction.status;
+      cappedBy = mlPrediction.cappedBy;
+      recommendation = mlPrediction.recommendation;
+      dangerScore = Number(mlPrediction.dangerScore.toFixed(4));
+      modelEnvironment = mlPrediction.environment;
+      forecast = mlPrediction.forecast;
+
+      if (mlPrediction.factors.length > 0) {
+        frontendFactors = mlPrediction.factors.map((f) => ({
+          label: f.label,
+          score: Number(f.score.toFixed(2)),
+          trend: "stable" as const,
+          detail: f.detail,
+        }));
+      }
+    }
+  }
+
+  const riskLabel: "Low Risk" | "Caution" | "High Danger" =
+    status === "safe"
+      ? "Low Risk"
+      : status === "caution"
+        ? "Caution"
+        : "High Danger";
 
   res.json({
     success: true,
@@ -235,13 +308,22 @@ export async function safetyCheck(req: Request, res: Response): Promise<void> {
       dangerScore,
       riskLabel,
       isNearAdminZone: inRiskZone,
-      recommendation: result.recommendation,
+      recommendation,
 
       // Phase 1 enrichments
-      overallScore: result.overall,
-      status: result.status,
-      cappedBy: result.cappedBy,
+      overallScore,
+      status,
+      cappedBy,
       factors: frontendFactors,
+
+      // ML enrichments (when available)
+      environment: modelEnvironment,
+      forecast,
+
+      // Diagnostics
+      scoringSource,
+      mlApiConfigured: Boolean(env.safetyMlApiUrl),
+      mlApiUsed,
     },
   });
 }

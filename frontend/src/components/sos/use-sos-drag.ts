@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { hapticFeedback } from "@/lib/store";
 import { useSession } from "@/lib/session";
+import { postPreAlert } from "@/lib/api";
 import { useSOS } from "./use-sos";
 import { detectSwipeDirection, isValidSOSTrigger, calculateSnapPosition, clampVerticalPosition, type GestureState } from "./sos-gesture-handler";
 
@@ -32,21 +33,7 @@ export function useSOSDrag(ballSize: number) {
         if (preAlertSent || !session?.touristId) return;
         markPreAlertSent();
         try {
-            const API_BASE = (
-                (import.meta.env.VITE_BACKEND_NODE_URL as string | undefined) ??
-                "http://localhost:8081"
-            ).replace(/\/$/, "");
-            await fetch(`${API_BASE}/api/sos/pre-alert`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    touristId: session.touristId,
-                    lat: null,
-                    lng: null,
-                    timestamp: new Date().toISOString(),
-                    type: "PROLONGED_HOLD",
-                }),
-            });
+            await postPreAlert(session.touristId, {});
         } catch {
             /* silent */
         }
