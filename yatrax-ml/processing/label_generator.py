@@ -250,7 +250,7 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
                 danger += crime_night_penalty
 
             # Infrastructure isolation penalty (proportional, stronger weight)
-            isolation_danger = (perturbed_hospital_km / 50.0) * ((100 - perturbed_emergency) / 100.0) * 0.50
+            isolation_danger = (perturbed_hospital_km / 50.0) * ((100 - perturbed_emergency) / 100.0) * 0.60
             danger += isolation_danger
 
             # Add calibrated noise (real-world variation)
