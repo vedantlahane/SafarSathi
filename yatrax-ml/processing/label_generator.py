@@ -160,7 +160,8 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
     for col, (name, weight) in protective_components.items():
         if col in grid.columns:
             # Higher protective score = less danger
-            vals = grid[col].fillna(50) / 100.0  # normalize to 0-1
+            # Use fillna(0): cells without real hospital/emergency data get NO protection
+            vals = grid[col].fillna(0) / 100.0  # normalize to 0-1
             grid["base_danger"] -= vals.clip(0, 1) * weight
 
     for col, (name, weight) in env_components.items():
@@ -217,6 +218,21 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
             danger *= _time_of_day_modifier(hour)
             danger *= _season_modifier(month)
             danger *= _weekend_modifier(day_of_week, hour)
+
+            # Night-time crime amplification: high crime areas are much worse at night
+            crime_rate = cell.get("crime_rate_per_100k", 50)
+            if (hour >= 22 or hour <= 4) and crime_rate > 100:
+                # Scale: crime=200 adds 0.10 danger, crime=600 adds 0.30
+                crime_night_penalty = min((crime_rate - 100) / 1000.0, 0.35)
+                danger += crime_night_penalty
+
+            # Infrastructure isolation penalty: far from hospital + low emergency = more danger
+            hospital_km = cell.get("nearest_hospital_proxy_km", 35)
+            emergency_score = cell.get("emergency_availability_score", 20)
+            if hospital_km > 25 and emergency_score < 30:
+                # Max penalty: 0.30 for 50km + score=0
+                isolation_penalty = min((hospital_km - 25) / 50.0, 0.20) + max((30 - emergency_score) / 100.0, 0)
+                danger += isolation_penalty
 
             # Add calibrated noise (real-world variation)
             danger += rng.normal(0, 0.05)
