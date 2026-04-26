@@ -298,10 +298,12 @@ def train_incident_classifier() -> dict:
         df = generate_incident_training_data()
     else:
         df = pd.read_parquet(data_path)
-        # Validate cached data has enough classes
+        # Validate cached data: min samples per class AND class balance
         class_counts = df["incident_type"].value_counts()
-        if class_counts.min() < 2:
-            print(f"  Cached data has under-populated classes, regenerating...")
+        imbalance_ratio = class_counts.max() / max(class_counts.min(), 1)
+        if class_counts.min() < 500 or imbalance_ratio > 100:
+            print(f"  Cached data is imbalanced (min={class_counts.min()}, "
+                  f"max={class_counts.max()}, ratio={imbalance_ratio:.0f}x), regenerating...")
             df = generate_incident_training_data()
         else:
             print(f"Loaded {len(df)} incident samples")
