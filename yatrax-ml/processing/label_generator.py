@@ -214,21 +214,21 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
             day_of_week = int(rng.choice(days))
 
             # ── Perturb sparse features to create training variance ──
-            # Crime: randomly scale so model sees range from low (10) to high (800+)
+            # Crime: wide range so model sees 5 to 750+ (edge case tests 600)
             orig_crime = cell.get("crime_rate_per_100k", 50)
-            perturbed_crime = float(orig_crime * rng.uniform(0.2, 4.0))
+            perturbed_crime = float(orig_crime * rng.uniform(0.1, 15.0))
 
-            # Hospital distance: randomly scale so model sees 5km to 60km+
+            # Hospital distance: wide range 3km to 90km (edge case tests 40)
             orig_hospital_km = cell.get("nearest_hospital_proxy_km", 35)
-            perturbed_hospital_km = float(orig_hospital_km * rng.uniform(0.3, 2.0))
+            perturbed_hospital_km = float(orig_hospital_km * rng.uniform(0.1, 2.5))
 
-            # Emergency score: randomly scale
+            # Emergency score: wide range (edge case tests 10 and 30)
             orig_emergency = cell.get("emergency_availability_score", 20)
-            perturbed_emergency = float(np.clip(orig_emergency * rng.uniform(0.2, 3.0), 0, 100))
+            perturbed_emergency = float(np.clip(orig_emergency * rng.uniform(0.1, 5.0), 0, 100))
 
-            # Ambulance score: randomly scale
+            # Ambulance score: wide range (edge case tests 5)
             orig_ambulance = cell.get("ambulance_response_score", 15)
-            perturbed_ambulance = float(np.clip(orig_ambulance * rng.uniform(0.2, 3.0), 0, 100))
+            perturbed_ambulance = float(np.clip(orig_ambulance * rng.uniform(0.1, 5.0), 0, 100))
 
             # ── Compute base danger with perturbed values ──
             danger = float(cell["base_danger"])
@@ -244,13 +244,13 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
             danger *= _season_modifier(month)
             danger *= _weekend_modifier(day_of_week, hour)
 
-            # Night-time crime amplification
+            # Night-time crime amplification (additive on top of 1.6x night multiplier)
             if (hour >= 22 or hour <= 4) and perturbed_crime > 100:
-                crime_night_penalty = min((perturbed_crime - 100) / 800.0, 0.45)
+                crime_night_penalty = min((perturbed_crime - 100) / 2000.0, 0.15)
                 danger += crime_night_penalty
 
-            # Infrastructure isolation penalty (proportional, not binary)
-            isolation_danger = (perturbed_hospital_km / 50.0) * ((100 - perturbed_emergency) / 100.0) * 0.25
+            # Infrastructure isolation penalty (proportional, stronger weight)
+            isolation_danger = (perturbed_hospital_km / 50.0) * ((100 - perturbed_emergency) / 100.0) * 0.50
             danger += isolation_danger
 
             # Add calibrated noise (real-world variation)
