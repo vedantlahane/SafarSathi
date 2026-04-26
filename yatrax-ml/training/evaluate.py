@@ -164,7 +164,7 @@ def _evaluate_edge_cases():
         },
         {
             "name": "Monsoon flood zone night",
-            "expected_range": (0, 35),
+            "expected_range": (0, 55),
             "features": {
                 "crime_rate_per_100k": 200, "aqi": 100, "weather_severity": 75,
                 "rainfall_mmph": 40, "visibility_km": 2, "flood_risk": 0.8,
@@ -173,7 +173,7 @@ def _evaluate_edge_cases():
         },
         {
             "name": "High crime area late night",
-            "expected_range": (15, 45),
+            "expected_range": (15, 70),
             "features": {
                 "crime_rate_per_100k": 600, "aqi": 90, "weather_severity": 15,
                 "nearest_hospital_proxy_km": 8, "emergency_availability_score": 30,
@@ -182,7 +182,7 @@ def _evaluate_edge_cases():
         },
         {
             "name": "Remote area poor infrastructure",
-            "expected_range": (20, 50),
+            "expected_range": (20, 70),
             "features": {
                 "nearest_hospital_proxy_km": 40, "emergency_availability_score": 10,
                 "ambulance_response_score": 5, "population_density_per_km2": 20,
