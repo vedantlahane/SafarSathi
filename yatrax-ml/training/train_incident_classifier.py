@@ -114,7 +114,7 @@ def generate_incident_training_data() -> pd.DataFrame:
     if fire_path.exists():
         fires = pd.read_parquet(fire_path)
         for _, row in fires.iterrows():
-            n_samples = min(max(1, int(row.get("fire_count", 1) / 5)), 20)
+            n_samples = min(max(1, int(row.get("fire_count", 1) / 50)), 3)
             for _ in range(n_samples):
                 features = _get_cell_features(grid, row.get("grid_lat", row.get("latitude")),
                                                row.get("grid_lon", row.get("longitude")))
@@ -187,7 +187,7 @@ def generate_incident_training_data() -> pd.DataFrame:
     df = pd.DataFrame(rows)
 
     # Ensure minimum samples per class (at least 50)
-    MIN_SAMPLES_PER_CLASS = 50
+    MIN_SAMPLES_PER_CLASS = 500
     for itype in INCIDENT_TYPES:
         class_count = (df["incident_type"] == itype).sum() if len(df) > 0 else 0
         if class_count < MIN_SAMPLES_PER_CLASS:

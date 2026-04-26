@@ -27,10 +27,10 @@ MERGE_CONFIG = {
             "tourist_targeted_crime_index",
         ],
         "fill_defaults": {
-            "crime_rate_per_100k": 190.0,
-            "crime_type_distribution_risk": 0.22,
-            "gender_safety_index": 0.65,
-            "tourist_targeted_crime_index": 0.16,
+            "crime_rate_per_100k": 50.0,
+            "crime_type_distribution_risk": 0.10,
+            "gender_safety_index": 0.80,
+            "tourist_targeted_crime_index": 0.05,
         },
     },
     "weather_grid.parquet": {
@@ -102,10 +102,10 @@ MERGE_CONFIG = {
             "nearest_hospital_proxy_km",
         ],
         "fill_defaults": {
-            "hospital_level_score": 50.0,
-            "emergency_availability_score": 40.0,
-            "ambulance_response_score": 35.0,
-            "nearest_hospital_proxy_km": 25.0,
+            "hospital_level_score": 30.0,
+            "emergency_availability_score": 20.0,
+            "ambulance_response_score": 15.0,
+            "nearest_hospital_proxy_km": 35.0,
         },
     },
     "fire_grid.parquet": {

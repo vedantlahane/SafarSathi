@@ -96,8 +96,8 @@ def ingest_noise_file(file_path: Path) -> pd.DataFrame | None:
     # Location
     lat_col = _find_col(df, ["latitude", "lat", "Latitude"])
     lon_col = _find_col(df, ["longitude", "lon", "Longitude"])
-    city_col = _find_col(df, ["city", "City", "location", "Location", "station"])
-    state_col = _find_col(df, ["state", "State"])
+    city_col = _find_col(df, ["city", "City", "location", "Location", "station", "Station", "station_name", "Station_Name"])
+    state_col = _find_col(df, ["state", "State", "STATE", "City", "city"])
 
     if lat_col and lon_col:
         result["latitude"] = pd.to_numeric(df[lat_col], errors="coerce")
@@ -138,9 +138,36 @@ def ingest_noise_file(file_path: Path) -> pd.DataFrame | None:
                         if matched:
                             break
 
-    if state_col:
-        result["state"] = df[state_col].astype(str).str.strip().str.lower()
+    # State-level fallback geocoding for unmatched stations
+    STATE_COORDS = {
+        "delhi": (28.6139, 77.2090), "maharashtra": (19.08, 72.88),
+        "west bengal": (22.57, 88.36), "tamil nadu": (13.08, 80.27),
+        "karnataka": (12.97, 77.59), "telangana": (17.39, 78.49),
+        "gujarat": (23.02, 72.57), "uttar pradesh": (26.85, 80.95),
+        "rajasthan": (26.91, 75.79), "madhya pradesh": (23.26, 77.41),
+        "punjab": (31.15, 75.34), "haryana": (29.06, 76.08),
+        "bihar": (25.61, 85.14), "kerala": (10.85, 76.27),
+        "andhra pradesh": (15.91, 79.74), "odisha": (20.30, 85.82),
+        "assam": (26.14, 91.74), "jharkhand": (23.34, 85.31),
+        "chhattisgarh": (21.25, 81.63), "uttarakhand": (30.32, 78.03),
+        "goa": (15.49, 73.83), "chandigarh": (30.73, 76.78),
+    }
+    if city_col:
+        # Try state-level fallback for any still-unmatched rows
+        for idx in result.index:
+            if pd.isna(result.at[idx, "latitude"]):
+                station = str(result.at[idx, "city"]).lower().strip()
+                for state_key, (lat, lon) in STATE_COORDS.items():
+                    if state_key in station:
+                        result.at[idx, "latitude"] = lat + np.random.uniform(-0.3, 0.3)
+                        result.at[idx, "longitude"] = lon + np.random.uniform(-0.3, 0.3)
+                        break
 
+    if state_col and state_col != city_col:
+        result["state"] = df[state_col].astype(str).str.strip().str.lower()
+    elif state_col:
+        result["state"] = df[state_col].astype(str).str.strip().str.lower()
+    
     # Date
     date_col = _find_col(df, ["date", "Date", "year", "Year"])
     if date_col:
