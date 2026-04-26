@@ -213,29 +213,48 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
             month = int(rng.choice(months))
             day_of_week = int(rng.choice(days))
 
-            # Apply temporal modifiers to base danger
+            # ── Perturb sparse features to create training variance ──
+            # Crime: randomly scale so model sees range from low (10) to high (800+)
+            orig_crime = cell.get("crime_rate_per_100k", 50)
+            perturbed_crime = float(orig_crime * rng.uniform(0.2, 4.0))
+
+            # Hospital distance: randomly scale so model sees 5km to 60km+
+            orig_hospital_km = cell.get("nearest_hospital_proxy_km", 35)
+            perturbed_hospital_km = float(orig_hospital_km * rng.uniform(0.3, 2.0))
+
+            # Emergency score: randomly scale
+            orig_emergency = cell.get("emergency_availability_score", 20)
+            perturbed_emergency = float(np.clip(orig_emergency * rng.uniform(0.2, 3.0), 0, 100))
+
+            # Ambulance score: randomly scale
+            orig_ambulance = cell.get("ambulance_response_score", 15)
+            perturbed_ambulance = float(np.clip(orig_ambulance * rng.uniform(0.2, 3.0), 0, 100))
+
+            # ── Compute base danger with perturbed values ──
             danger = float(cell["base_danger"])
+
+            # Recalculate crime contribution with perturbed value
+            # Remove original crime contribution, add perturbed
+            orig_crime_contrib = (min(orig_crime / 600.0, 1.0)) * 0.25
+            new_crime_contrib = (min(perturbed_crime / 600.0, 1.0)) * 0.25
+            danger = danger - orig_crime_contrib + new_crime_contrib
+
+            # Apply temporal modifiers
             danger *= _time_of_day_modifier(hour)
             danger *= _season_modifier(month)
             danger *= _weekend_modifier(day_of_week, hour)
 
-            # Night-time crime amplification: high crime areas are much worse at night
-            crime_rate = cell.get("crime_rate_per_100k", 50)
-            if (hour >= 22 or hour <= 4) and crime_rate > 100:
-                # Scale: crime=200 adds 0.10 danger, crime=600 adds 0.30
-                crime_night_penalty = min((crime_rate - 100) / 1000.0, 0.35)
+            # Night-time crime amplification
+            if (hour >= 22 or hour <= 4) and perturbed_crime > 100:
+                crime_night_penalty = min((perturbed_crime - 100) / 800.0, 0.45)
                 danger += crime_night_penalty
 
-            # Infrastructure isolation penalty: far from hospital + low emergency = more danger
-            hospital_km = cell.get("nearest_hospital_proxy_km", 35)
-            emergency_score = cell.get("emergency_availability_score", 20)
-            if hospital_km > 25 and emergency_score < 30:
-                # Max penalty: 0.30 for 50km + score=0
-                isolation_penalty = min((hospital_km - 25) / 50.0, 0.20) + max((30 - emergency_score) / 100.0, 0)
-                danger += isolation_penalty
+            # Infrastructure isolation penalty (proportional, not binary)
+            isolation_danger = (perturbed_hospital_km / 50.0) * ((100 - perturbed_emergency) / 100.0) * 0.25
+            danger += isolation_danger
 
             # Add calibrated noise (real-world variation)
-            danger += rng.normal(0, 0.05)
+            danger += rng.normal(0, 0.04)
             danger = float(np.clip(danger, 0, 1))
 
             # Convert to safety score (0-100, 100 = safest)
@@ -251,9 +270,17 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
                 "month": month,
                 "day_of_week": day_of_week,
 
-                # All features from unified grid
+                # All features from unified grid (original values)
                 **{col: cell[col] for col in grid.columns
-                   if col not in ["grid_lat", "grid_lon", "cell_id", "base_danger"]},
+                   if col not in ["grid_lat", "grid_lon", "cell_id", "base_danger",
+                                  "crime_rate_per_100k", "nearest_hospital_proxy_km",
+                                  "emergency_availability_score", "ambulance_response_score"]},
+
+                # Perturbed features (model sees these paired with the label)
+                "crime_rate_per_100k": perturbed_crime,
+                "nearest_hospital_proxy_km": perturbed_hospital_km,
+                "emergency_availability_score": perturbed_emergency,
+                "ambulance_response_score": perturbed_ambulance,
 
                 # Label
                 "safety_score_target": safety_score,
