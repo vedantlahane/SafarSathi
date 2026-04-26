@@ -147,8 +147,11 @@ def generate_incident_training_data() -> pd.DataFrame:
         features = {col: cell[col] for col in grid.columns
                      if col not in ["cell_id", "base_danger"]}
 
-        # Medical emergency — high altitude or extreme weather
-        if cell.get("elevation_m", 0) > 2500 or cell.get("weather_severity", 0) > 60:
+        # Medical emergency — remote areas or extreme weather
+        # Note: elevation_m may not be in grid, use nearest_hospital_proxy_km or weather_severity
+        hospital_dist = cell.get("nearest_hospital_proxy_km", 0)
+        weather_sev = cell.get("weather_severity", 0)
+        if hospital_dist > 15 or weather_sev > 40:
             f = features.copy()
             f["incident_type"] = "medical_emergency"
             f["hour"] = int(rng.choice(24))
@@ -156,10 +159,20 @@ def generate_incident_training_data() -> pd.DataFrame:
             rows.append(f)
 
         # Stranded — remote + poor infrastructure
-        if cell.get("nearest_hospital_proxy_km", 0) > 30:
+        if hospital_dist > 20:
             f = features.copy()
             f["incident_type"] = "stranded"
             f["hour"] = int(rng.choice([0, 1, 2, 3, 22, 23]))
+            f["month"] = int(rng.choice(12) + 1)
+            rows.append(f)
+
+        # Wildlife — use fire/landslide-prone areas as proxy
+        fire_risk = cell.get("fire_risk_index", 0)
+        landslide_risk = cell.get("landslide_risk", 0)
+        if (fire_risk > 0.3 or landslide_risk > 0.3) and rng.random() < 0.3:
+            f = features.copy()
+            f["incident_type"] = "wildlife"
+            f["hour"] = int(rng.choice([5, 6, 7, 17, 18, 19, 20]))
             f["month"] = int(rng.choice(12) + 1)
             rows.append(f)
 
@@ -172,6 +185,26 @@ def generate_incident_training_data() -> pd.DataFrame:
             rows.append(f)
 
     df = pd.DataFrame(rows)
+
+    # Ensure minimum samples per class (at least 50)
+    MIN_SAMPLES_PER_CLASS = 50
+    for itype in INCIDENT_TYPES:
+        class_count = (df["incident_type"] == itype).sum() if len(df) > 0 else 0
+        if class_count < MIN_SAMPLES_PER_CLASS:
+            needed = MIN_SAMPLES_PER_CLASS - class_count
+            # Generate synthetic samples from random grid cells
+            synthetic_cells = grid.sample(min(needed, len(grid)), random_state=RANDOM_SEED + hash(itype) % 1000, replace=True)
+            for _, cell in synthetic_cells.iterrows():
+                features = {col: cell[col] for col in grid.columns
+                             if col not in ["cell_id", "base_danger"]}
+                features["incident_type"] = itype
+                features["hour"] = int(rng.choice(24))
+                features["month"] = int(rng.choice(12) + 1)
+                _add_incident_specific_noise(features, itype, rng)
+                rows.append(features)
+            # Rebuild dataframe with new samples
+            df = pd.DataFrame(rows)
+
     print(f"Generated {len(df)} incident classification samples")
     print(f"Distribution:\n{df['incident_type'].value_counts().to_string()}")
 
@@ -247,6 +280,13 @@ def _add_incident_specific_noise(features: dict, incident_type: str, rng) -> Non
         features["emergency_availability_score"] = max(0, features.get("emergency_availability_score", 40) - 30)
 
 
+def _can_stratify(y: np.ndarray) -> bool:
+    """Check if stratified split is possible (each class needs at least 2 samples)."""
+    from collections import Counter
+    counts = Counter(y)
+    return all(c >= 2 for c in counts.values())
+
+
 def train_incident_classifier() -> dict:
     """Train the incident type classifier."""
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -258,7 +298,13 @@ def train_incident_classifier() -> dict:
         df = generate_incident_training_data()
     else:
         df = pd.read_parquet(data_path)
-        print(f"Loaded {len(df)} incident samples")
+        # Validate cached data has enough classes
+        class_counts = df["incident_type"].value_counts()
+        if class_counts.min() < 2:
+            print(f"  Cached data has under-populated classes, regenerating...")
+            df = generate_incident_training_data()
+        else:
+            print(f"Loaded {len(df)} incident samples")
 
     # Encode labels
     le = LabelEncoder()
@@ -281,7 +327,8 @@ def train_incident_classifier() -> dict:
     y = df["label"].values
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y,
+        X, y, test_size=0.2, random_state=RANDOM_SEED,
+        stratify=y if _can_stratify(y) else None,
     )
 
     # Train

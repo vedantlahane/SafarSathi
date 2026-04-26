@@ -114,25 +114,32 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
     # Normalize each risk factor to 0-1
     risk_components: dict[str, tuple[str, float]] = {
         # (column_name, weight_in_composite)
-        "crime_rate_per_100k": ("crime_danger", 0.20),
-        "road_accident_hotspot_risk": ("accident_danger", 0.15),
+        "crime_rate_per_100k": ("crime_danger", 0.25),
+        "road_accident_hotspot_risk": ("accident_danger", 0.12),
         "flood_risk": ("flood_danger", 0.10),
         "earthquake_risk": ("earthquake_danger", 0.08),
-        "landslide_risk": ("landslide_danger", 0.07),
-        "fire_risk_index": ("fire_danger", 0.05),
+        "landslide_risk": ("landslide_danger", 0.06),
+        "fire_risk_index": ("fire_danger", 0.04),
+        "water_contamination_risk": ("water_danger", 0.03),
     }
 
     # Protective factors (higher = safer)
     protective_components: dict[str, tuple[str, float]] = {
-        "hospital_level_score": ("hospital_protection", 0.12),
-        "emergency_availability_score": ("emergency_protection", 0.08),
-        "water_safety_score": ("water_protection", 0.05),
+        "hospital_level_score": ("hospital_protection", 0.10),
+        "emergency_availability_score": ("emergency_protection", 0.07),
+        "water_safety_score": ("water_protection", 0.03),
     }
 
     # Environmental factors
     env_components: dict[str, tuple[str, float]] = {
-        "aqi": ("aqi_danger", 0.05),
+        "aqi": ("aqi_danger", 0.04),
         "weather_severity": ("weather_danger", 0.05),
+    }
+
+    # Infrastructure isolation penalty — directly tied to hospital distance
+    isolation_components: dict[str, tuple[str, float]] = {
+        "nearest_hospital_proxy_km": ("isolation_danger", 0.08),
+        "population_density_per_km2": ("density_protection", -0.05),
     }
 
     # Compute base danger per cell (0 to 1)
@@ -167,6 +174,19 @@ def generate_safety_labels(samples_per_cell: int = 24) -> pd.DataFrame:
                 p95 = vals.quantile(0.95)
                 normalized = (vals / max(p95, 1e-6)).clip(0, 1)
             grid["base_danger"] += normalized * weight
+
+    # Infrastructure isolation penalty
+    for col, (name, weight) in isolation_components.items():
+        if col in grid.columns:
+            vals = grid[col].fillna(0)
+            if col == "nearest_hospital_proxy_km":
+                # Farther from hospital = more danger; 50km+ is max penalty
+                normalized = (vals / 50.0).clip(0, 1)
+                grid["base_danger"] += normalized * weight
+            elif col == "population_density_per_km2":
+                # Higher density = slightly safer (more people, services nearby)
+                normalized = (vals / 5000.0).clip(0, 1)
+                grid["base_danger"] -= normalized * abs(weight)  # subtract: higher density reduces danger
 
     grid["base_danger"] = grid["base_danger"].clip(0, 1)
 

@@ -19,14 +19,14 @@ from config.settings import RAW_WEATHER, PROCESSED_DIR, SEASONS
 TEMP_COLS = ["temperature_celsius", "temp_c", "temperature", "tavg", "meantemp", "Temp_C"]
 HUMIDITY_COLS = ["humidity", "relative_humidity", "humidity_pct", "Humidity"]
 WIND_COLS = ["wind_speed", "wind_kph", "wind_speed_kmph", "wspd", "Wind_Speed"]
-RAINFALL_COLS = ["precip_mm", "precipitation", "rainfall", "rain_mm", "Rainfall"]
+RAINFALL_COLS = ["precip_mm", "precipitation", "rainfall", "rain_mm", "Rainfall", "Precipitation"]
 VISIBILITY_COLS = ["visibility_km", "visibility", "vis", "Visibility"]
 UV_COLS = ["uv_index", "uv", "UV_Index"]
 PRESSURE_COLS = ["pressure_mb", "pressure", "sea_level_pressure"]
 LAT_COLS = ["latitude", "lat", "Latitude"]
 LON_COLS = ["longitude", "lon", "lng", "Longitude"]
 DATE_COLS = ["date", "datetime", "last_updated", "Date", "date_time"]
-CITY_COLS = ["location_name", "city", "station", "City", "city_name"]
+CITY_COLS = ["location_name", "city", "station", "City", "city_name", "SUBDIVISION", "subdivision", "Sub_Division"]
 
 
 def _find_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
@@ -82,15 +82,31 @@ def ingest_weather_file(file_path: Path) -> pd.DataFrame | None:
 
     # Date and time
     date_col = _find_col(df, DATE_COLS)
+    month_col = _find_col(df, ["month", "Month", "MONTH", "month_label"])
+    year_col = _find_col(df, ["year", "Year", "YEAR"])
+
     if date_col:
         dates = pd.to_datetime(df[date_col], errors="coerce")
-        result["date"] = dates
-        result["month"] = dates.dt.month
-        result["hour"] = dates.dt.hour.fillna(12).astype(int)
-        result["day_of_week"] = dates.dt.dayofweek
+        if dates.notna().sum() > len(df) * 0.3:
+            result["date"] = dates
+            result["month"] = dates.dt.month
+            result["hour"] = dates.dt.hour.fillna(12).astype(int)
+            result["day_of_week"] = dates.dt.dayofweek
+        else:
+            result["date"] = pd.NaT
+            # Try separate month/year columns
+            if month_col:
+                result["month"] = pd.to_numeric(df[month_col], errors="coerce").fillna(6).astype(int)
+            else:
+                result["month"] = 6
+            result["hour"] = 12
+            result["day_of_week"] = 3
     else:
         result["date"] = pd.NaT
-        result["month"] = 6  # default monsoon
+        if month_col:
+            result["month"] = pd.to_numeric(df[month_col], errors="coerce").fillna(6).astype(int)
+        else:
+            result["month"] = 6
         result["hour"] = 12
         result["day_of_week"] = 3
 
@@ -190,8 +206,9 @@ def _geocode_cities(df: pd.DataFrame) -> pd.DataFrame:
     Fill in lat/lon for rows that only have city names.
     Uses a pre-built city coordinate lookup.
     """
-    # Major Indian city coordinates
+    # Major Indian city + IMD sub-division coordinates
     city_coords: dict[str, tuple[float, float]] = {
+        # Cities
         "delhi": (28.6139, 77.2090),
         "new delhi": (28.6139, 77.2090),
         "mumbai": (19.0760, 72.8777),
@@ -240,6 +257,45 @@ def _geocode_cities(df: pd.DataFrame) -> pd.DataFrame:
         "rishikesh": (30.0869, 78.2676),
         "leh": (34.1526, 77.5771),
         "munnar": (10.0889, 77.0595),
+        # IMD meteorological sub-division centroids
+        "andaman & nicobar islands": (11.74, 92.66),
+        "arunachal pradesh": (28.22, 94.73),
+        "assam & meghalaya": (26.14, 91.77),
+        "naga mani mizo tripura": (24.80, 93.50),
+        "sub himalayan west bengal & sikkim": (26.72, 88.43),
+        "gangetic west bengal": (23.00, 88.00),
+        "orissa": (20.50, 84.01),
+        "odisha": (20.50, 84.01),
+        "jharkhand": (23.61, 85.28),
+        "bihar": (25.10, 85.31),
+        "east uttar pradesh": (26.45, 82.85),
+        "west uttar pradesh": (28.50, 78.50),
+        "uttarakhand": (30.07, 79.02),
+        "haryana delhi & chandigarh": (28.80, 76.80),
+        "haryana chandigarh & delhi": (28.80, 76.80),
+        "punjab": (31.15, 75.34),
+        "himachal pradesh": (31.10, 77.17),
+        "jammu & kashmir": (34.08, 74.80),
+        "west rajasthan": (26.50, 71.50),
+        "east rajasthan": (26.50, 75.50),
+        "west madhya pradesh": (22.70, 76.00),
+        "east madhya pradesh": (23.50, 80.50),
+        "gujarat region": (22.30, 72.00),
+        "saurashtra & kutch": (22.00, 70.00),
+        "konkan & goa": (16.00, 73.50),
+        "madhya maharashtra": (19.00, 75.00),
+        "marathwada": (19.50, 76.50),
+        "vidarbha": (20.70, 79.00),
+        "chhattisgarh": (21.27, 81.63),
+        "coastal andhra pradesh": (16.00, 80.50),
+        "telangana": (18.11, 79.02),
+        "rayalaseema": (15.00, 78.50),
+        "tamil nadu": (11.13, 78.66),
+        "coastal karnataka": (14.00, 74.80),
+        "north interior karnataka": (16.00, 76.50),
+        "south interior karnataka": (13.00, 76.50),
+        "kerala": (10.85, 76.27),
+        "lakshadweep": (10.57, 72.64),
     }
 
     if "city" not in df.columns:
