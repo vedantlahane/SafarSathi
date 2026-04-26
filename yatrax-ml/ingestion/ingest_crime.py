@@ -64,6 +64,20 @@ def _load_district_centroids() -> pd.DataFrame:
     """
     if DISTRICT_CENTROIDS_PATH.exists():
         centroids = pd.read_csv(DISTRICT_CENTROIDS_PATH)
+        # Normalize column names to lowercase
+        centroids.columns = [c.strip().lower() for c in centroids.columns]
+        # Ensure state column is lowercase string
+        if "state" in centroids.columns:
+            centroids["state"] = centroids["state"].astype(str).str.strip().str.lower()
+        # Rename common variants
+        rename_map = {}
+        for col in centroids.columns:
+            if col in ("lat", "latitude"):
+                rename_map[col] = "latitude"
+            elif col in ("lon", "lng", "longitude"):
+                rename_map[col] = "longitude"
+        if rename_map:
+            centroids = centroids.rename(columns=rename_map)
         return centroids
 
     # Fallback: state-level approximate centroids
@@ -75,6 +89,7 @@ def _load_district_centroids() -> pd.DataFrame:
         "bihar": (25.1, 85.3),
         "chhattisgarh": (21.3, 81.6),
         "delhi": (28.7, 77.1),
+        "delhi ut": (28.7, 77.1),
         "goa": (15.4, 74.0),
         "gujarat": (22.3, 71.2),
         "haryana": (29.0, 76.1),
@@ -99,7 +114,15 @@ def _load_district_centroids() -> pd.DataFrame:
         "uttarakhand": (30.1, 79.0),
         "west bengal": (22.9, 87.9),
         "jammu and kashmir": (33.8, 76.6),
+        "jammu & kashmir": (33.8, 76.6),
         "ladakh": (34.2, 77.6),
+        "a & n islands": (11.7, 92.7),
+        "andaman & nicobar islands": (11.7, 92.7),
+        "chandigarh": (30.7, 76.8),
+        "d & n haveli": (20.3, 73.0),
+        "daman & diu": (20.4, 72.8),
+        "lakshadweep": (10.6, 72.6),
+        "puducherry": (11.9, 79.8),
     }
 
     rows = []
@@ -243,17 +266,50 @@ def ingest_all_crime() -> pd.DataFrame:
 
     # Attach coordinates
     centroids = _load_district_centroids()
-    factors = factors.merge(
-        centroids,
-        on="state",
-        how="left",
-    )
+
+    # Ensure merge column types match
+    factors["state"] = factors["state"].astype(str).str.strip().str.lower()
+
+    # Try district-level merge first, then state-level fallback
+    if "district" in centroids.columns:
+        merge_cols = ["state", "district"]
+        centroids["district"] = centroids["district"].astype(str).str.strip().str.lower()
+        merged = factors.merge(
+            centroids[["state", "district", "latitude", "longitude"]].drop_duplicates(),
+            on=merge_cols,
+            how="left",
+        )
+        # For unmatched districts, fall back to state-level centroids
+        unmatched = merged["latitude"].isna()
+        if unmatched.any():
+            state_centroids = centroids.groupby("state")[["latitude", "longitude"]].mean().reset_index()
+            for idx in merged[unmatched].index:
+                st = merged.at[idx, "state"]
+                match = state_centroids[state_centroids["state"] == st]
+                if not match.empty:
+                    merged.at[idx, "latitude"] = match.iloc[0]["latitude"]
+                    merged.at[idx, "longitude"] = match.iloc[0]["longitude"]
+        factors = merged
+    else:
+        # State-level centroids only — keep only lat/lon columns to avoid conflicts
+        centroid_cols = [c for c in ["state", "latitude", "longitude"] if c in centroids.columns]
+        factors = factors.merge(
+            centroids[centroid_cols].drop_duplicates(subset=["state"]),
+            on="state",
+            how="left",
+        )
 
     # Add jitter for districts (since we only have state centroids in fallback)
     rng = np.random.default_rng(RANDOM_SEED)
     if "latitude" in factors.columns:
-        factors["latitude"] += rng.normal(0, 0.5, len(factors))
-        factors["longitude"] += rng.normal(0, 0.5, len(factors))
+        valid_mask = factors["latitude"].notna()
+        n_valid = valid_mask.sum()
+        if n_valid > 0:
+            factors.loc[valid_mask, "latitude"] += rng.normal(0, 0.5, n_valid)
+            factors.loc[valid_mask, "longitude"] += rng.normal(0, 0.5, n_valid)
+
+    # Drop rows without coordinates
+    factors = factors.dropna(subset=["latitude", "longitude"]).copy()
 
     # Save
     output_path = PROCESSED_DIR / "crime_grid.parquet"

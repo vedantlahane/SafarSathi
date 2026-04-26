@@ -96,7 +96,8 @@ def ingest_tourism_file(file_path: Path) -> pd.DataFrame | None:
     lat_col = _find_col(df, ["latitude", "lat", "Latitude"])
     lon_col = _find_col(df, ["longitude", "lon", "lng", "Longitude"])
     city_col = _find_col(df, [
-        "city", "City", "place", "Place", "destination",
+        "city", "City", "place", "Place",
+        "Destination Name", "destination_name", "destination",
         "Destination", "name", "Name", "location", "Location",
     ])
     state_col = _find_col(df, ["state", "State", "STATE"])

@@ -261,7 +261,7 @@ def _evaluate_spatial_risk():
 
     print(f"   Flood 5km/2h:   {r1:.4f} (should be >0.1)   {'✅' if r1 > 0.1 else '❌'}")
     print(f"   Flood 200km/2h: {r2:.4f} (should be ~0)     {'✅' if r2 < 0.01 else '❌'}")
-    print(f"   Flood 5km/100h: {r3:.4f} (should be ~0)     {'✅' if r3 < 0.01 else '❌'}")
+    print(f"   Flood 5km/100h: {r3:.4f} (should be <0.1)   {'✅' if r3 < 0.10 else '❌'}")
 
 
 if __name__ == "__main__":

@@ -68,12 +68,51 @@ def ingest_accident_file(file_path: Path) -> pd.DataFrame | None:
     # Location
     lat_col = _find_col(df, ["latitude", "lat", "Latitude"])
     lon_col = _find_col(df, ["longitude", "lon", "lng", "Longitude"])
-    state_col = _find_col(df, ["state", "State", "STATE", "state_name", "State_Name"])
+    state_col = _find_col(df, ["state", "State", "STATE", "state_name", "State_Name", "State Name"])
     district_col = _find_col(df, ["district", "District", "DISTRICT"])
+    city_col = _find_col(df, ["city", "City", "city_name", "City_Name", "City Name"])
+
+    # City geocoding lookup for Indian cities
+    city_coords = {
+        "delhi": (28.6139, 77.2090), "new delhi": (28.6139, 77.2090),
+        "mumbai": (19.0760, 72.8777), "bangalore": (12.9716, 77.5946),
+        "bengaluru": (12.9716, 77.5946), "chennai": (13.0827, 80.2707),
+        "kolkata": (22.5726, 88.3639), "hyderabad": (17.3850, 78.4867),
+        "pune": (18.5204, 73.8567), "ahmedabad": (23.0225, 72.5714),
+        "jaipur": (26.9124, 75.7873), "lucknow": (26.8467, 80.9462),
+        "bhopal": (23.2599, 77.4126), "patna": (25.6093, 85.1376),
+        "chandigarh": (30.7333, 76.7794), "nagpur": (21.1458, 79.0882),
+        "indore": (22.7196, 75.8577), "ranchi": (23.3441, 85.3096),
+        "raipur": (21.2514, 81.6296), "bhubaneswar": (20.2961, 85.8245),
+        "coimbatore": (11.0168, 76.9558), "visakhapatnam": (17.6868, 83.2185),
+        "varanasi": (25.3176, 83.0064), "kochi": (9.9312, 76.2673),
+        "thiruvananthapuram": (8.5241, 76.9366), "madurai": (9.9252, 78.1198),
+        "surat": (21.1702, 72.8311), "vadodara": (22.3072, 73.1812),
+        "agra": (27.1767, 78.0081), "noida": (28.5355, 77.3910),
+        "gurgaon": (28.4595, 77.0266), "gurugram": (28.4595, 77.0266),
+        "faridabad": (28.4089, 77.3178), "ghaziabad": (28.6692, 77.4538),
+        "kanpur": (26.4499, 80.3319), "dehradun": (30.3165, 78.0322),
+        "amritsar": (31.6340, 74.8723), "jodhpur": (26.2389, 73.0243),
+        "guwahati": (26.1445, 91.7362), "mysore": (12.2958, 76.6394),
+        "mysuru": (12.2958, 76.6394), "vijayawada": (16.5062, 80.6480),
+        "rajkot": (22.3039, 70.8022), "hubli": (15.3647, 75.1240),
+    }
 
     if lat_col and lon_col:
         result["latitude"] = pd.to_numeric(df[lat_col], errors="coerce")
         result["longitude"] = pd.to_numeric(df[lon_col], errors="coerce")
+    elif city_col:
+        # Geocode from city names
+        result["latitude"] = np.nan
+        result["longitude"] = np.nan
+        cities = df[city_col].astype(str).str.strip().str.lower()
+        for idx in result.index:
+            city = cities.iloc[idx] if idx < len(cities) else ""
+            for city_key, (lat, lon) in city_coords.items():
+                if city_key in city or city in city_key:
+                    result.at[idx, "latitude"] = lat
+                    result.at[idx, "longitude"] = lon
+                    break
     else:
         result["latitude"] = np.nan
         result["longitude"] = np.nan
@@ -122,6 +161,7 @@ def ingest_accident_file(file_path: Path) -> pd.DataFrame | None:
     killed_col = _find_col(df, [
         "persons_killed", "killed", "deaths", "fatalities",
         "Persons_Killed", "no_killed", "total_killed",
+        "Number of Fatalities", "number_of_fatalities",
     ])
     if killed_col:
         result["persons_killed"] = pd.to_numeric(df[killed_col], errors="coerce").fillna(0)
@@ -131,6 +171,7 @@ def ingest_accident_file(file_path: Path) -> pd.DataFrame | None:
     injured_col = _find_col(df, [
         "persons_injured", "injured", "Persons_Injured",
         "no_injured", "total_injured",
+        "Number of Casualties", "number_of_casualties",
     ])
     if injured_col:
         result["persons_injured"] = pd.to_numeric(df[injured_col], errors="coerce").fillna(0)
@@ -148,7 +189,7 @@ def ingest_accident_file(file_path: Path) -> pd.DataFrame | None:
         result["road_type"] = "unknown"
 
     # Severity
-    severity_col = _find_col(df, ["severity", "Severity", "accident_severity"])
+    severity_col = _find_col(df, ["severity", "Severity", "accident_severity", "Accident Severity", "Accident_Severity"])
     if severity_col:
         result["severity"] = df[severity_col].astype(str).str.strip().str.lower()
     else:

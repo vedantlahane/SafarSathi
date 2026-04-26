@@ -28,6 +28,7 @@ NOISE_LIMITS = {
 # Known CPCB noise monitoring city coordinates
 NOISE_CITY_COORDS = {
     "delhi": (28.6139, 77.2090),
+    "new delhi": (28.6139, 77.2090),
     "mumbai": (19.0760, 72.8777),
     "kolkata": (22.5726, 88.3639),
     "chennai": (13.0827, 80.2707),
@@ -43,6 +44,28 @@ NOISE_CITY_COORDS = {
     "bhopal": (23.2599, 77.4126),
     "nagpur": (21.1458, 79.0882),
     "indore": (22.7196, 75.8577),
+    "surat": (21.1702, 72.8311),
+    "visakhapatnam": (17.6868, 83.2185),
+    "coimbatore": (11.0168, 76.9558),
+    "kochi": (9.9312, 76.2673),
+    "thiruvananthapuram": (8.5241, 76.9366),
+    "dehradun": (30.3165, 78.0322),
+    "ranchi": (23.3441, 85.3096),
+    "bhubaneswar": (20.2961, 85.8245),
+    "raipur": (21.2514, 81.6296),
+    "guwahati": (26.1445, 91.7362),
+    "varanasi": (25.3176, 83.0064),
+    "agra": (27.1767, 78.0081),
+    "kanpur": (26.4499, 80.3319),
+    "noida": (28.5355, 77.3910),
+    "gurgaon": (28.4595, 77.0266),
+    "gurugram": (28.4595, 77.0266),
+    "faridabad": (28.4089, 77.3178),
+    "ghaziabad": (28.6692, 77.4538),
+    "mysore": (12.2958, 76.6394),
+    "vijayawada": (16.5062, 80.6480),
+    "rajkot": (22.3039, 70.8022),
+    "madurai": (9.9252, 78.1198),
 }
 
 
@@ -85,15 +108,35 @@ def ingest_noise_file(file_path: Path) -> pd.DataFrame | None:
 
     if city_col:
         result["city"] = df[city_col].astype(str).str.strip().str.lower()
-        # Geocode
+        # Geocode: try matching station name parts against known cities
         for idx in result.index:
             if pd.isna(result.at[idx, "latitude"]):
-                city = str(result.at[idx, "city"]).lower().strip()
+                station_name = str(result.at[idx, "city"]).lower().strip()
+                # Try direct matching first
+                matched = False
                 for city_key, (lat, lon) in NOISE_CITY_COORDS.items():
-                    if city_key in city:
+                    if city_key in station_name:
                         result.at[idx, "latitude"] = lat
                         result.at[idx, "longitude"] = lon
+                        matched = True
                         break
+                # If not matched, try extracting city from station name
+                # Station names are often like 'RK Puram, New Delhi' or 'Anand Vihar-Delhi'
+                if not matched:
+                    for sep in [",", "-", "_", "("]:
+                        parts = station_name.split(sep)
+                        for part in parts:
+                            part_clean = part.strip().rstrip(")")
+                            for city_key, (lat, lon) in NOISE_CITY_COORDS.items():
+                                if city_key in part_clean or part_clean in city_key:
+                                    result.at[idx, "latitude"] = lat
+                                    result.at[idx, "longitude"] = lon
+                                    matched = True
+                                    break
+                            if matched:
+                                break
+                        if matched:
+                            break
 
     if state_col:
         result["state"] = df[state_col].astype(str).str.strip().str.lower()
