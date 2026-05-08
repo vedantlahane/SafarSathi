@@ -38,6 +38,28 @@ SAFE_LIMITS = {
     "tds": (None, 500.0),                 # mg/L
 }
 
+CITY_COORDS = {
+    "delhi": (28.6139, 77.2090), "mumbai": (19.0760, 72.8777),
+    "kolkata": (22.5726, 88.3639), "chennai": (13.0827, 80.2707),
+    "bangalore": (12.9716, 77.5946), "hyderabad": (17.3850, 78.4867),
+    "ahmedabad": (23.0225, 72.5714), "pune": (18.5204, 73.8567),
+    "lucknow": (26.8467, 80.9462), "jaipur": (26.9124, 75.7873),
+    "chandigarh": (30.7333, 76.7794), "patna": (25.6093, 85.1376),
+    "bhopal": (23.2599, 77.4126), "nagpur": (21.1458, 79.0882),
+    "indore": (22.7196, 75.8577), "surat": (21.1702, 72.8311),
+    "visakhapatnam": (17.6868, 83.2185), "coimbatore": (11.0168, 76.9558),
+    "kochi": (9.9312, 76.2673), "thiruvananthapuram": (8.5241, 76.9366),
+    "dehradun": (30.3165, 78.0322), "ranchi": (23.3441, 85.3096),
+    "bhubaneswar": (20.2961, 85.8245), "raipur": (21.2514, 81.6296),
+    "guwahati": (26.1445, 91.7362), "varanasi": (25.3176, 83.0064),
+    "agra": (27.1767, 78.0081), "kanpur": (26.4499, 80.3319),
+    "noida": (28.5355, 77.3910), "gurgaon": (28.4595, 77.0266),
+    "faridabad": (28.4089, 77.3178), "ghaziabad": (28.6692, 77.4538),
+    "mysore": (12.2958, 76.6394), "vijayawada": (16.5062, 80.6480),
+    "rajkot": (22.3039, 70.8022), "madurai": (9.9252, 78.1198),
+}
+
+
 
 def _find_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
     for c in candidates:
@@ -115,8 +137,34 @@ def ingest_water_file(file_path: Path) -> pd.DataFrame | None:
     if state_col:
         result["state"] = df[state_col].astype(str).str.strip().str.lower()
         result.loc[result["coverage_type"] == "none", "coverage_type"] = "state"
+    
     if station_col:
         result["station"] = df[station_col].astype(str).str.strip()
+        
+        # Try to map station to known city coordinates
+        for idx in result.index:
+            if pd.isna(result.at[idx, "latitude"]):
+                station_name = str(result.at[idx, "station"]).lower()
+                matched = False
+                for city, (lat, lon) in CITY_COORDS.items():
+                    if city in station_name:
+                        result.at[idx, "latitude"] = lat
+                        result.at[idx, "longitude"] = lon
+                        result.at[idx, "coverage_type"] = "station_matched"
+                        matched = True
+                        break
+                if not matched:
+                    # Also check state name as a last resort, but add random jitter
+                    if "state" in result.columns and pd.notna(result.at[idx, "state"]):
+                        state_name = str(result.at[idx, "state"]).lower()
+                        # Fallback state coordinates
+                        STATE_COORDS = {"kerala": (10.85, 76.27), "maharashtra": (19.08, 72.88), "karnataka": (12.97, 77.59), "tamil nadu": (13.08, 80.27)}
+                        for st, (lat, lon) in STATE_COORDS.items():
+                            if st in state_name:
+                                result.at[idx, "latitude"] = lat + np.random.uniform(-0.5, 0.5)
+                                result.at[idx, "longitude"] = lon + np.random.uniform(-0.5, 0.5)
+                                result.at[idx, "coverage_type"] = "state_jittered"
+                                break
 
     # Date
     date_col = _find_col(df, ["date", "Date", "year", "Year", "sampling_date"])
@@ -253,6 +301,12 @@ def ingest_all_water() -> pd.DataFrame:
 
     if "station" in combined.columns:
         print(f"Unique stations: {combined['station'].nunique()}")
+
+    if "latitude" in combined.columns:
+        coord_pct = float(combined["latitude"].notna().mean() * 100)
+        print(f"Coordinate coverage: {coord_pct:.1f}%")
+        if coord_pct < 5.0:
+            print(f"  ⚠️ Water coverage is very low ({coord_pct:.1f}%)")
 
     factors = compute_water_factors(combined)
     

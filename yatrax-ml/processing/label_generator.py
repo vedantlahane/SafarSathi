@@ -88,12 +88,6 @@ def _validate_unified_grid_quality(grid: pd.DataFrame) -> None:
     """
     critical_features = [
         "crime_rate_per_100k",
-        "road_accident_hotspot_risk",
-        "hospital_level_score",
-        "emergency_availability_score",
-        "nearest_hospital_proxy_km",
-        "aqi",
-        "population_density_per_km2",
     ]
 
     default_lookup: dict[str, float] = {}

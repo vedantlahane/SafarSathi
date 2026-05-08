@@ -257,14 +257,20 @@ def compute_terrain_factors(
             extra, on=["grid_lat", "grid_lon"], how="outer"
         )
 
-    merged = merged.fillna({
+    default_cols = {
         "elevation_m": 200.0,
         "slope_deg": 5.0,
         "ndvi": 0.3,
         "landslide_count": 0,
         "landslide_prone_index": 0.0,
         "landslide_deaths": 0,
-    })
+    }
+    
+    for col, val in default_cols.items():
+        if col not in merged.columns:
+            merged[col] = val
+            
+    merged = merged.fillna(default_cols)
 
     # Derived factors
     # Altitude sickness risk: starts at 2500m, serious above 3500m
