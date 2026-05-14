@@ -11,6 +11,7 @@ Improved version:
 """
 
 from __future__ import annotations
+from lib.gpu_utils import validate_lgbm_params
 
 import json
 from dataclasses import dataclass
@@ -283,7 +284,7 @@ def train_safety_scorer() -> dict:
         # ⚠️ "force_col_wise": True has been REMOVED to allow GPU training
     }
     params.update(SAFETY_SCORER_PARAMS or {})
-    params.update(SAFETY_SCORER_PARAMS or {})
+    params = validate_lgbm_params(params, 'Safety Scorer')
 
     num_boost_round = int(params.pop("n_estimators", 1200))
 
@@ -292,6 +293,7 @@ def train_safety_scorer() -> dict:
         lgb.log_evaluation(period=100),
     ]
 
+    print(f'\n?? Training with device={params.get('device')}, device_type={params.get('device_type')}')
     model = lgb.train(
         params=params,
         train_set=train_data,
@@ -555,3 +557,4 @@ def predict_safety(
 if __name__ == "__main__":
     metrics = train_safety_scorer()
     print(f"\nFinal metrics: {metrics}")
+

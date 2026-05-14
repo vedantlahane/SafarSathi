@@ -29,6 +29,7 @@ import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from lib.gpu_utils import validate_lgbm_params
 
 from config.settings import (
     PROCESSED_DIR,
@@ -953,6 +954,7 @@ def train_incident_classifier() -> dict:
         "device_type": INCIDENT_CLASSIFIER_PARAMS.get("device_type", "cpu")
     }
 
+    params = validate_lgbm_params(params, "Incident Classifier")
     num_boost_round = int(INCIDENT_CLASSIFIER_PARAMS.get("n_estimators", 600))
 
     callbacks = [
@@ -960,6 +962,7 @@ def train_incident_classifier() -> dict:
         lgb.log_evaluation(period=50),
     ]
 
+    print(f"\n?? Training with device={params.get('device')}, device_type={params.get('device_type')}")
     model = lgb.train(
         params=params,
         train_set=train_data,
