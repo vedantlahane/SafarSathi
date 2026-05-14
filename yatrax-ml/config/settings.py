@@ -70,6 +70,7 @@ SAFETY_SCORER_PARAMS = {
     "reg_alpha": 0.1,
     "reg_lambda": 1.0,
     "random_state": 42,
+    "device": "gpu",
 }
 
 # Model 2: Trajectory Forecaster (LSTM)
@@ -109,6 +110,7 @@ INCIDENT_CLASSIFIER_PARAMS = {
     "min_child_samples": 20,
     "class_weight": "balanced",
     "random_state": 42,
+    "device": "gpu",
 }
 
 # Model 5: Spatial Risk (Graph or fallback diffusion)
