@@ -173,7 +173,7 @@ KAGGLE_DATASETS: list[KaggleDataset] = [
         slug="webaccess/all-census-data",
         target_dir="population",
         description="District-level census data",
-        factors_covered=["population_density_per_km2"],
+        factors_covered=["population_dewnsity_per_km2"],
     ),
 
     # ─── FIRE (Category 3/12) ───
