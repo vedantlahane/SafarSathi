@@ -1,82 +1,143 @@
 """
 Model 1: Main Safety Score Predictor
 
-Replaces the TensorFlow neural network with LightGBM.
-
-REFACTORED: Drops constant/indicator columns, handles NaN natively,
-and validates that the model is actually learning spatial patterns.
+Improved version:
+- LightGBM regressor with robust feature filtering
+- strict spatial split by cell_id / grid coordinates
+- coverage-aware training weights
+- safer feature-importance analysis
+- proper permutation importance wrapper
+- stronger metadata logging
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Iterable
 
 import joblib
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
 from config.settings import (
-    TRAINING_DIR, MODELS_DIR, SAFETY_SCORER_PARAMS, RANDOM_SEED,
+    TRAINING_DIR,
+    MODELS_DIR,
+    SAFETY_SCORER_PARAMS,
+    RANDOM_SEED,
 )
 
-MODEL_VERSION = "5.0.0-lgbm-refactored"
+MODEL_VERSION = "5.1.0-lgbm-hardened"
 MODEL_DIR = MODELS_DIR / "safety_scorer"
+TARGET_COL = "safety_score_target"
+
+
+# ============================================================
+# FEATURE SELECTION
+# ============================================================
+
+def _is_numeric_series(s: pd.Series) -> bool:
+    return pd.api.types.is_numeric_dtype(s)
 
 
 def _get_feature_columns(df: pd.DataFrame) -> list[str]:
     """
-    Select feature columns — everything except target, identifiers,
-    constant columns, and data-availability indicators.
+    Select usable numeric features while excluding identifiers,
+    metadata columns, and near-constants.
     """
     exclude = {
-        # Target and identifiers
-        "safety_score_target",
-        "grid_lat", "grid_lon", "cell_id",
-        "source_file", "date", "city", "state", "district",
+        TARGET_COL,
+        "grid_lat",
+        "grid_lon",
+        "cell_id",
+        "source_file",
+        "date",
+        "city",
+        "state",
+        "district",
         "base_danger",
-        # Confidence metadata (not spatial features)
-        "coverage_score", "feature_completeness",
+        "coverage_score",
+        "feature_completeness",
+        "population_coverage_score",
     }
 
-    # Also exclude any *_data_available and *_confidence columns (metadata, not features)
+    # Exclude all metadata/availability columns
     exclude.update(c for c in df.columns if c.endswith("_data_available"))
     exclude.update(c for c in df.columns if c.endswith("_confidence"))
 
-    candidates = [
+    numeric_cols = [
         c for c in df.columns
-        if c not in exclude
-        and df[c].dtype in [np.float64, np.float32, np.int64, np.int32, float, int]
+        if c not in exclude and _is_numeric_series(df[c])
     ]
 
-    # Drop columns with <3 unique values (constants or near-constants)
-    good = []
-    for c in candidates:
-        n_unique = df[c].nunique(dropna=True)
+    good: list[str] = []
+    for col in numeric_cols:
+        n_unique = df[col].nunique(dropna=True)
+
+        # Ignore all-NaN columns and true near-constants
         if n_unique >= 3:
-            good.append(c)
+            good.append(col)
         else:
-            print(f"  ⚠️ Dropping constant/near-constant feature: {c} (unique={n_unique})")
+            print(f"  ⚠️ Dropping constant/near-constant feature: {col} (unique={n_unique})")
 
     return good
 
 
-def train_safety_scorer() -> dict:
-    """
-    Train the main safety score model on real data.
+# ============================================================
+# SPLIT HELPERS
+# ============================================================
 
-    Returns metrics dict.
+def _split_by_groups(
+    data: pd.DataFrame,
+    group_cols: list[str],
+    train_frac: float = 0.70,
+    val_frac: float = 0.15,
+    seed: int = RANDOM_SEED,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    Split by unique groups to prevent leakage.
+    Prefers cell_id, otherwise grid_lat/grid_lon.
+    """
+    if not all(col in data.columns for col in group_cols):
+        # Fallback to random split
+        train_df, temp_df = train_test_split(data, test_size=(1.0 - train_frac), random_state=seed)
+        val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=seed)
+        return train_df, val_df, test_df
 
-    # ─── LOAD DATA ───
-    # The label generator saves a single file; we split here
+    group_keys = data[group_cols].drop_duplicates().reset_index(drop=True)
+    group_keys = group_keys.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+
+    n_groups = len(group_keys)
+    n_train = int(n_groups * train_frac)
+    n_val = int(n_groups * val_frac)
+
+    train_keys = group_keys.iloc[:n_train]
+    val_keys = group_keys.iloc[n_train:n_train + n_val]
+    test_keys = group_keys.iloc[n_train + n_val:]
+
+    train_df = data.merge(train_keys, on=group_cols, how="inner")
+    val_df = data.merge(val_keys, on=group_cols, how="inner")
+    test_df = data.merge(test_keys, on=group_cols, how="inner")
+
+    # Sanity check: no overlap
+    train_ids = set(map(tuple, train_keys[group_cols].to_numpy()))
+    val_ids = set(map(tuple, val_keys[group_cols].to_numpy()))
+    test_ids = set(map(tuple, test_keys[group_cols].to_numpy()))
+
+    assert train_ids.isdisjoint(val_ids)
+    assert train_ids.isdisjoint(test_ids)
+    assert val_ids.isdisjoint(test_ids)
+
+    return train_df, val_df, test_df
+
+
+def _load_or_create_splits() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     samples_path = TRAINING_DIR / "training_samples.parquet"
-
-    # Also check for pre-split files
     train_path = TRAINING_DIR / "safety_score_train.parquet"
     val_path = TRAINING_DIR / "safety_score_val.parquet"
     test_path = TRAINING_DIR / "safety_score_test.parquet"
@@ -85,75 +146,148 @@ def train_safety_scorer() -> dict:
         train_df = pd.read_parquet(train_path)
         val_df = pd.read_parquet(val_path)
         test_df = pd.read_parquet(test_path)
-    elif samples_path.exists():
-        print("Splitting training samples into train/val/test...")
-        all_data = pd.read_parquet(samples_path)
+        return train_df, val_df, test_df
 
-        # Geographic split: split by grid cell, not randomly, to prevent leakage
-        if "grid_lat" in all_data.columns and "grid_lon" in all_data.columns:
-            cells = all_data[["grid_lat", "grid_lon"]].drop_duplicates()
-            cells = cells.sample(frac=1.0, random_state=RANDOM_SEED).reset_index(drop=True)
-            n = len(cells)
-            n_train = int(n * 0.70)
-            n_val = int(n * 0.15)
-
-            train_cells = cells.iloc[:n_train]
-            val_cells = cells.iloc[n_train:n_train+n_val]
-            test_cells = cells.iloc[n_train+n_val:]
-
-            train_df = all_data.merge(train_cells, on=["grid_lat", "grid_lon"])
-            val_df = all_data.merge(val_cells, on=["grid_lat", "grid_lon"])
-            test_df = all_data.merge(test_cells, on=["grid_lat", "grid_lon"])
-        else:
-            # Random split fallback
-            from sklearn.model_selection import train_test_split
-            train_df, temp = train_test_split(all_data, test_size=0.30, random_state=RANDOM_SEED)
-            val_df, test_df = train_test_split(temp, test_size=0.50, random_state=RANDOM_SEED)
-
-        # Save splits
-        train_df.to_parquet(train_path, index=False)
-        val_df.to_parquet(val_path, index=False)
-        test_df.to_parquet(test_path, index=False)
-        print(f"  Saved splits: train={len(train_df)}, val={len(val_df)}, test={len(test_df)}")
-    else:
+    if not samples_path.exists():
         raise FileNotFoundError(
-            f"Neither {samples_path} nor pre-split files found. Run label_generator.py first."
+            f"Neither {samples_path} nor pre-split files found. Run label generation first."
         )
+
+    print("Splitting training samples into train/val/test...")
+    all_data = pd.read_parquet(samples_path)
+
+    # Prefer strict group split to avoid leakage
+    if "cell_id" in all_data.columns:
+        train_df, val_df, test_df = _split_by_groups(all_data, ["cell_id"])
+    elif {"grid_lat", "grid_lon"}.issubset(all_data.columns):
+        train_df, val_df, test_df = _split_by_groups(all_data, ["grid_lat", "grid_lon"])
+    else:
+        train_df, val_df, test_df = _split_by_groups(all_data, ["__fallback__"])  # triggers random fallback
+
+    train_df.to_parquet(train_path, index=False)
+    val_df.to_parquet(val_path, index=False)
+    test_df.to_parquet(test_path, index=False)
+
+    print(f"  Saved splits: train={len(train_df)}, val={len(val_df)}, test={len(test_df)}")
+    return train_df, val_df, test_df
+
+
+# ============================================================
+# PREDICTION WRAPPER FOR PERMUTATION IMPORTANCE
+# ============================================================
+
+@dataclass
+class _BoosterEstimator:
+    booster: lgb.Booster
+
+    def fit(self, X, y=None):
+        return self
+
+    def predict(self, X):
+        if isinstance(X, pd.DataFrame):
+            X = X.to_numpy()
+        return self.booster.predict(X)
+
+
+# ============================================================
+# TRAINING
+# ============================================================
+
+def _build_sample_weights(df: pd.DataFrame) -> np.ndarray:
+    """
+    Downweight sparse/low-confidence samples so the model does not overfit
+    noisy cells with weak coverage.
+    """
+    weight = np.ones(len(df), dtype=float)
+
+    if "feature_completeness" in df.columns:
+        comp = pd.to_numeric(df["feature_completeness"], errors="coerce").fillna(0.5).to_numpy()
+        weight *= (0.7 + 0.6 * comp)  # 0.7..1.3
+
+    if "coverage_score" in df.columns:
+        cov = pd.to_numeric(df["coverage_score"], errors="coerce").fillna(0.5).to_numpy()
+        weight *= (0.8 + 0.4 * cov)  # 0.8..1.2
+
+    # Clip to keep training stable
+    return np.clip(weight, 0.5, 1.5)
+
+
+def train_safety_scorer() -> dict:
+    """
+    Train the main safety score model on the generated training labels.
+    """
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+    train_df, val_df, test_df = _load_or_create_splits()
 
     print(f"Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
 
-    # ─── PREPARE FEATURES ───
+    if TARGET_COL not in train_df.columns:
+        raise KeyError(f"Missing target column: {TARGET_COL}")
+
     feature_cols = _get_feature_columns(train_df)
     print(f"Feature columns: {len(feature_cols)}")
 
     if len(feature_cols) < 5:
-        raise RuntimeError(f"Only {len(feature_cols)} features — something went wrong with data.")
+        raise RuntimeError(
+            f"Only {len(feature_cols)} usable features found — check the label generation or merge pipeline."
+        )
 
     X_train = train_df[feature_cols]
-    y_train = train_df["safety_score_target"]
+    y_train = train_df[TARGET_COL].astype(float)
 
     X_val = val_df[feature_cols]
-    y_val = val_df["safety_score_target"]
+    y_val = val_df[TARGET_COL].astype(float)
 
     X_test = test_df[feature_cols]
-    y_test = test_df["safety_score_target"]
+    y_test = test_df[TARGET_COL].astype(float)
 
-    # ─── CREATE LGBM DATASETS ───
-    train_data = lgb.Dataset(X_train, label=y_train)
-    val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
+    train_weight = _build_sample_weights(train_df)
+    val_weight = _build_sample_weights(val_df)
 
-    # ─── TRAIN ───
+    train_data = lgb.Dataset(
+        X_train,
+        label=y_train,
+        weight=train_weight,
+        feature_name=feature_cols,
+        free_raw_data=False,
+    )
+
+    val_data = lgb.Dataset(
+        X_val,
+        label=y_val,
+        weight=val_weight,
+        reference=train_data,
+        feature_name=feature_cols,
+        free_raw_data=False,
+    )
+
     print("\nTraining LightGBM safety scorer...")
 
+    # Keep defaults sane, but allow settings file to override
     params = {
-        **SAFETY_SCORER_PARAMS,
         "objective": "regression",
-        "metric": ["mae", "rmse"],
-        "verbose": -1,
+        "metric": ["l1", "l2"],
+        "learning_rate": 0.03,
+        "num_leaves": 63,
+        "min_data_in_leaf": 80,
+        "feature_fraction": 0.85,
+        "bagging_fraction": 0.80,
+        "bagging_freq": 1,
+        "lambda_l2": 1.0,
+        "verbosity": -1,
+        "seed": RANDOM_SEED,
+        "feature_fraction_seed": RANDOM_SEED,
+        "bagging_seed": RANDOM_SEED,
+        "data_random_seed": RANDOM_SEED,
+        "force_col_wise": True,
     }
+    params.update(SAFETY_SCORER_PARAMS or {})
+
+    num_boost_round = int(params.pop("n_estimators", 1200))
 
     callbacks = [
-        lgb.early_stopping(stopping_rounds=50),
+        lgb.early_stopping(stopping_rounds=100),
         lgb.log_evaluation(period=100),
     ]
 
@@ -162,128 +296,144 @@ def train_safety_scorer() -> dict:
         train_set=train_data,
         valid_sets=[train_data, val_data],
         valid_names=["train", "val"],
-        num_boost_round=params.pop("n_estimators", 800),
+        num_boost_round=num_boost_round,
         callbacks=callbacks,
     )
 
-    # ─── EVALUATE ───
-    y_pred = model.predict(X_test)
-    y_pred = np.clip(y_pred, 0, 100)
+    # --------------------------------------------------------
+    # TEST EVALUATION
+    # --------------------------------------------------------
+    y_pred = np.clip(model.predict(X_test), 0, 100)
 
     mae = float(mean_absolute_error(y_test, y_pred))
     rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
     r2 = float(r2_score(y_test, y_pred))
 
-    print(f"\n{'='*50}")
-    print(f"  TEST SET RESULTS")
-    print(f"{'='*50}")
+    print(f"\n{'=' * 50}")
+    print("  TEST SET RESULTS")
+    print(f"{'=' * 50}")
     print(f"  MAE:  {mae:.2f} points (out of 100)")
     print(f"  RMSE: {rmse:.2f}")
     print(f"  R²:   {r2:.4f}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
-    # ─── FEATURE IMPORTANCE (GAIN) ───
+    # --------------------------------------------------------
+    # FEATURE IMPORTANCE
+    # --------------------------------------------------------
     importance = model.feature_importance(importance_type="gain")
-    importance_df = pd.DataFrame({
-        "feature": feature_cols,
-        "importance_gain": importance,
-    }).sort_values("importance_gain", ascending=False)
+    importance_df = pd.DataFrame(
+        {
+            "feature": feature_cols,
+            "importance_gain": importance,
+        }
+    ).sort_values("importance_gain", ascending=False)
 
-    # Normalize to percentages
-    total_gain = importance_df["importance_gain"].sum()
-    importance_df["pct_gain"] = (importance_df["importance_gain"] / max(total_gain, 1) * 100).round(2)
+    total_gain = float(importance_df["importance_gain"].sum())
+    if total_gain <= 0:
+        importance_df["pct_gain"] = 0.0
+    else:
+        importance_df["pct_gain"] = (importance_df["importance_gain"] / total_gain * 100).round(2)
 
-    print(f"\nTop 15 features (LightGBM gain):")
+    print("\nTop 15 features (LightGBM gain):")
     for _, row in importance_df.head(15).iterrows():
         print(f"  {row['feature']:40s} {row['pct_gain']:5.1f}%")
 
-    # ─── FEATURE DOMINANCE AUDIT ───
-    top1_pct = importance_df.iloc[0]["pct_gain"] if len(importance_df) > 0 else 0
-    top3_pct = importance_df.head(3)["pct_gain"].sum() if len(importance_df) >= 3 else 0
-    n_features_50pct = 0  # how many features needed to reach 50% of importance
-    cumsum = 0
+    # --------------------------------------------------------
+    # FEATURE DOMINANCE AUDIT
+    # --------------------------------------------------------
+    top1_pct = float(importance_df.iloc[0]["pct_gain"]) if len(importance_df) > 0 else 0.0
+    top3_pct = float(importance_df.head(3)["pct_gain"].sum()) if len(importance_df) >= 3 else 0.0
+
+    cumsum = 0.0
+    n_features_50pct = 0
     for _, row in importance_df.iterrows():
-        cumsum += row["pct_gain"]
+        cumsum += float(row["pct_gain"])
         n_features_50pct += 1
         if cumsum >= 50:
             break
 
-    print(f"\n🔍 Feature dominance audit:")
-    print(f"  Top-1 feature:   {importance_df.iloc[0]['feature']} ({top1_pct:.1f}%)")
+    print("\n🔍 Feature dominance audit:")
+    print(f"  Top-1 feature:   {importance_df.iloc[0]['feature'] if len(importance_df) else None} ({top1_pct:.1f}%)")
     print(f"  Top-3 features:  {top3_pct:.1f}% of total importance")
     print(f"  Features for 50%: {n_features_50pct} features needed")
-    print(f"  Diversity index:  {len(feature_cols)} total, "
-          f"{(importance_df['pct_gain'] > 1.0).sum()} contribute >1%")
+    print(f"  Diversity index:  {len(feature_cols)} total, {(importance_df['pct_gain'] > 1.0).sum()} contribute >1%")
 
     if top1_pct > 40:
-        print(f"  ⚠️ WARNING: Top feature has {top1_pct:.0f}% importance — model over-relies on one signal!")
+        print(f"  ⚠️ WARNING: Top feature has {top1_pct:.0f}% importance — model over-relies on one signal.")
     elif top3_pct > 70:
-        print(f"  ⚠️ WARNING: Top 3 features have {top3_pct:.0f}% — model may lack diversity")
+        print(f"  ⚠️ WARNING: Top 3 features have {top3_pct:.0f}% — model may lack diversity.")
     elif n_features_50pct >= 5:
         print(f"  ✅ Good diversity — {n_features_50pct} features needed for 50% importance")
 
-    # ─── PERMUTATION IMPORTANCE ───
-    print(f"\nRunning permutation importance on test set...")
+    # --------------------------------------------------------
+    # PERMUTATION IMPORTANCE
+    # --------------------------------------------------------
+    print("\nRunning permutation importance on test set...")
     try:
         from sklearn.inspection import permutation_importance as perm_imp
-        # Use the raw prediction function
-        class _LGBWrapper:
-            def __init__(self, booster):
-                self.booster = booster
-            def predict(self, X):
-                return self.booster.predict(X)
-            def fit(self, X, y):
-                return self
 
-        wrapper = _LGBWrapper(model)
+        wrapper = _BoosterEstimator(model)
         perm_result = perm_imp(
-            wrapper, X_test.values, y_test.values,
-            n_repeats=10, random_state=RANDOM_SEED, n_jobs=-1,
+            wrapper,
+            X_test,
+            y_test,
+            n_repeats=8,
+            random_state=RANDOM_SEED,
+            n_jobs=-1,
             scoring="neg_mean_absolute_error",
         )
-        perm_df = pd.DataFrame({
-            "feature": feature_cols,
-            "perm_importance_mean": perm_result.importances_mean,
-            "perm_importance_std": perm_result.importances_std,
-        }).sort_values("perm_importance_mean", ascending=False)
 
-        print(f"\nTop 10 features (permutation importance):")
+        perm_df = pd.DataFrame(
+            {
+                "feature": feature_cols,
+                "perm_importance_mean": perm_result.importances_mean,
+                "perm_importance_std": perm_result.importances_std,
+            }
+        ).sort_values("perm_importance_mean", ascending=False)
+
+        print("\nTop 10 features (permutation importance):")
         for _, row in perm_df.head(10).iterrows():
             print(f"  {row['feature']:40s} {row['perm_importance_mean']:.4f} ± {row['perm_importance_std']:.4f}")
 
-        # Check agreement between gain and permutation importance
         gain_top5 = set(importance_df.head(5)["feature"])
         perm_top5 = set(perm_df.head(5)["feature"])
         overlap = gain_top5 & perm_top5
-        print(f"\n  Gain vs Perm top-5 overlap: {len(overlap)}/5 ({', '.join(overlap) if overlap else 'none'})")
+        print(
+            f"\n  Gain vs Perm top-5 overlap: {len(overlap)}/5 "
+            f"({', '.join(sorted(overlap)) if overlap else 'none'})"
+        )
         if len(overlap) < 2:
-            print(f"  ⚠️ Low agreement between importance methods — some features may be artifacts")
+            print("  ⚠️ Low agreement between importance methods — some features may be artifacts.")
 
-        # Merge permutation importance into main df
         importance_df = importance_df.merge(perm_df, on="feature", how="left")
         importance_df.to_csv(MODEL_DIR / "feature_importance_full.csv", index=False)
-    except ImportError:
-        print("  ⚠️ sklearn not available for permutation importance — skipping")
+
     except Exception as exc:
         print(f"  ⚠️ Permutation importance failed: {exc}")
 
-    # ─── SPATIAL DISCRIMINATION CHECK ───
-    print(f"\nSpatial discrimination check:")
+    # --------------------------------------------------------
+    # SPATIAL DISCRIMINATION CHECK
+    # --------------------------------------------------------
+    print("\nSpatial discrimination check:")
     print(f"  Prediction range: {y_pred.min():.1f} — {y_pred.max():.1f}")
     print(f"  Prediction std:   {y_pred.std():.1f}")
     if y_pred.std() < 3.0:
-        print(f"  ⚠️ WARNING: Very low prediction variance — model may not be spatially discriminating!")
+        print("  ⚠️ WARNING: Very low prediction variance — model may not be spatially discriminating.")
 
-    # ─── ERROR DISTRIBUTION ───
+    # --------------------------------------------------------
+    # ERROR DISTRIBUTION
+    # --------------------------------------------------------
     errors = y_test.values - y_pred
-    print(f"\nError distribution:")
+    print("\nError distribution:")
     print(f"  Mean error:   {errors.mean():.2f}")
     print(f"  Std error:    {errors.std():.2f}")
-    print(f"  Within ±5:    {(np.abs(errors) <= 5).mean()*100:.1f}%")
-    print(f"  Within ±10:   {(np.abs(errors) <= 10).mean()*100:.1f}%")
+    print(f"  Within ±5:    {(np.abs(errors) <= 5).mean() * 100:.1f}%")
+    print(f"  Within ±10:   {(np.abs(errors) <= 10).mean() * 100:.1f}%")
     print(f"  Worst error:  {np.abs(errors).max():.1f}")
 
-    # ─── SAVE ───
+    # --------------------------------------------------------
+    # SAVE ARTIFACTS
+    # --------------------------------------------------------
     model_path = MODEL_DIR / "safety_scorer.lgb"
     model.save_model(str(model_path))
 
@@ -302,12 +452,12 @@ def train_safety_scorer() -> dict:
             "within_5_pct": float((np.abs(errors) <= 5).mean()),
             "within_10_pct": float((np.abs(errors) <= 10).mean()),
         },
-        "params": SAFETY_SCORER_PARAMS,
+        "params": {**params, "n_estimators": num_boost_round},
         "feature_importance": importance_df.head(30).to_dict(orient="records"),
         "feature_dominance": {
             "top1_feature": importance_df.iloc[0]["feature"] if len(importance_df) > 0 else None,
-            "top1_pct": float(top1_pct),
-            "top3_pct": float(top3_pct),
+            "top1_pct": top1_pct,
+            "top3_pct": top3_pct,
             "features_for_50pct": n_features_50pct,
             "n_features_above_1pct": int((importance_df["pct_gain"] > 1.0).sum()),
         },
@@ -319,7 +469,7 @@ def train_safety_scorer() -> dict:
         },
     }
 
-    with open(MODEL_DIR / "metadata.json", "w") as f:
+    with open(MODEL_DIR / "metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
 
     importance_df.to_csv(MODEL_DIR / "feature_importance.csv", index=False)
@@ -330,8 +480,14 @@ def train_safety_scorer() -> dict:
     return metadata["metrics"]
 
 
+# ============================================================
+# LOADING / INFERENCE
+# ============================================================
+
 def load_safety_scorer() -> tuple[lgb.Booster, list[str]]:
-    """Load trained model and feature columns."""
+    """
+    Load the trained LightGBM booster and feature column order.
+    """
     model_path = MODEL_DIR / "safety_scorer.lgb"
     metadata_path = MODEL_DIR / "metadata.json"
 
@@ -340,7 +496,7 @@ def load_safety_scorer() -> tuple[lgb.Booster, list[str]]:
 
     model = lgb.Booster(model_file=str(model_path))
 
-    with open(metadata_path) as f:
+    with open(metadata_path, encoding="utf-8") as f:
         metadata = json.load(f)
 
     return model, metadata["feature_columns"]
@@ -353,19 +509,10 @@ def predict_safety(
 ) -> dict:
     """
     Predict safety score for a single point.
-
-    Args:
-        model: trained LightGBM booster
-        feature_cols: ordered feature column names
-        features: dict of feature_name → value
-
-    Returns:
-        dict with score, level, risk_factors
     """
-    vector = np.array([[features.get(col, np.nan) for col in feature_cols]])
+    vector = np.array([[features.get(col, np.nan) for col in feature_cols]], dtype=float)
     score = float(np.clip(model.predict(vector)[0], 0, 100))
 
-    # Classify
     if score >= 70:
         level = "safe"
     elif score >= 45:
@@ -375,7 +522,6 @@ def predict_safety(
     else:
         level = "dangerous"
 
-    # Identify top risk factors
     risk_factors = []
     thresholds = {
         "crime_rate_per_100k": (300, "High crime area"),
@@ -390,13 +536,12 @@ def predict_safety(
     }
 
     for feat, (threshold, desc) in thresholds.items():
-        val = features.get(feat, 0)
-        if val is not None and val > threshold:
-            risk_factors.append(f"{desc} ({feat}={val:.1f})")
+        val = features.get(feat)
+        if val is not None and pd.notna(val) and float(val) > threshold:
+            risk_factors.append(f"{desc} ({feat}={float(val):.1f})")
 
-    # Night risk
     hour = features.get("hour", 12)
-    if hour is not None and (hour >= 22 or hour < 5):
+    if hour is not None and pd.notna(hour) and (int(hour) >= 22 or int(hour) < 5):
         risk_factors.append("Late night hours")
 
     return {
