@@ -114,6 +114,7 @@ INCIDENT_CLASSIFIER_PARAMS = {
     "class_weight": "balanced",
     "random_state": 42,
     "device": "gpu",
+    "device_type": "gpu",
 }
 
 # Model 5: Spatial Risk (Graph or fallback diffusion)
