@@ -7,12 +7,38 @@ Output: data/processed/disaster_grid.parquet
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from config.settings import RAW_DISASTERS, PROCESSED_DIR
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from processing.geo_grid import generate_india_grid
+
+from app.config import get_settings
+
+cfg = get_settings()
+
+RAW_DISASTERS = (
+    PROJECT_ROOT
+    / "data"
+    / "raw"
+    / "disasters"
+)
+
+PROCESSED_DIR = (
+    PROJECT_ROOT
+    / cfg.data_processed_dir
+)
+
+PROCESSED_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
 
 
 DISASTER_TYPE_KEYWORDS = {
@@ -28,11 +54,46 @@ DISASTER_TYPE_KEYWORDS = {
 }
 
 
-def _detect_disaster_type(row: pd.Series) -> str:
-    """Infer disaster type from any text columns in the row."""
-    text = " ".join(str(v).lower() for v in row.values if pd.notna(v))
+def _detect_disaster_type(
+    row: pd.Series,
+    source_file: str = "",
+) -> str:
+    """
+    Infer disaster type using:
+    1. filename priors
+    2. row text
+    """
+
+    source = str(source_file).lower()
+
+    # ========================================================
+    # STRONG FILE PRIORS
+    # ========================================================
+
+    if "earthquake" in source:
+        return "earthquake"
+
+    if "flood" in source:
+        return "flood"
+
+    if "cyclone" in source:
+        return "cyclone"
+
+    if "landslide" in source:
+        return "landslide"
+
+    # ========================================================
+    # FALLBACK TEXT SCAN
+    # ========================================================
+
+    text = " ".join(
+        str(v).lower()
+        for v in row.values
+        if pd.notna(v)
+    )
 
     for dtype, keywords in DISASTER_TYPE_KEYWORDS.items():
+
         if any(kw in text for kw in keywords):
             return dtype
 
@@ -48,6 +109,48 @@ def _find_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
         if c.lower().strip() in lower_map:
             return lower_map[c.lower().strip()]
     return None
+
+
+def spatial_decay_assign(
+    grid_df: pd.DataFrame,
+    event_df: pd.DataFrame,
+    value_col: str,
+    radius_km: float = 25,
+    decay_km: float = 10,
+) -> np.ndarray:
+    """Spread event influence onto the India grid with exponential decay."""
+    try:
+        from scipy.spatial import cKDTree
+    except ImportError as exc:
+        raise ImportError(
+            "scipy is required for spatial_decay_assign in ingest_disasters.py"
+        ) from exc
+
+    result = np.zeros(len(grid_df), dtype=float)
+    if event_df.empty:
+        return result
+
+    grid_coords = grid_df[["grid_lat", "grid_lon"]].to_numpy()
+    tree = cKDTree(grid_coords)
+
+    for _, row in event_df.iterrows():
+        if not pd.notna(row.get(value_col)):
+            continue
+
+        point = [row["grid_lat"], row["grid_lon"]]
+        radius_deg = radius_km / 111.0
+        nearby = tree.query_ball_point(point, radius_deg)
+
+        if not nearby:
+            continue
+
+        nearby_coords = grid_coords[nearby]
+        dists = np.sqrt(np.sum((nearby_coords - point) ** 2, axis=1)) * 111.0
+        weights = np.exp(-dists / decay_km)
+
+        result[nearby] += row[value_col] * weights
+
+    return result
 
 
 def ingest_disaster_file(file_path: Path) -> pd.DataFrame | None:
@@ -104,8 +207,14 @@ def ingest_disaster_file(file_path: Path) -> pd.DataFrame | None:
     if type_col:
         result["disaster_type"] = df[type_col].astype(str).str.strip().str.lower()
     else:
-        # Auto-detect from row content
-        result["disaster_type"] = df.apply(_detect_disaster_type, axis=1)
+        # Auto-detect using both filename priors and row content
+        result["disaster_type"] = df.apply(
+            lambda row: _detect_disaster_type(
+                row,
+                file_path.name,
+            ),
+            axis=1,
+        )
 
     # Deaths / affected
     deaths_col = _find_col(df, ["deaths", "killed", "fatalities", "no_killed"])
@@ -124,74 +233,194 @@ def ingest_disaster_file(file_path: Path) -> pd.DataFrame | None:
     return result
 
 
-def compute_disaster_factors(disaster_df: pd.DataFrame) -> pd.DataFrame:
+def compute_disaster_factors(
+    disaster_df: pd.DataFrame,
+) -> pd.DataFrame:
     """
-    Compute safety-relevant disaster factors.
-    
-    Outputs:
-    - flood_risk_index (historical flood frequency + severity)
-    - earthquake_zone_risk (historical earthquake frequency + magnitude)
-    - cyclone_risk_index (historical cyclone impact)
-    - overall_disaster_risk (composite)
+    Build continuous disaster hazard fields.
+
+    Each event contributes locally using exponential decay.
     """
+
     if disaster_df.empty:
         return pd.DataFrame()
 
-    # Only rows with coordinates
-    geo = disaster_df.dropna(subset=["latitude", "longitude"]).copy()
+    geo = disaster_df.dropna(
+        subset=["latitude", "longitude"]
+    ).copy()
 
     if geo.empty:
         return pd.DataFrame()
 
-    # Round to grid cells
-    geo["grid_lat"] = (geo["latitude"] / 0.1).round() * 0.1
-    geo["grid_lon"] = (geo["longitude"] / 0.1).round() * 0.1
+    # --------------------------------------------------------
+    # IMPORTANT:
+    # DO NOT snap events before propagation.
+    # Keep original coordinates.
+    # --------------------------------------------------------
 
-    # Count events by type per grid cell
-    flood_events = geo[geo["disaster_type"] == "flood"]
-    earthquake_events = geo[geo["disaster_type"] == "earthquake"]
-    cyclone_events = geo[geo["disaster_type"] == "cyclone"]
-    landslide_events = geo[geo["disaster_type"] == "landslide"]
+    grid = generate_india_grid()
 
-    all_cells = geo.groupby(["grid_lat", "grid_lon"]).size().reset_index(name="total_events")
+    hazard_filters = {
+        "flood": "flood|inundation|waterlog|deluge|submerg",
+        "earthquake": "earthquake|quake|seismic|tremor",
+        "cyclone": "cyclone|storm|typhoon|hurricane",
+        "landslide": "landslide|mudslide|debris|land slip",
+    }
 
-    def _count_by_type(events: pd.DataFrame, name: str) -> pd.DataFrame:
+    hazard_params = {
+        "flood": {
+            "radius_km": 25,
+            "decay_km": 8,
+        },
+        "earthquake": {
+            "radius_km": 80,
+            "decay_km": 30,
+        },
+        "cyclone": {
+            "radius_km": 120,
+            "decay_km": 40,
+        },
+        "landslide": {
+            "radius_km": 15,
+            "decay_km": 5,
+        },
+    }
+
+    for hazard, pattern in hazard_filters.items():
+
+        params = hazard_params[hazard]
+
+        events = geo[
+            geo["disaster_type"]
+            .astype(str)
+            .str.lower()
+            .str.contains(
+                pattern,
+                na=False,
+                regex=True,
+            )
+        ].copy()
+
         if events.empty:
-            return pd.DataFrame(columns=["grid_lat", "grid_lon", f"{name}_count", f"{name}_severity_avg"])
-        grouped = events.groupby(["grid_lat", "grid_lon"]).agg(
-            count=("disaster_type", "size"),
-            severity_avg=("severity", "mean"),
-            deaths_total=("deaths", "sum"),
-        ).reset_index()
-        grouped.columns = ["grid_lat", "grid_lon", f"{name}_count", f"{name}_severity_avg", f"{name}_deaths"]
-        return grouped
+            grid[f"{hazard}_count"] = 0.0
+            grid[f"{hazard}_severity"] = 0.0
+            grid[f"{hazard}_deaths"] = 0.0
+            continue
 
-    flood_grid = _count_by_type(flood_events, "flood")
-    earthquake_grid = _count_by_type(earthquake_events, "earthquake")
-    cyclone_grid = _count_by_type(cyclone_events, "cyclone")
-    landslide_grid = _count_by_type(landslide_events, "landslide")
+        events["severity"] = pd.to_numeric(
+            events["severity"],
+            errors="coerce",
+        ).fillna(0)
 
-    # Merge all
-    result = all_cells.copy()
-    for grid_df in [flood_grid, earthquake_grid, cyclone_grid, landslide_grid]:
-        if not grid_df.empty:
-            result = result.merge(grid_df, on=["grid_lat", "grid_lon"], how="left")
+        events["deaths"] = pd.to_numeric(
+            events["deaths"],
+            errors="coerce",
+        ).fillna(0)
 
-    result = result.fillna(0)
+        events["event_weight"] = 1.0
 
-    # Normalize to risk indices (0 to 1)
-    for col in ["flood_count", "earthquake_count", "cyclone_count", "landslide_count"]:
-        if col in result.columns:
-            max_val = result[col].quantile(0.95)
-            if max_val > 0:
-                result[col.replace("_count", "_risk")] = (result[col] / max_val).clip(0, 1)
-            else:
-                result[col.replace("_count", "_risk")] = 0.0
+        events = events.rename(
+            columns={
+                "latitude": "grid_lat",
+                "longitude": "grid_lon",
+            }
+        )
 
-    result["latitude"] = result["grid_lat"]
-    result["longitude"] = result["grid_lon"]
+        grid[f"{hazard}_count"] = spatial_decay_assign(
+            grid_df=grid,
+            event_df=events,
+            value_col="event_weight",
+            radius_km=params["radius_km"],
+            decay_km=params["decay_km"],
+        )
 
-    return result
+        grid[f"{hazard}_severity"] = spatial_decay_assign(
+            grid_df=grid,
+            event_df=events,
+            value_col="severity",
+            radius_km=params["radius_km"],
+            decay_km=params["decay_km"],
+        )
+
+        grid[f"{hazard}_deaths"] = spatial_decay_assign(
+            grid_df=grid,
+            event_df=events,
+            value_col="deaths",
+            radius_km=params["radius_km"],
+            decay_km=params["decay_km"],
+        )
+
+    all_events = geo.copy()
+    all_events["event_weight"] = 1.0
+    all_events = all_events.rename(
+        columns={
+            "latitude": "grid_lat",
+            "longitude": "grid_lon",
+        }
+    )
+
+    grid["total_events"] = spatial_decay_assign(
+        grid_df=grid,
+        event_df=all_events,
+        value_col="event_weight",
+        radius_km=40,
+        decay_km=15,
+    )
+
+    def normalize_series(
+        s: pd.Series,
+    ) -> pd.Series:
+
+        s = pd.to_numeric(
+            s,
+            errors="coerce",
+        ).fillna(0)
+
+        p99 = s.quantile(0.99)
+
+        if p99 <= 0:
+            return pd.Series(
+                0.0,
+                index=s.index,
+            )
+
+        return (s / p99).clip(0, 1)
+
+    for hazard in [
+        "flood",
+        "earthquake",
+        "cyclone",
+        "landslide",
+    ]:
+
+        count_col = f"{hazard}_count"
+        sev_col = f"{hazard}_severity"
+        deaths_col = f"{hazard}_deaths"
+
+        count_score = normalize_series(
+            grid[count_col]
+        )
+
+        sev_score = normalize_series(
+            grid[sev_col]
+        )
+
+        death_score = normalize_series(
+            grid[deaths_col]
+        )
+
+        risk_col = f"{hazard}_risk"
+
+        grid[risk_col] = (
+            0.5 * count_score
+            + 0.3 * sev_score
+            + 0.2 * death_score
+        ).clip(0, 1)
+
+    grid["latitude"] = grid["grid_lat"]
+    grid["longitude"] = grid["grid_lon"]
+
+    return grid
 
 
 def ingest_all_disasters() -> pd.DataFrame:
