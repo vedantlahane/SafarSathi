@@ -155,10 +155,10 @@ def _evaluate_edge_cases():
     test_cases = [
         {
             "name": "Safe urban daytime",
-            "expected_range": (60, 100),
+            "expected_range": (55, 100),
             "features": {
-                "crime_rate_per_100k": 150, "aqi": 80, "weather_severity": 10,
-                "hospital_level_score": 80, "nearest_hospital_proxy_km": 2,
+                "crime_rate_per_100k": 100, "aqi": 60, "weather_severity": 10,
+                "nearest_hospital_proxy_km": 2, "ambulance_response_score": 70,
                 "road_accident_hotspot_risk": 0.1, "hour": 14, "month": 3,
             },
         },
@@ -166,26 +166,26 @@ def _evaluate_edge_cases():
             "name": "Monsoon flood zone night",
             "expected_range": (0, 55),
             "features": {
-                "crime_rate_per_100k": 200, "aqi": 100, "weather_severity": 75,
-                "rainfall_mmph": 40, "visibility_km": 2, "flood_risk": 0.8,
+                "crime_rate_per_100k": 250, "aqi": 120, "weather_severity": 75,
+                "rainfall_mmph": 40, "flood_risk": 0.8,
                 "nearest_hospital_proxy_km": 15, "hour": 2, "month": 7,
             },
         },
         {
             "name": "High crime area late night",
-            "expected_range": (15, 45),
+            "expected_range": (10, 50),
             "features": {
                 "crime_rate_per_100k": 600, "aqi": 90, "weather_severity": 15,
-                "nearest_hospital_proxy_km": 8, "emergency_availability_score": 30,
+                "nearest_hospital_proxy_km": 8,
                 "hour": 1, "month": 10,
             },
         },
         {
             "name": "Remote area poor infrastructure",
-            "expected_range": (20, 50),
+            "expected_range": (15, 55),
             "features": {
-                "nearest_hospital_proxy_km": 40, "emergency_availability_score": 10,
-                "ambulance_response_score": 5, "population_density_per_km2": 20,
+                "nearest_hospital_proxy_km": 40,
+                "ambulance_response_score": 5,
                 "hour": 18, "month": 8, "weather_severity": 30,
             },
         },

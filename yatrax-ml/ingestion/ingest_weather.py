@@ -221,14 +221,53 @@ def _compute_weather_severity(df: pd.DataFrame) -> pd.Series:
     return severity.clip(0, 100)
 
 
+def _build_city_lookup_from_metadata() -> dict[str, tuple[float, float]]:
+    """
+    Auto-build a city→(lat,lon) lookup from any weather metadata CSV
+    that has city, lat, lng columns. This covers thousands of cities
+    instead of the ~70 in the hardcoded dict.
+    """
+    lookup: dict[str, tuple[float, float]] = {}
+
+    # Search for metadata CSVs with lat/lng columns in the weather directory
+    for csv_path in RAW_WEATHER.glob("**/*.csv"):
+        try:
+            # Read just the header to check columns cheaply
+            sample = pd.read_csv(csv_path, nrows=2, low_memory=False)
+            has_city = _find_col(sample, ["city", "City", "location_name"])
+            has_lat = _find_col(sample, ["lat", "latitude", "Latitude"])
+            has_lng = _find_col(sample, ["lng", "lon", "longitude", "Longitude"])
+
+            if has_city and has_lat and has_lng:
+                # This is a metadata file — read all cities
+                meta = pd.read_csv(csv_path, usecols=[has_city, has_lat, has_lng],
+                                   low_memory=False)
+                meta = meta.dropna()
+                for _, row in meta.drop_duplicates(subset=[has_city]).iterrows():
+                    city = str(row[has_city]).strip().lower()
+                    lat = float(row[has_lat])
+                    lng = float(row[has_lng])
+                    if 6.0 <= lat <= 37.0 and 68.0 <= lng <= 98.0:  # India bounds
+                        lookup[city] = (lat, lng)
+                if lookup:
+                    print(f"  Built city lookup from {csv_path.name}: {len(lookup)} cities")
+                    return lookup  # Use the first good metadata file
+        except Exception:
+            continue
+
+    return lookup
+
+
 def _geocode_cities(df: pd.DataFrame) -> pd.DataFrame:
     """
     Fill in lat/lon for rows that only have city names.
-    Uses a pre-built city coordinate lookup.
+    First tries auto-built lookup from metadata CSV, then hardcoded fallback.
     """
-    # Major Indian city + IMD sub-division coordinates
+    # Try auto-building from metadata first
+    auto_lookup = _build_city_lookup_from_metadata()
+
+    # Hardcoded fallback: major Indian cities + IMD sub-division centroids
     city_coords: dict[str, tuple[float, float]] = {
-        # Cities
         "delhi": (28.6139, 77.2090),
         "new delhi": (28.6139, 77.2090),
         "mumbai": (19.0760, 72.8777),
@@ -329,16 +368,24 @@ def _geocode_cities(df: pd.DataFrame) -> pd.DataFrame:
         "lakshadweep": (10.57, 72.64),
     }
 
+    # Merge: auto-lookup takes priority over hardcoded
+    combined_lookup = {**city_coords, **auto_lookup}
+    print(f"  Weather city lookup: {len(combined_lookup)} cities ")
+
     if "city" not in df.columns:
         return df
 
     mask = df["latitude"].isna() & df["city"].notna()
+    matched = 0
     for idx in df[mask].index:
         city = str(df.at[idx, "city"]).lower().strip()
-        if city in city_coords:
-            df.at[idx, "latitude"] = city_coords[city][0]
-            df.at[idx, "longitude"] = city_coords[city][1]
+        if city in combined_lookup:
+            df.at[idx, "latitude"] = combined_lookup[city][0]
+            df.at[idx, "longitude"] = combined_lookup[city][1]
+            matched += 1
 
+    unmatched = mask.sum() - matched
+    print(f"  Geocoded {matched}/{mask.sum()} cities ({unmatched} unmatched)")
     return df
 
 

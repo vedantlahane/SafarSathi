@@ -277,12 +277,94 @@ def ingest_all_noise() -> pd.DataFrame:
     csv_files = list(RAW_NOISE.glob("**/*.csv"))
     print(f"Found {len(csv_files)} noise CSV files")
 
-    all_frames = []
+    # ── Fix: detect stations.csv + station_month.csv and join them ──────
+    stations_file = None
+    month_file = None
+    other_files = []
+
     for f in csv_files:
+        name_lower = f.stem.lower()
+        if "station" in name_lower and "month" not in name_lower:
+            stations_file = f
+        elif "station" in name_lower and "month" in name_lower:
+            month_file = f
+        else:
+            other_files.append(f)
+
+    # If we found both station files, join them before processing
+    if stations_file and month_file:
+        print(f"  Found station reference: {stations_file.name}")
+        print(f"  Found monthly data: {month_file.name}")
+        try:
+            stations_df = pd.read_csv(stations_file, low_memory=False)
+            monthly_df = pd.read_csv(month_file, low_memory=False)
+
+            # Find the station ID column (might be 'Station', 'station_id', etc.)
+            station_id_col = _find_col(stations_df, [
+                "Station", "station", "Station_ID", "station_id", "Code",
+            ])
+            city_col = _find_col(stations_df, [
+                "City", "city", "Location", "location",
+            ])
+
+            if station_id_col and city_col:
+                # Join monthly data with station metadata to get City
+                monthly_station_col = _find_col(monthly_df, [
+                    "Station", "station", "Station_ID", "station_id", "Code",
+                ])
+                if monthly_station_col:
+                    merged = monthly_df.merge(
+                        stations_df[[station_id_col, city_col]].drop_duplicates(),
+                        left_on=monthly_station_col,
+                        right_on=station_id_col,
+                        how="left",
+                    )
+                    # Rename city column and geocode
+                    merged["city"] = merged[city_col].astype(str).str.strip().str.lower()
+
+                    # Geocode city to lat/lon
+                    merged["latitude"] = np.nan
+                    merged["longitude"] = np.nan
+                    for idx in merged.index:
+                        city = merged.at[idx, "city"]
+                        if city in NOISE_CITY_COORDS:
+                            merged.at[idx, "latitude"] = NOISE_CITY_COORDS[city][0]
+                            merged.at[idx, "longitude"] = NOISE_CITY_COORDS[city][1]
+                        else:
+                            # Try partial match
+                            for city_key, (lat, lon) in NOISE_CITY_COORDS.items():
+                                if city_key in city or city in city_key:
+                                    merged.at[idx, "latitude"] = lat
+                                    merged.at[idx, "longitude"] = lon
+                                    break
+
+                    # Save as temporary CSV and parse through ingest_noise_file
+                    temp_path = RAW_NOISE / "_merged_station_data.csv"
+                    merged.to_csv(temp_path, index=False)
+                    other_files.append(temp_path)
+                    print(f"  Joined station data: {len(merged)} records, "
+                          f"{merged['latitude'].notna().sum()} geocoded")
+        except Exception as e:
+            print(f"  ⚠️ Station join failed: {e}")
+            # Fall back to processing files separately
+            other_files.extend([f for f in [stations_file, month_file]])
+    else:
+        other_files = csv_files
+
+    all_frames = []
+    for f in other_files:
         df = ingest_noise_file(f)
         if df is not None and not df.empty:
             all_frames.append(df)
             print(f"  Parsed {f.name}: {len(df)} rows")
+
+    # Clean up temp file if created
+    temp_path = RAW_NOISE / "_merged_station_data.csv"
+    if temp_path.exists():
+        try:
+            temp_path.unlink()
+        except Exception:
+            pass
 
     if not all_frames:
         print("No noise data found!")

@@ -89,6 +89,20 @@ def run_pipeline(
     # ─── 3. MERGE ───
     if not skip_merge:
         step("3/6 — Merge All Sources into Unified Grid")
+
+        # Clean stale training artifacts so old cached data doesn't pollute
+        from config.settings import TRAINING_DIR
+        for stale_file in [
+            TRAINING_DIR / "training_samples.parquet",
+            TRAINING_DIR / "safety_score_train.parquet",
+            TRAINING_DIR / "safety_score_val.parquet",
+            TRAINING_DIR / "safety_score_test.parquet",
+            TRAINING_DIR / "incident_classification.parquet",
+        ]:
+            if stale_file.exists():
+                stale_file.unlink()
+                print(f"  🗑️ Cleaned stale: {stale_file.name}")
+
         from processing.merge_sources import merge_all_sources
         merge_all_sources()
     else:

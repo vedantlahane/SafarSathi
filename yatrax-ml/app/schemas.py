@@ -80,6 +80,19 @@ class PredictSafetyResponse(BaseModel):
     danger_score: float = Field(ge=0, le=1)
     status: SafetyStatus
     recommendation: str
+    prediction_confidence: float = Field(ge=0, le=1, default=0.5,
+        description="How much to trust this prediction (0=low, 1=high). "
+                    "Based on source data density, feature completeness, "
+                    "and distance to nearest real data cell.")
+    data_source_distance_km: float = Field(ge=0, default=0.0,
+        description="Distance in km to the nearest real data cell. "
+                    "0 = exact cell match, 999 = median fallback.")
+    domain_confidence: dict[str, float] = Field(default_factory=dict,
+        description="Per-domain data confidence (0=no data, 1=real data). "
+                    "Example: {'crime': 0.95, 'weather': 0.72, 'aqi': 0.0}")
+    low_confidence_reasons: list[str] = Field(default_factory=list,
+        description="Human-readable reasons for low confidence. "
+                    "Example: ['No AQI station nearby', 'Weather propagated from 42km away']")
     capped_by: Optional[str] = None
     environment: Optional[str] = None
     factors: list[FactorItem]

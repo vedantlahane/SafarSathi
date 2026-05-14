@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import math
+from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
@@ -95,11 +96,11 @@ _FACTOR_LABELS: dict[str, str] = {
     "weather_severity":            "Weather",
     "road_accident_hotspot_risk":  "Road Safety",
     "accident_severity_index":     "Accident Severity",
-    "hospital_level_score":        "Hospital Quality",
     "nearest_hospital_proxy_km":   "Hospital Distance",
-    "emergency_availability_score":"Emergency Services",
+    "ambulance_response_score":    "Emergency Services",
+    "water_contamination_risk":    "Water Quality",
+    "gender_safety_index":         "Gender Safety",
     "hour":                        "Time of Day",
-    "population_density_per_km2":  "Population Density",
 }
 
 
@@ -116,12 +117,12 @@ def _build_factors(
         val = grid_feats[key]
         label = _FACTOR_LABELS[key]
         # Normalise to 0-100 impact score (higher val = more risk for most features)
-        if key == "hospital_level_score":
-            impact = clamp(val)
-        elif key == "emergency_availability_score":
-            impact = clamp(val)
-        elif key == "nearest_hospital_proxy_km":
+        if key == "nearest_hospital_proxy_km":
             impact = clamp(100 - (val / 50) * 100)
+        elif key == "ambulance_response_score":
+            impact = clamp(val)
+        elif key == "gender_safety_index":
+            impact = clamp(val * 100)
         elif key == "hour":
             h = int(val)
             if 8 <= h < 18:
@@ -156,12 +157,25 @@ def _run_anomaly(
 
     try:
         raw_score: float = float(registry.anomaly_detector.score_samples(row)[0])
-        detected = raw_score < -0.20
+
+        # Load threshold from training metadata (not hardcoded)
+        threshold = -0.20  # fallback default
+        try:
+            import json
+            meta_path = Path(__file__).resolve().parent.parent / "models" / "anomaly" / "metadata.json"
+            if meta_path.exists():
+                with open(meta_path) as f:
+                    meta = json.load(f)
+                threshold = meta.get("score_stats", {}).get("threshold_approx", -0.20)
+        except Exception:
+            pass
+
+        detected = raw_score < threshold
 
         if not detected:
             return AnomalyResult(detected=False, score=round(raw_score, 4))
 
-        severity = "High" if raw_score < -0.30 else "Medium"
+        severity = "High" if raw_score < threshold * 1.5 else "Medium"
 
         # Perturbation-based attribution
         medians = registry.anomaly_feature_medians
@@ -430,6 +444,48 @@ def evaluate(req: PredictSafetyRequest, registry: ModelRegistry) -> PredictSafet
     # ── Step 1: Grid cell lookup ──────────────────────────────────────────────
     grid_feats = get_grid_features(lat, lon)
 
+    # Extract confidence metadata BEFORE building feature vectors
+    # (underscore-prefixed keys must not leak into ML features)
+    prediction_confidence = grid_feats.pop("_confidence", 0.5)
+    data_source_distance_km = grid_feats.pop("_nearest_dist_km", 0.0)
+    grid_feats.pop("_is_fallback", None)
+    grid_feats.pop("_source", None)
+
+    # Extract per-domain confidence and build reason codes
+    DOMAIN_LABELS = {
+        "crime_confidence":      ("crime",      "Crime data"),
+        "weather_confidence":    ("weather",    "Weather station"),
+        "aqi_confidence":        ("aqi",        "AQI monitoring station"),
+        "water_confidence":      ("water",      "Water quality data"),
+        "health_confidence":     ("health",     "Hospital/health facility"),
+        "disaster_confidence":   ("disaster",   "Disaster records"),
+        "accident_confidence":   ("accident",   "Road accident data"),
+        "fire_confidence":       ("fire",       "Fire risk data"),
+        "terrain_confidence":    ("terrain",    "Terrain/elevation data"),
+        "population_confidence": ("population", "Population density data"),
+        "noise_confidence":      ("noise",      "Noise monitoring station"),
+    }
+    domain_confidence: dict[str, float] = {}
+    low_confidence_reasons: list[str] = []
+
+    for conf_key, (domain_name, domain_label) in DOMAIN_LABELS.items():
+        val = grid_feats.pop(conf_key, None)
+        if val is not None:
+            domain_confidence[domain_name] = round(float(val), 2)
+            if float(val) < 0.5:
+                low_confidence_reasons.append(f"No {domain_label} nearby")
+        else:
+            domain_confidence[domain_name] = 0.0
+            low_confidence_reasons.append(f"No {domain_label} nearby")
+
+    # Also remove coverage_score / feature_completeness from model features
+    grid_feats.pop("coverage_score", None)
+    grid_feats.pop("feature_completeness", None)
+
+    if data_source_distance_km > 30:
+        low_confidence_reasons.insert(0,
+            f"Data propagated from {data_source_distance_km:.0f}km away")
+
     # Apply live weather / AQI overrides from gateway
     for live_key in ("weather_severity", "aqi"):
         if live_key in override and override[live_key] is not None:
@@ -498,6 +554,10 @@ def evaluate(req: PredictSafetyRequest, registry: ModelRegistry) -> PredictSafet
         danger_score=danger_score,
         status=status,
         recommendation=recommendation,
+        prediction_confidence=round(float(prediction_confidence), 3),
+        data_source_distance_km=round(float(data_source_distance_km), 1),
+        domain_confidence=domain_confidence,
+        low_confidence_reasons=low_confidence_reasons,
         capped_by=None,
         environment=f"grid_cell:{round(lat,1)},{round(lon,1)}",
         factors=factors,
