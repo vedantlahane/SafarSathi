@@ -947,7 +947,10 @@ def train_incident_classifier() -> dict:
         "feature_fraction_seed": RANDOM_SEED,
         "bagging_seed": RANDOM_SEED,
         "data_random_seed": RANDOM_SEED,
-        "force_col_wise": True,
+        
+        # 👇 ADD THESE TWO LINES 👇
+        "device": INCIDENT_CLASSIFIER_PARAMS.get("device", "cpu"),
+        "device_type": INCIDENT_CLASSIFIER_PARAMS.get("device_type", "cpu")
     }
 
     num_boost_round = int(INCIDENT_CLASSIFIER_PARAMS.get("n_estimators", 600))

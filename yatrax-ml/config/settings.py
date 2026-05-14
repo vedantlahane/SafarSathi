@@ -60,7 +60,7 @@ SEASONS = {
 
 # Model 1: Safety Scorer (LightGBM)
 SAFETY_SCORER_PARAMS = {
-    "n_estimators": 800,
+    "n_estimators": 1200,
     "max_depth": 10,
     "learning_rate": 0.03,
     "num_leaves": 63,
@@ -70,7 +70,10 @@ SAFETY_SCORER_PARAMS = {
     "reg_alpha": 0.1,
     "reg_lambda": 1.0,
     "random_state": 42,
+    
+    # GPU Execution Flags
     "device": "gpu",
+    "device_type": "gpu"
 }
 
 # Model 2: Trajectory Forecaster (LSTM)

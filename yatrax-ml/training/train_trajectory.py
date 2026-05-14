@@ -18,7 +18,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor
+import lightgbm as lgb
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 
@@ -139,13 +139,16 @@ def train_trajectory_model() -> dict:
         X, y, test_size=0.2, random_state=RANDOM_SEED,
     )
 
-    print("Training Gradient Boosting trajectory model...")
-    model = GradientBoostingRegressor(
+    print("Training LightGBM trajectory model on GPU...")
+    model = lgb.LGBMRegressor(
         n_estimators=300,
         max_depth=6,
         learning_rate=0.05,
-        min_samples_leaf=20,
+        min_child_samples=20,
         random_state=RANDOM_SEED,
+        device="gpu",
+        device_type="gpu",
+        verbose=-1,
     )
     model.fit(X_train, y_train)
 

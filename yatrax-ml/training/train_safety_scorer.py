@@ -280,8 +280,9 @@ def train_safety_scorer() -> dict:
         "feature_fraction_seed": RANDOM_SEED,
         "bagging_seed": RANDOM_SEED,
         "data_random_seed": RANDOM_SEED,
-        "force_col_wise": True,
+        # ⚠️ "force_col_wise": True has been REMOVED to allow GPU training
     }
+    params.update(SAFETY_SCORER_PARAMS or {})
     params.update(SAFETY_SCORER_PARAMS or {})
 
     num_boost_round = int(params.pop("n_estimators", 1200))
