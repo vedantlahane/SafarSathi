@@ -92,3 +92,4 @@ danger_model.pkl
 # Python caches
 __pycache__/
 *.py[cod]
+yatrax-ml/punjab/data/
