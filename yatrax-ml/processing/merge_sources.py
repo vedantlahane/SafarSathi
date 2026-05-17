@@ -1,6 +1,13 @@
 """
 Merge all processed data sources into a unified grid.
 
+IMPROVED VERSION:
+- Aggressive dead feature pruning (< 1% coverage)
+- Feature registry with coverage tracking
+- Feature manifest generation during merge
+- Unified confidence engine
+- Pipeline validation and invariant checks
+
 Goals:
 - Preserve exact grid matches for sources that are already gridded.
 - Use source-specific local interpolation for point sources.
@@ -10,6 +17,7 @@ Goals:
 
 Input:  data/processed/*_grid.parquet
 Output: data/processed/unified_grid.parquet
+        data/processed/feature_manifest.json
 """
 
 from __future__ import annotations
@@ -33,6 +41,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config.settings import PROCESSED_DIR
 from processing.geo_grid import generate_india_grid, spatial_interpolate
+from lib.feature_registry import create_standard_registry, FeatureType
+from lib.confidence_engine import get_confidence_engine
+from lib.pipeline_validator import (
+    validate_merge,
+    check_coordinate_consistency,
+    warn_if_data_loss,
+)
 
 
 # ---------------------------------------------------------------------
@@ -381,8 +396,109 @@ def _drop_constant_numeric_columns(grid: pd.DataFrame) -> pd.DataFrame:
     return grid
 
 
+def _prune_dead_features(
+    grid: pd.DataFrame,
+    coverage_threshold_pct: float = 1.0,
+) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Aggressively prune features with insufficient real data.
+    
+    Features with < 1% real coverage are nearly pure NaN/defaults
+    and add noise to training without signal.
+    
+    Args:
+        grid: Merged grid dataframe
+        coverage_threshold_pct: Minimum % of non-NaN values to keep
+    
+    Returns:
+        (pruned_grid, dead_features_list)
+    """
+    protected = {
+        "grid_lat",
+        "grid_lon",
+        "cell_id",
+        "coverage_score",
+        "feature_completeness",
+    }
+    protected.update(c for c in grid.columns if c.endswith("_confidence"))
+    
+    numeric_cols = grid.select_dtypes(include=[np.number]).columns
+    dead_features = []
+    
+    for col in numeric_cols:
+        if col in protected:
+            continue
+        
+        coverage = (grid[col].notna().sum() / len(grid)) * 100
+        
+        if coverage < coverage_threshold_pct:
+            dead_features.append(col)
+    
+    if dead_features:
+        print(f"\n✂️ Pruning {len(dead_features)} dead features (<{coverage_threshold_pct}% coverage):")
+        
+        # Group by domain for clarity
+        by_domain = {}
+        for feat in dead_features:
+            # Infer domain from column name
+            domain = feat.split("_")[0]
+            if domain not in by_domain:
+                by_domain[domain] = []
+            by_domain[domain].append(feat)
+        
+        for domain in sorted(by_domain.keys()):
+            feats = by_domain[domain]
+            coverage_info = [
+                f"{f}: {(grid[f].notna().sum() / len(grid) * 100):.1f}%"
+                for f in feats[:2]  # Show first 2 per domain
+            ]
+            suffix = f"... +{len(feats)-2} more" if len(feats) > 2 else ""
+            print(f"   {domain:12s}: {', '.join(coverage_info)} {suffix}")
+        
+        grid = grid.drop(columns=dead_features)
+    
+    return grid, dead_features
+
+
+def _generate_feature_manifest(
+    grid: pd.DataFrame,
+    registry: Any,
+    dead_features: list[str],
+) -> dict:
+    """
+    Generate feature manifest with coverage analysis.
+    
+    Returns:
+        Manifest dict for JSON serialization
+    """
+    from datetime import datetime
+    
+    # Compute coverage for each feature
+    manifest = registry.compute_coverage(grid)
+    
+    # Add metadata
+    manifest_dict = manifest.to_dict()
+    manifest_dict["dead_features_pruned"] = dead_features
+    manifest_dict["merge_timestamp"] = datetime.utcnow().isoformat()
+    
+    # Report
+    print(registry.report_coverage(manifest))
+    
+    return manifest_dict
+
+
 def merge_all_sources() -> pd.DataFrame:
-    print("Generating India grid...")
+    print("\n" + "="*70)
+    print("MERGING ALL DATA SOURCES")
+    print("="*70)
+    
+    # Initialize systems
+    registry = create_standard_registry()
+    confidence_engine = get_confidence_engine()
+    
+    n_before_merge = None
+    
+    print("\nGenerating India grid...")
     grid = generate_india_grid()
     print(f"Grid: {len(grid)} cells")
 
@@ -410,8 +526,24 @@ def merge_all_sources() -> pd.DataFrame:
         )
 
     # -----------------------------------------------------------------
+    # VALIDATION: Check for serialization bugs
+    # -----------------------------------------------------------------
+    print("\n" + "─"*70)
+    print("Validating merged data integrity...")
+    print("─"*70)
+    
+    try:
+        check_coordinate_consistency(grid)
+        print("✅ Coordinate consistency check passed")
+    except Exception as e:
+        print(f"❌ Coordinate check failed: {e}")
+        raise
+
+    # -----------------------------------------------------------------
     # Keep only cells with any real data in key sources
     # -----------------------------------------------------------------
+    n_before_filter = len(grid)
+    
     avail_cols = [
         f"{s}_data_available"
         for s in KEY_SOURCES
@@ -420,11 +552,11 @@ def merge_all_sources() -> pd.DataFrame:
 
     if avail_cols:
         has_any_real = grid[avail_cols].sum(axis=1) > 0
-        n_before = len(grid)
         grid = grid[has_any_real].copy()
-        n_dropped = n_before - len(grid)
+        n_dropped = n_before_filter - len(grid)
         print(f"\n✂️ Dropped {n_dropped} cells with no real data from any key source")
         print(f"   Kept {len(grid)} cells with real data")
+        warn_if_data_loss(n_before_filter, len(grid), "key source filtering")
     else:
         print("\n⚠️ No data availability columns found — keeping full grid")
 
@@ -439,12 +571,34 @@ def merge_all_sources() -> pd.DataFrame:
     grid = _drop_constant_numeric_columns(grid)
 
     # -----------------------------------------------------------------
+    # AGGRESSIVE FEATURE PRUNING: Remove dead features (<1% coverage)
+    # -----------------------------------------------------------------
+    grid, dead_features = _prune_dead_features(
+        grid,
+        coverage_threshold_pct=1.0,
+    )
+
+    # -----------------------------------------------------------------
     # Drop indicator columns
     # -----------------------------------------------------------------
     indicator_cols = [c for c in grid.columns if c.endswith("_data_available")]
     if indicator_cols:
         grid = grid.drop(columns=indicator_cols)
         print(f"   Dropped {len(indicator_cols)} indicator columns")
+
+    # -----------------------------------------------------------------
+    # VALIDATION: Run invariant checks
+    # -----------------------------------------------------------------
+    print("\n" + "─"*70)
+    print("Running invariant validations...")
+    print("─"*70)
+    
+    try:
+        validate_merge(grid, raise_on_critical=True)
+    except Exception as e:
+        print(f"\n❌ CRITICAL: Merge validation failed")
+        print(f"   {e}")
+        raise
 
     print(f"\nUnified grid: {len(grid)} cells × {len(grid.columns)} columns")
     print(f"Columns: {sorted(grid.columns.tolist())}")
@@ -496,6 +650,11 @@ def merge_all_sources() -> pd.DataFrame:
             )
 
     # -----------------------------------------------------------------
+    # Generate feature manifest
+    # -----------------------------------------------------------------
+    manifest_dict = _generate_feature_manifest(grid, registry, dead_features)
+
+    # -----------------------------------------------------------------
     # Save artifacts
     # -----------------------------------------------------------------
     output_path = PROCESSED_DIR / "unified_grid.parquet"
@@ -511,6 +670,16 @@ def merge_all_sources() -> pd.DataFrame:
             indent=2,
         )
     print(f"Saved column medians: {medians_path}")
+
+    # Save feature manifest
+    manifest_path = PROCESSED_DIR / "feature_manifest.json"
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest_dict, f, indent=2)
+    print(f"Saved feature manifest: {manifest_path}")
+
+    print("\n" + "="*70)
+    print(f"✅ MERGE COMPLETE: {len(grid)} cells, {len(grid.columns)} columns")
+    print("="*70 + "\n")
 
     return grid
 

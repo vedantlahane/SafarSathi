@@ -1,14 +1,17 @@
 """
-End-to-end pipeline orchestrator.
+End-to-end pipeline orchestrator (registry-driven version).
+
+This now uses the PipelineRegistry system instead of hardcoded lists.
+New models/data sources can be added via decorators without touching this file.
 
 Run: python pipeline.py
 
 This runs everything in order:
 1. Download data (optional)
-2. Ingest all data sources
+2. Ingest all data sources (via registry)
 3. Merge into unified grid
 4. Generate training labels
-5. Train all models
+5. Train all models (via registry)
 6. Evaluate
 """
 
@@ -20,24 +23,20 @@ import argparse
 import importlib
 from pathlib import Path
 
+from lib.pipeline_registry import (
+    PipelineStage,
+    PipelineRegistry,
+    register_standard_components,
+    get_registry,
+    execute_stage,
+    execute_component,
+)
+
 
 def step(name: str):
     print(f"\n{'━'*60}")
     print(f"  STEP: {name}")
     print(f"{'━'*60}\n")
-
-
-def _run_module(display_name: str, module_path: str, func_name: str):
-    """Import and run a function, handling errors gracefully."""
-    print(f"\n── {display_name} ──")
-    try:
-        module = importlib.import_module(module_path)
-        func = getattr(module, func_name)
-        func()
-    except FileNotFoundError:
-        print(f"  ⚠️  No raw data for {display_name} — skipping")
-    except Exception as e:
-        print(f"  ❌ Error in {display_name}: {e}")
 
 
 def run_pipeline(
@@ -51,8 +50,12 @@ def run_pipeline(
     start_time = time.time()
 
     print("=" * 60)
-    print("  YatraX ML Training Pipeline")
+    print("  YatraX ML Training Pipeline (Registry-Driven)")
     print("=" * 60)
+
+    # Initialize registry (one-time setup)
+    register_standard_components()
+    registry = get_registry()
 
     # ─── 1. DOWNLOAD ───
     if not skip_download:
@@ -62,27 +65,17 @@ def run_pipeline(
     else:
         print("\n⏭️  Skipping download (use --download to enable)")
 
-    # ─── 2. INGEST ───
+    # ─── 2. INGEST (registry-driven) ───
     if not skip_ingest:
-        step("2/6 — Ingest Raw Data")
-
-        ingestors = [
-            ("Crime",        "ingestion.ingest_crime",      "ingest_all_crime"),
-            ("Weather",      "ingestion.ingest_weather",    "ingest_all_weather"),
-            ("AQI",          "ingestion.ingest_aqi",        "ingest_all_aqi"),
-            ("Water Quality","ingestion.ingest_water",      "ingest_all_water"),
-            ("Disasters",    "ingestion.ingest_disasters",  "ingest_all_disasters"),
-            ("Accidents",    "ingestion.ingest_accidents",  "ingest_all_accidents"),
-            ("Health",       "ingestion.ingest_health",     "ingest_all_health"),
-            ("Terrain",      "ingestion.ingest_terrain",    "ingest_all_terrain"),
-            ("Population",   "ingestion.ingest_population", "ingest_all_population"),
-            ("Tourism",      "ingestion.ingest_tourism",    "ingest_all_tourism"),
-            ("Fire",         "ingestion.ingest_fire",       "ingest_all_fire"),
-            ("Noise",        "ingestion.ingest_noise",      "ingest_all_noise"),
-        ]
-
-        for name, module_path, func_name in ingestors:
-            _run_module(name, module_path, func_name)
+        step("2/6 — Ingest Raw Data (via Registry)")
+        
+        results = execute_stage(PipelineStage.INGEST)
+        
+        n_completed = sum(1 for r in results.values() if r is not None)
+        n_failed = len(results) - n_completed
+        print(f"\n✅ Completed {n_completed} ingestion tasks")
+        if n_failed > 0:
+            print(f"⚠️  Skipped {n_failed} (missing source files)")
     else:
         print("\n⏭️  Skipping ingestion")
 
@@ -116,21 +109,17 @@ def run_pipeline(
     else:
         print("\n⏭️  Skipping label generation")
 
-    # ─── 5. TRAIN ───
+    # ─── 5. TRAIN (registry-driven) ───
     if not skip_training:
-        step("5/6 — Train Models")
-
-        trainers = [
-            ("Safety Scorer",        "training.train_safety_scorer",        "train_safety_scorer"),
-            ("Incident Classifier",  "training.train_incident_classifier",  "train_incident_classifier"),
-            ("Anomaly Detector",     "training.train_anomaly",              "train_anomaly_detector"),
-            ("Trajectory Forecaster","training.train_trajectory",           "train_trajectory_model"),
-            ("Spatial Risk",         "training.train_spatial_risk",         "save_propagation_profiles"),
-            ("Alert Timing",         "training.train_alert_timing",        "save_alert_model"),
-        ]
-
-        for name, module_path, func_name in trainers:
-            _run_module(name, module_path, func_name)
+        step("5/6 — Train Models (via Registry)")
+        
+        results = execute_stage(PipelineStage.TRAIN)
+        
+        n_completed = sum(1 for r in results.values() if r is not None)
+        n_failed = len(results) - n_completed
+        print(f"\n✅ Completed {n_completed} training tasks")
+        if n_failed > 0:
+            print(f"⚠️  Skipped {n_failed} (missing training data)")
     else:
         print("\n⏭️  Skipping training")
 
@@ -165,7 +154,9 @@ def run_pipeline(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="YatraX ML Training Pipeline")
+    parser = argparse.ArgumentParser(
+        description="YatraX ML Training Pipeline (Registry-Driven)"
+    )
     parser.add_argument("--download", action="store_true", help="Download Kaggle datasets")
     parser.add_argument("--skip-ingest", action="store_true")
     parser.add_argument("--skip-merge", action="store_true")

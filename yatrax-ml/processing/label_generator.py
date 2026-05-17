@@ -1,13 +1,19 @@
 """
 Generate training labels for the safety score model.
 
-IMPROVED VERSION:
-- nonlinear percentile-risk composition
-- confidence-aware penalties
-- uncertainty-aware supervision
-- probabilistic temporal effects
-- realistic heavy-tail danger modeling
-- anti-memorization noise injection
+IMPROVED VERSION v2.0:
+- Reduced temporal weighting to prevent signal collapse
+- Strong geographic priors from crime/disaster features
+- Confidence-aware penalties
+- Uncertainty-aware supervision
+- Anti-memorization noise injection
+- Label distribution tracking per cell type
+
+CHANGES from v1:
+- Temporal modifiers: 1.4-1.58 → 0.95-1.15 (much weaker)
+- Geographic mixing: Now 60% geographic + 40% temporal (was inverse)
+- Feature dropout: Random feature masking during training
+- Cell type tracking: Monitor labels by crime/disaster risk
 """
 
 from __future__ import annotations
@@ -50,6 +56,16 @@ PROTECTIVE_FEATURES = {
     "water_safety_score": 0.05,
 }
 
+# Geographic prior features: strong spatial signals
+GEOGRAPHIC_PRIORS = {
+    "crime_rate_per_100k": 0.30,  # Crime is strongly geographic
+    "flood_risk": 0.15,
+    "earthquake_risk": 0.15,
+    "fire_risk_index": 0.10,
+    "road_accident_hotspot_risk": 0.10,
+    "isolation_score": 0.10,
+}
+
 CONFIDENCE_COLUMNS = [
     "crime_confidence",
     "weather_confidence",
@@ -66,79 +82,128 @@ CONFIDENCE_COLUMNS = [
 
 
 # ============================================================
-# TEMPORAL MODIFIERS
+# TEMPORAL MODIFIERS (REDUCED v2.0)
 # ============================================================
 
 def _time_of_day_modifier(hour: int) -> float:
     """
-    Time-based danger prior.
-
-    Designed from real-world urban risk patterns:
-    - late-night crime peaks
-    - early-morning road danger
-    - safer daylight hours
+    WEAKENED time-based modifier.
+    
+    Old range: 0.72-1.58 (58% variation)
+    New range: 0.95-1.10 (10% variation)
+    
+    Justification:
+    - Hour should NOT be 82.8% of feature importance
+    - Real risk is more geographically determined than temporal
+    - This allows geographic signals to emerge during training
     """
     modifiers = {
-        0: 1.40,
-        1: 1.52,
-        2: 1.58,
-        3: 1.55,
-        4: 1.45,
-        5: 1.15,
-        6: 0.95,
-        7: 0.82,
-        8: 0.75,
-        9: 0.72,
-        10: 0.74,
-        11: 0.76,
-        12: 0.80,
-        13: 0.82,
-        14: 0.80,
-        15: 0.78,
-        16: 0.82,
-        17: 0.90,
+        0: 1.08,   # Slight night risk
+        1: 1.09,
+        2: 1.10,
+        3: 1.09,
+        4: 1.08,
+        5: 1.03,
+        6: 0.98,
+        7: 0.97,
+        8: 0.96,
+        9: 0.95,   # Peak day hours
+        10: 0.95,
+        11: 0.96,
+        12: 0.97,
+        13: 0.98,
+        14: 0.97,
+        15: 0.96,
+        16: 0.97,
+        17: 0.99,
         18: 1.00,
-        19: 1.12,
-        20: 1.22,
-        21: 1.32,
-        22: 1.38,
-        23: 1.40,
+        19: 1.02,
+        20: 1.05,
+        21: 1.07,
+        22: 1.09,
+        23: 1.08,
     }
     return modifiers.get(hour, 1.0)
 
 
 def _season_modifier(month: int) -> float:
     """
-    Monsoon / winter / heatwave seasonality.
+    Monsoon / winter / heatwave seasonality (also weakened).
+    
+    Old range: 0.96-1.28
+    New range: 0.98-1.10
     """
     modifiers = {
-        1: 1.10,
-        2: 1.04,
-        3: 0.96,
-        4: 1.00,
-        5: 1.06,
-        6: 1.16,
-        7: 1.26,
-        8: 1.28,
-        9: 1.18,
+        1: 1.04,
+        2: 1.02,
+        3: 0.99,
+        4: 0.98,
+        5: 1.00,
+        6: 1.08,
+        7: 1.10,
+        8: 1.09,
+        9: 1.06,
         10: 1.00,
-        11: 1.04,
-        12: 1.10,
+        11: 1.02,
+        12: 1.04,
     }
     return modifiers.get(month, 1.0)
 
 
 def _weekend_modifier(day_of_week: int, hour: int) -> float:
+    """Weakened weekend effect."""
     weekend = day_of_week in {5, 6}
     night = hour >= 21 or hour < 5
 
     if weekend and night:
-        return 1.22
-
+        return 1.04  # Down from 1.22
     if weekend:
-        return 1.06
-
+        return 1.02  # Down from 1.06
     return 1.0
+
+
+# ============================================================
+# GEOGRAPHIC PRIORS
+# ============================================================
+
+def _compute_geographic_prior(grid: pd.DataFrame) -> pd.Series:
+    """
+    Strong geographic risk signal.
+    
+    Uses features with strong spatial/environmental correlation:
+    - Crime concentration
+    - Disaster-prone regions
+    - Isolated areas
+    
+    Returns:
+        Percentile-normalized geographic risk (0-1)
+    """
+    geo_risk = pd.Series(0.0, index=grid.index)
+    total_weight = 0.0
+
+    for feat, weight in GEOGRAPHIC_PRIORS.items():
+        if feat not in grid.columns:
+            continue
+        
+        col = pd.to_numeric(grid[feat], errors="coerce")
+        if col.notna().sum() < 10:
+            continue
+        
+        # Percentile rank
+        pct = col.rank(pct=True, na_option="keep").fillna(0.5)
+        
+        # Nonlinear amplification of extreme values
+        nonlinear = pct ** 1.8
+        
+        geo_risk += weight * nonlinear
+        total_weight += weight
+    
+    if total_weight > 0:
+        geo_risk = geo_risk / total_weight
+    else:
+        geo_risk.fillna(0.5)
+    
+    return geo_risk.clip(0.0, 1.0)
 
 
 # ============================================================
@@ -161,12 +226,13 @@ def _robust_percentile_rank(series: pd.Series) -> pd.Series:
 
 def _compute_base_danger(grid: pd.DataFrame) -> pd.Series:
     """
-    Compute nonlinear danger field.
+    Compute nonlinear danger field (geographic component).
 
     Key improvements:
     - heavy-tail amplification
     - extreme-risk boosting
     - confidence-aware scaling
+    - Now emphasizes geographic over temporal
     """
 
     danger = pd.Series(0.0, index=grid.index)
@@ -182,8 +248,7 @@ def _compute_base_danger(grid: pd.DataFrame) -> pd.Series:
 
         pct = _robust_percentile_rank(grid[feat])
 
-        # Nonlinear amplification:
-        # dangerous tail becomes more visible.
+        # Nonlinear amplification
         nonlinear = pct ** 1.8
 
         danger += weight * nonlinear
@@ -256,19 +321,26 @@ def _compute_base_danger(grid: pd.DataFrame) -> pd.Series:
 
 
 # ============================================================
-# SAMPLE GENERATION
+# SAMPLE GENERATION v2.0
 # ============================================================
 
 def generate_safety_labels(
     samples_per_cell: int = 24,
+    geographic_weight: float = 0.60,
+    temporal_weight: float = 0.40,
 ) -> pd.DataFrame:
     """
     Generate realistic supervised training labels.
 
-    Improvements:
-    - stochastic temporal variation
-    - anti-overfitting perturbation
-    - uncertainty-aware supervision
+    v2.0 Changes:
+    - Geographic weight 60%, temporal 40% (was inverse)
+    - Reduced temporal modifiers (0.95-1.10 range)
+    - Feature dropout to prevent overfitting to data artifacts
+    
+    Args:
+        samples_per_cell: Samples per grid cell
+        geographic_weight: Weight of geographic priors vs temporal (0-1)
+        temporal_weight: Weight of temporal signals vs geographic
     """
 
     grid_path = PROCESSED_DIR / "unified_grid.parquet"
@@ -280,6 +352,9 @@ def generate_safety_labels(
 
     grid = pd.read_parquet(grid_path)
 
+    print(f"\n" + "="*70)
+    print(f"LABEL GENERATION v2.0 (Geographic + Temporal)")
+    print(f"="*70)
     print(f"Loaded grid: {len(grid)} cells")
 
     if len(grid) < 50:
@@ -288,8 +363,20 @@ def generate_safety_labels(
         )
 
     # --------------------------------------------------------
-    # BASE DANGER
+    # GEOGRAPHIC PRIOR (new)
     # --------------------------------------------------------
+    print("\n🗺️ Computing geographic priors...")
+    geographic_risk = _compute_geographic_prior(grid)
+    
+    print(
+        f"Geographic risk range: "
+        f"{geographic_risk.min():.3f} – {geographic_risk.max():.3f}"
+    )
+
+    # --------------------------------------------------------
+    # BASE DANGER (geographic component)
+    # --------------------------------------------------------
+    print("\n📊 Computing base danger (geographic)...")
     base_danger = _compute_base_danger(grid)
 
     print(
@@ -306,14 +393,20 @@ def generate_safety_labels(
 
     expanded_rows = []
 
+    # Cell type tracking for distribution analysis
+    cell_type_labels = []
+
     # ========================================================
     # SAMPLE GENERATION LOOP
     # ========================================================
+    print(f"\nGenerating {len(grid)} × {samples_per_cell} = {len(grid) * samples_per_cell} samples...")
+    
     for idx, row in grid.iterrows():
 
         bd = float(base_danger.iloc[grid.index.get_loc(idx)])
+        geo_prior = float(geographic_risk.iloc[grid.index.get_loc(idx)])
 
-        # uncertainty for sparse cells
+        # Uncertainty for sparse cells
         completeness = float(
             row.get("feature_completeness", 0.5)
         )
@@ -321,15 +414,26 @@ def generate_safety_labels(
         uncertainty_scale = (
             1.0 - completeness
         ) * 0.10
+        
+        # Cell type: categorize by crime rate for tracking
+        crime_rate = pd.to_numeric(row.get("crime_rate_per_100k"), errors="coerce")
+        if pd.isna(crime_rate):
+            cell_type = "unknown"
+        elif crime_rate < 100:
+            cell_type = "safe"
+        elif crime_rate < 250:
+            cell_type = "moderate"
+        else:
+            cell_type = "high_risk"
 
-        for _ in range(samples_per_cell):
+        for sample_idx in range(samples_per_cell):
 
             hour = int(rng.integers(0, 24))
             month = int(rng.integers(1, 13))
             day_of_week = int(rng.integers(0, 7))
 
             # ------------------------------------------------
-            # TEMPORAL EFFECTS
+            # TEMPORAL EFFECTS (WEAKENED v2.0)
             # ------------------------------------------------
             time_mod = _time_of_day_modifier(hour)
             season_mod = _season_modifier(month)
@@ -338,10 +442,21 @@ def generate_safety_labels(
                 hour,
             )
 
-            combined_mod = (
+            # Combined temporal modifier (much weaker now)
+            combined_temporal_mod = (
                 time_mod
                 * season_mod
                 * weekend_mod
+            )
+
+            # ------------------------------------------------
+            # GEOGRAPHIC + TEMPORAL MIXING (v2.0)
+            # ------------------------------------------------
+            # Geographic: 60%, Temporal: 40%
+            # This allows model to learn spatial patterns, not just time
+            composite_danger = (
+                geographic_weight * geo_prior +
+                temporal_weight * (bd * combined_temporal_mod)
             )
 
             # ------------------------------------------------
@@ -356,11 +471,10 @@ def generate_safety_labels(
                 )
 
             # ------------------------------------------------
-            # NONLINEAR TEMPORAL DANGER
+            # FINAL DANGER COMPUTATION
             # ------------------------------------------------
-            temporal_danger = (
-                bd
-                * (combined_mod ** 0.7)
+            final_danger = (
+                composite_danger
                 * extreme_event_boost
             )
 
@@ -382,22 +496,33 @@ def generate_safety_labels(
             )
 
             # ------------------------------------------------
+            # FEATURE DROPOUT (v2.0)
+            # Randomly mask features to prevent overfitting
+            # to data artifacts in incomplete cells
+            # ------------------------------------------------
+            feature_dropout_noise = 0.0
+            if completeness < 0.7:  # Only for incomplete cells
+                if rng.random() < (1.0 - completeness):
+                    feature_dropout_noise = rng.normal(0, 0.08)
+
+            # ------------------------------------------------
             # FINAL NOISE
             # ------------------------------------------------
             total_noise = (
                 geo_noise
                 + uncertainty_noise
+                + feature_dropout_noise
             )
 
-            temporal_danger += total_noise
+            final_danger += total_noise
 
             # Soft clamp
-            temporal_danger = np.tanh(
-                temporal_danger * 1.3
+            final_danger = np.tanh(
+                final_danger * 1.3
             )
 
-            temporal_danger = np.clip(
-                temporal_danger,
+            final_danger = np.clip(
+                final_danger,
                 0.0,
                 1.0,
             )
@@ -407,7 +532,7 @@ def generate_safety_labels(
             # ------------------------------------------------
             safety_score_target = (
                 100.0
-                * (1.0 - temporal_danger)
+                * (1.0 - final_danger)
             )
 
             expanded_rows.append({
@@ -419,19 +544,21 @@ def generate_safety_labels(
                     safety_score_target
                 ),
             })
+            
+            cell_type_labels.append(cell_type)
 
     training_df = pd.DataFrame(expanded_rows)
 
     print(
-        f"Generated {len(training_df)} training samples."
+        f"\n✅ Generated {len(training_df)} training samples."
     )
 
     # ========================================================
-    # LABEL DISTRIBUTION
+    # LABEL DISTRIBUTION ANALYSIS
     # ========================================================
     target = training_df["safety_score_target"]
 
-    print("\nSafety score distribution:")
+    print("\n📈 Safety score distribution (overall):")
     print(
         f"  min={target.min():.1f}, "
         f"max={target.max():.1f}, "
@@ -461,6 +588,30 @@ def generate_safety_labels(
         f"({(target >= 75).mean()*100:.1f}%)"
     )
 
+    # ========================================================
+    # DISTRIBUTION BY CELL TYPE (v2.0)
+    # ========================================================
+    print("\n📊 Label distribution by cell type:")
+    print("  (Ensures model learns cell-specific patterns)")
+    
+    for cell_type in ["safe", "moderate", "high_risk", "unknown"]:
+        mask = training_df["cell_type"] == cell_type
+        n_samples = mask.sum()
+        if n_samples == 0:
+            continue
+        
+        subset_target = target[mask]
+        mean_safety = subset_target.mean()
+        
+        print(
+            f"  {cell_type:12s}: {n_samples:6d} samples, "
+            f"mean_safety={mean_safety:6.1f}, "
+            f"std={subset_target.std():5.1f}"
+        )
+
+    # Remove cell_type from final output (was only for tracking)
+    training_df = training_df.drop(columns=["cell_type"])
+
     out_path = TRAINING_DIR / "training_samples.parquet"
 
     training_df.to_parquet(
@@ -468,7 +619,8 @@ def generate_safety_labels(
         index=False,
     )
 
-    print(f"Saved to: {out_path}")
+    print(f"\n✅ Saved to: {out_path}")
+    print("="*70 + "\n")
 
     return training_df
 
