@@ -93,3 +93,5 @@ danger_model.pkl
 __pycache__/
 *.py[cod]
 yatrax-ml/punjab/data/
+punjab/data/raw/
+punjab/data/shrug/
