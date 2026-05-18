@@ -46,6 +46,19 @@ from utils import (
 
 
 # ============================================================
+# River Stretch → District Mapping
+# ============================================================
+# Maps water pollution monitoring stretches to their corresponding districts
+
+RIVER_DISTRICT_MAP = {
+    "Rupnagar to Harika Bridge": "Roopnagar",
+    "Mubarakpur to Sardulgarh": "Sangrur",
+    "Sultanpur Lodhi to Conf to Beas": "Kapurthala",
+    "Along Mukerian": "Pathankot",
+}
+
+
+# ============================================================
 # 1. Forest Cover
 # ============================================================
 
@@ -106,7 +119,23 @@ def load_water_pollution() -> pd.DataFrame:
             np.where(df["bod_mg_l"] >= 10, 40, 15)
         )
     )
-    return df
+    
+    # Map river stretches to districts
+    df["district"] = df["River Stretch"].map(RIVER_DISTRICT_MAP)
+    
+    # Aggregate by district (multiple river stretches per district)
+    summary = (
+        df.dropna(subset=["district"])
+        .groupby("district", as_index=False)
+        .agg({
+            "bod_mg_l": "max",
+            "water_risk_score": "max",
+            "water_pollution_severity": lambda x: x.mode()[0] if len(x.mode()) > 0 else "UNKNOWN",
+        })
+    )
+    
+    print(f"Water pollution mapped shape: {summary.shape}")
+    return summary
 
 
 # ============================================================
@@ -156,12 +185,48 @@ def load_protected_areas() -> pd.DataFrame:
 def build_environment_master(
     forest:    pd.DataFrame,
     protected: pd.DataFrame,
+    water:     pd.DataFrame,
 ) -> pd.DataFrame:
 
-    master = forest.merge(protected, on="district", how="left")
+    # ============================================================
+    # Create Full Punjab District Base
+    # ============================================================
+    # Start with ALL 22 Punjab districts to prevent silent data loss
+    
+    master = pd.DataFrame({
+        "district": list(DISTRICT_CENTROIDS.keys())
+    })
+    
+    # Merge all layers onto full district base using left join
+    master = (
+        master
+        .merge(forest, on="district", how="left")
+        .merge(protected, on="district", how="left")
+        .merge(
+            water[["district", "bod_mg_l", "water_risk_score", "water_pollution_severity"]],
+            on="district",
+            how="left"
+        )
+    )
 
-    master["protected_area_ha"]    = master["protected_area_ha"].fillna(0)
+    # ============================================================
+    # Handle Missing Values
+    # ============================================================
+    
+    # Ecological data: missing means zero (no forest/protected area/scrub in that district)
+    for col in ["forest_pct", "scrub_area", "protected_area_ha"]:
+        master[col] = master[col].fillna(0)
+    
+    # Categorical features
     master["protected_zone_risk"]  = master["protected_zone_risk"].fillna("LOW")
+    
+    # Water pollution: missing means no pollution monitoring (safe fallback)
+    master["bod_mg_l"]             = master["bod_mg_l"].fillna(0)
+    master["water_risk_score"]     = master["water_risk_score"].fillna(20)
+    master["water_pollution_severity"] = master["water_pollution_severity"].fillna("LOW")
+    
+    # Add coordinates for all districts
+    master = add_coordinates(master)
 
     # ============================================================
     # Environmental Intelligence Scoring
@@ -219,7 +284,8 @@ def save(df: pd.DataFrame) -> None:
 def run() -> pd.DataFrame:
     forest    = load_forest()
     protected = load_protected_areas()
-    master    = build_environment_master(forest, protected)
+    water     = load_water_pollution()
+    master    = build_environment_master(forest, protected, water)
     save(master)
     return master
 

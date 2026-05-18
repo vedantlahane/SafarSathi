@@ -110,7 +110,110 @@ def score_master(master: pd.DataFrame) -> pd.DataFrame:
         + master["environment_risk_score"] * 0.10
     )
 
+    # ============================================================
+    # Urban/Institutional Resilience Buffer
+    # ============================================================
+    # CRITICAL INSIGHT:
+    # Tourist safety is NOT just "absence of incidents"
+    # It is: "danger adjusted by resilience capacity"
+    #
+    # Urban districts naturally have more activity (accidents, crime)
+    # BUT ALSO more capacity (hospitals, infrastructure, response)
+    #
+    # This buffer prevents unfair penalization of urban centers
+    # where high incident density is offset by high institutional strength.
+    
+    _ensure_numeric(master, "healthcare_access_score", fallback=50.0)
+    _ensure_numeric(master, "basic_infra_score", fallback=50.0)
+    _ensure_numeric(master, "women_empowerment_score", fallback=50.0)
+    _ensure_numeric(master, "transport_accessibility_score", fallback=50.0)
+    
+    # Build resilience from institutional capacity
+    master["resilience_buffer"] = (
+        normalize_0_100(master["healthcare_access_score"]) * 0.4
+        + normalize_0_100(master["basic_infra_score"]) * 0.3
+        + normalize_0_100(master["women_empowerment_score"]) * 0.2
+        + normalize_0_100(master["transport_accessibility_score"]) * 0.1
+    )
+    
+    # Reduce raw risk by resilience offset (25% of buffer strength)
+    # This means: strong infrastructure can mitigate up to 25 points of risk
+    master["tourist_safety_risk"] = (
+        master["tourist_safety_risk"]
+        - master["resilience_buffer"] * 0.25
+    )
+    
+    # Ensure risk remains in valid [0, 100] range
+    master["tourist_safety_risk"] = master["tourist_safety_risk"].clip(0, 100)
+
     master["tourist_safety_score"] = 100 - master["tourist_safety_risk"]
+    
+    # ============================================================
+    # Feature Contribution Audit
+    # ============================================================
+    # CRITICAL FOR TRANSPARENCY:
+    # Show exactly how much each factor contributes to final score.
+    # Helps identify feature dominance and unrealistic weighting.
+    
+    master["crime_contribution"] = (
+        master["crime_risk_score"] * 0.40
+    )
+    
+    master["accident_contribution"] = (
+        master["accident_risk_score"] * 0.30
+    )
+    
+    master["social_contribution"] = (
+        master["social_vulnerability_score"] * 0.20
+    )
+    
+    master["environment_contribution"] = (
+        master["environment_risk_score"] * 0.10
+    )
+    
+    master["resilience_contribution"] = (
+        master["resilience_buffer"] * 0.25  # How much resilience reduced risk
+    )
+    
+    # ============================================================
+    # Confidence Layer
+    # ============================================================
+    # NOT all districts should be treated equally.
+    # Some have sparse data, weak coverage, or low-confidence estimates.
+    # This layer flags which rankings are trustworthy.
+    
+    _ensure_numeric(master, "accident_confidence", fallback="MEDIUM")
+    
+    # Calculate data completeness (how many non-missing numeric features)
+    numeric_cols = master.select_dtypes(include=np.number).columns
+    master["feature_completeness"] = (
+        master[numeric_cols].notna().sum(axis=1) / len(numeric_cols) * 100
+    )
+    
+    # Overall confidence based on:
+    # - accident data confidence (HIGH/MEDIUM/LOW)
+    # - feature completeness (% of non-missing features)
+    # - accident volume (more data = more confidence)
+    
+    accident_conf_weight = master["accident_confidence"].map({
+        "HIGH": 3.0,
+        "MEDIUM": 2.0,
+        "LOW": 1.0,
+        "UNKNOWN": 1.5
+    }).fillna(2.0)
+    
+    master["overall_confidence"] = (
+        accident_conf_weight * 25
+        + (master["feature_completeness"] / 100) * 75
+    )
+    
+    # Confidence categories
+    master["confidence_level"] = pd.cut(
+        master["overall_confidence"],
+        bins=[0, 50, 75, 100],
+        labels=["LOW_CONFIDENCE", "MEDIUM_CONFIDENCE", "HIGH_CONFIDENCE"]
+    )
+    
     return master
 
 
@@ -147,6 +250,10 @@ def explain_risk(row: pd.Series) -> str:
 def add_explainability(master: pd.DataFrame) -> pd.DataFrame:
     master["risk_explanation"] = master.apply(explain_risk, axis=1)
     master["district_rank"] = master["tourist_safety_score"].rank(ascending=False, method="dense")
+    
+    # Add confidence indicator to ranking output
+    master["ranking_note"] = master["confidence_level"].astype(str)
+    
     return master
 
 

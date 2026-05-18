@@ -24,6 +24,7 @@ import pandas as pd
 from utils import (
     HEALTH_DIR,
     CLEAN_DIR,
+    DISTRICT_CENTROIDS,
     safe_read_csv,
     safe_float,
     canonical_district,
@@ -149,6 +150,24 @@ def build_social_master(nfhs: pd.DataFrame) -> pd.DataFrame:
                      "healthcare_access_score"]
     )
 
+    # ============================================================
+    # Ensure Full District Coverage
+    # ============================================================
+    # Start with all 22 Punjab districts to prevent data loss
+    
+    full_base = pd.DataFrame({
+        "district": list(DISTRICT_CENTROIDS.keys())
+    })
+    
+    # Merge NFHS data onto full district base
+    transposed = full_base.merge(transposed, on="district", how="left")
+    
+    # Fill missing districts with median values
+    numeric_cols = transposed.select_dtypes(include='number').columns
+    for col in numeric_cols:
+        transposed[col] = transposed[col].fillna(transposed[col].median())
+    
+    # Add coordinates for all districts
     transposed = add_coordinates(transposed)
 
     print(f"Social master shape: {transposed.shape}")

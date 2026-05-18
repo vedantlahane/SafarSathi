@@ -15,7 +15,7 @@ from pathlib import Path
 # Base Paths
 # ============================================================
 
-BASE_DIR  = Path("/content/drive/MyDrive/yatrax-ml/punjab")
+BASE_DIR  = Path("C:/Users/Admin/Desktop/YatraX/punjab")
 RAW_DIR   = BASE_DIR / "data" / "raw"
 CLEAN_DIR = BASE_DIR / "data" / "clean"
 
@@ -204,6 +204,9 @@ def normalize_0_100(series: pd.Series) -> pd.Series:
     
     This prevents single outliers from dominating the scale on small datasets
     (e.g., 22 districts). Uses 5th-95th percentile range instead of raw min-max.
+    
+    IMPORTANT: For final scoring, we compress the range to 20-80 to reflect
+    realistic district safety differences (moderate, not extreme).
     """
     s = pd.to_numeric(series, errors="coerce")
     
@@ -223,10 +226,15 @@ def normalize_0_100(series: pd.Series) -> pd.Series:
     if denom == 0:
         return pd.Series([50.0] * len(s), index=s.index)
     
-    # Scale to 0-100
+    # Scale to 0-100 first
     normalized = ((s_clipped - lower) / denom * 100).clip(0, 100)
     
-    return normalized
+    # CALIBRATION FIX: Compress to 20-80 range for realism
+    # Real-world district safety differences are usually moderate, not extreme
+    # This prevents ranking aggression and makes scores more interpretable
+    compressed = 20 + normalized * 0.60
+    
+    return compressed
 
 
 # ============================================================
