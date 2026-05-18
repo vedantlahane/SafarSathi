@@ -15,7 +15,7 @@ from pathlib import Path
 # Base Paths
 # ============================================================
 
-BASE_DIR  = Path("C:/Users/Admin/Desktop/YatraX/punjab")
+BASE_DIR  = Path("/content/drive/MyDrive/yatrax-ml/punjab")
 RAW_DIR   = BASE_DIR / "data" / "raw"
 CLEAN_DIR = BASE_DIR / "data" / "clean"
 
@@ -199,42 +199,10 @@ def add_coordinates(df: pd.DataFrame, district_col: str = "district") -> pd.Data
 # ============================================================
 
 def normalize_0_100(series: pd.Series) -> pd.Series:
-    """
-    Normalize series to 0-100 scale using robust percentile clipping.
-    
-    This prevents single outliers from dominating the scale on small datasets
-    (e.g., 22 districts). Uses 5th-95th percentile range instead of raw min-max.
-    
-    IMPORTANT: For final scoring, we compress the range to 20-80 to reflect
-    realistic district safety differences (moderate, not extreme).
-    """
-    s = pd.to_numeric(series, errors="coerce")
-    
-    # Handle all-NaN case
-    if s.isna().all():
-        return pd.Series([50.0] * len(s), index=s.index)
-    
-    # Use 5th and 95th percentiles as bounds (robust to outliers)
-    lower = s.quantile(0.05)
-    upper = s.quantile(0.95)
-    
-    # Clip values to percentile range
-    s_clipped = s.clip(lower, upper)
-    
-    # Handle zero-denominator case
-    denom = upper - lower
-    if denom == 0:
-        return pd.Series([50.0] * len(s), index=s.index)
-    
-    # Scale to 0-100 first
-    normalized = ((s_clipped - lower) / denom * 100).clip(0, 100)
-    
-    # CALIBRATION FIX: Compress to 20-80 range for realism
-    # Real-world district safety differences are usually moderate, not extreme
-    # This prevents ranking aggression and makes scores more interpretable
-    compressed = 20 + normalized * 0.60
-    
-    return compressed
+    mn, mx = series.min(), series.max()
+    if mn == mx:
+        return pd.Series([50.0] * len(series), index=series.index)
+    return (series - mn) / (mx - mn) * 100
 
 
 # ============================================================
