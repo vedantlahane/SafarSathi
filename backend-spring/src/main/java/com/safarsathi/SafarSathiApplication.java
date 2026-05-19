@@ -1,12 +1,12 @@
-package com.safarsathi;
+package com.YatraX;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SafarSathiApplication {
+public class YatraXApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SafarSathiApplication.class, args);
+        SpringApplication.run(YatraXApplication.class, args);
     }
 }

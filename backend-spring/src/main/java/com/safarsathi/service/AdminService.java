@@ -1,9 +1,9 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.PoliceDepartment;
-import com.safarsathi.repository.PoliceDepartmentRepository;
-import com.safarsathi.security.JwtService;
-import com.safarsathi.util.HashUtil;
+import com.YatraX.entity.PoliceDepartment;
+import com.YatraX.repository.PoliceDepartmentRepository;
+import com.YatraX.security.JwtService;
+import com.YatraX.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

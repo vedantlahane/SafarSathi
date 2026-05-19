@@ -127,7 +127,7 @@ Test-Endpoint "POST /api/action/sos/:id (pre-alert)" `
 # ── 6. Risk Zones (public) ───────────────────────────────────────────────────
 Write-Host "`n[6] Risk Zones" -ForegroundColor White
 
-Test-Endpoint "GET /api/risk-zones" -Url "$BASE/api/risk-zones" -Headers $AUTH | Out-Null
+Test-Endpoint "GET /api/risk-zones/active" -Url "$BASE/api/risk-zones/active" -Headers $AUTH | Out-Null
 
 # ── 7. Police Stations (public) ──────────────────────────────────────────────
 Write-Host "`n[7] Police Stations" -ForegroundColor White

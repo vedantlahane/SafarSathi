@@ -32,7 +32,7 @@ export function LoginScreen({ onLogin, error }: LoginScreenProps) {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-xl mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">SafarSathi Admin</h1>
+          <h1 className="text-2xl font-bold text-white">YatraX Admin</h1>
           <p className="text-slate-400 mt-1">Sign in to access the control panel</p>
         </div>
 
@@ -53,7 +53,7 @@ export function LoginScreen({ onLogin, error }: LoginScreenProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@safarsathi.in"
+                placeholder="admin@YatraX.in"
                 className="bg-white/10 border-white/20 text-white placeholder:text-slate-500 focus:border-blue-500"
                 required
               />
@@ -90,7 +90,7 @@ export function LoginScreen({ onLogin, error }: LoginScreenProps) {
 
           <div className="mt-6 pt-6 border-t border-white/10 text-center">
             <p className="text-xs text-slate-500">
-              Protected by SafarSathi Security
+              Protected by YatraX Security
             </p>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function LoginScreen({ onLogin, error }: LoginScreenProps) {
         {/* Demo Credentials */}
         <div className="mt-4 p-3 bg-white/5 border border-white/10 rounded-lg text-center">
           <p className="text-xs text-slate-400">
-            <span className="text-slate-500">Demo:</span> admin@safarsathi.in / admin123
+            <span className="text-slate-500">Demo:</span> admin@YatraX.in / admin123
           </p>
         </div>
       </div>

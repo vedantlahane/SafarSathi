@@ -1,7 +1,7 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.entity.PoliceDepartment;
-import com.safarsathi.service.PoliceService;
+import com.YatraX.entity.PoliceDepartment;
+import com.YatraX.service.PoliceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

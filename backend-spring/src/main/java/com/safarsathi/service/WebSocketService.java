@@ -1,6 +1,6 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.Alert;
+import com.YatraX.entity.Alert;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 

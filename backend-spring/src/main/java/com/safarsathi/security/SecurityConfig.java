@@ -1,4 +1,4 @@
-package com.safarsathi.security;
+package com.YatraX.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,7 +30,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
-     * Vercel production URL, e.g. https://safarsathi.vercel.app
+     * Vercel production URL, e.g. https://YatraX.vercel.app
      * Set via the FRONTEND_URL environment variable in Cloud Run.
      * Leave unset (or empty) for local development — falls back to wildcard.
      */

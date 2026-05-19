@@ -19,9 +19,9 @@ export type AdminSession = {
   state: string;
 };
 
-const STORAGE_KEY = "safarSathiSession";
-const SESSION_STORAGE_KEY = "safarSathiSession:temp";
-const ADMIN_STORAGE_KEY = "safarSathiAdminSession";
+const STORAGE_KEY = "YatraXSession";
+const SESSION_STORAGE_KEY = "YatraXSession:temp";
+const ADMIN_STORAGE_KEY = "YatraXAdminSession";
 let cachedSession: TouristSession | null = null;
 let cachedAdminSession: AdminSession | null = null;
 const listeners = new Set<() => void>();

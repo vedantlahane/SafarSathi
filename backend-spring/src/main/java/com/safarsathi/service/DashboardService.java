@@ -1,8 +1,8 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.dto.*;
-import com.safarsathi.entity.*;
-import com.safarsathi.repository.*;
+import com.YatraX.dto.*;
+import com.YatraX.entity.*;
+import com.YatraX.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;

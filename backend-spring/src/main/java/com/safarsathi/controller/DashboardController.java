@@ -1,8 +1,8 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.dto.AdminDashboardResponse;
-import com.safarsathi.dto.TouristDashboardResponse;
-import com.safarsathi.service.DashboardService;
+import com.YatraX.dto.AdminDashboardResponse;
+import com.YatraX.dto.TouristDashboardResponse;
+import com.YatraX.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

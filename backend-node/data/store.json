@@ -3,7 +3,7 @@
     {
       "id": "ca4b21f2-ce17-49ef-a829-57d063d20163",
       "name": "Aarav Sharma",
-      "email": "tourist@safarsathi.in",
+      "email": "tourist@YatraX.in",
       "phone": "+91-9876543211",
       "passportNumber": "IND1234567",
       "dateOfBirth": "1993-04-12",
@@ -49,8 +49,8 @@
   "policeDepartments": [
     {
       "id": "3fca1135-0969-4709-a3f4-387987599b0d",
-      "name": "SafarSathi Control Center",
-      "email": "admin@safarsathi.in",
+      "name": "YatraX Control Center",
+      "email": "admin@YatraX.in",
       "passwordHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
       "departmentCode": "SS-CONTROL",
       "latitude": 26.1445,

@@ -7,7 +7,7 @@ export async function connectDatabase(): Promise<boolean> {
   try {
     console.log("🔄 Connecting to MongoDB...");
     await mongoose.connect(env.mongoUri, {
-      dbName: "safarsathi",
+      dbName: "YatraX",
       serverSelectionTimeoutMS: 10000,
       connectTimeoutMS: 10000,
     });

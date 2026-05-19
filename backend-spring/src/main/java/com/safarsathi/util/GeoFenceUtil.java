@@ -1,4 +1,4 @@
-package com.safarsathi.util;
+package com.YatraX.util;
 
 /**
  * Geo-fencing utilities: Haversine distance, radius checks, deviation detection.

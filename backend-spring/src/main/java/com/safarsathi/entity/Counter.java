@@ -1,4 +1,4 @@
-package com.safarsathi.entity;
+package com.YatraX.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

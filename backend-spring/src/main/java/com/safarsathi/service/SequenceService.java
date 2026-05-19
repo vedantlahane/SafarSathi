@@ -1,7 +1,7 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.Counter;
-import com.safarsathi.repository.CounterRepository;
+import com.YatraX.entity.Counter;
+import com.YatraX.repository.CounterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;

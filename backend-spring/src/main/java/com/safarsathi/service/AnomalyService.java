@@ -1,10 +1,10 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.Alert;
-import com.safarsathi.entity.RiskZone;
-import com.safarsathi.entity.Tourist;
-import com.safarsathi.repository.TouristRepository;
-import com.safarsathi.util.GeoFenceUtil;
+import com.YatraX.entity.Alert;
+import com.YatraX.entity.RiskZone;
+import com.YatraX.entity.Tourist;
+import com.YatraX.repository.TouristRepository;
+import com.YatraX.util.GeoFenceUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,6 @@
 """
 Generate dense synthetic training data focused on LPU, Haveli, Khajurla, Kajrula,
-Phagwara, and Jalandhar. Run once — appends to SafarSathi_Punjab_Data.csv.
+Phagwara, and Jalandhar. Run once — appends to YatraX_Punjab_Data.csv.
 """
 import csv
 import random
@@ -153,7 +153,7 @@ for zone in ZONES:
             "Danger_Score": danger,
         })
 
-csv_path = "E:/GitHub/SafarSathi/SafarSathi_Punjab_Data.csv"
+csv_path = "E:/GitHub/YatraX/YatraX_Punjab_Data.csv"
 with open(csv_path, "a", newline="") as f:
     writer = csv.DictWriter(
         f,

@@ -150,6 +150,7 @@ export type RiskZone = {
 
 export type HospitalResponse = {
     hospitalId: number;
+    id?: number;
     name: string;
     latitude: number;
     longitude: number;

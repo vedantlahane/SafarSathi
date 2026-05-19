@@ -1,6 +1,6 @@
-package com.safarsathi.repository;
+package com.YatraX.repository;
 
-import com.safarsathi.entity.BlockchainLog;
+import com.YatraX.entity.BlockchainLog;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;

@@ -136,7 +136,7 @@ export function AdminPanel({
         state: res.admin.state
       });
       setAuthError("");
-      toast.success("Welcome to SafarSathi Admin");
+      toast.success("Welcome to YatraX Admin");
     } catch (err: any) {
       setAuthError(err.message);
       toast.error(err.message);

@@ -1,7 +1,7 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.entity.Hospital;
-import com.safarsathi.repository.HospitalRepository;
+import com.YatraX.entity.Hospital;
+import com.YatraX.repository.HospitalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

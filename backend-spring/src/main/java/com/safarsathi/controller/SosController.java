@@ -1,7 +1,7 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.dto.LocationRequest;
-import com.safarsathi.service.SosService;
+import com.YatraX.dto.LocationRequest;
+import com.YatraX.service.SosService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

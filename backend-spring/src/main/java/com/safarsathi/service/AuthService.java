@@ -1,11 +1,11 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.dto.TouristRegistrationRequest;
-import com.safarsathi.dto.TouristResponse;
-import com.safarsathi.entity.Tourist;
-import com.safarsathi.repository.TouristRepository;
-import com.safarsathi.security.JwtService;
-import com.safarsathi.util.HashUtil;
+import com.YatraX.dto.TouristRegistrationRequest;
+import com.YatraX.dto.TouristResponse;
+import com.YatraX.entity.Tourist;
+import com.YatraX.repository.TouristRepository;
+import com.YatraX.security.JwtService;
+import com.YatraX.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +31,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final BlockchainService blockchainService;
     private final AnomalyService anomalyService;
-    private final com.safarsathi.repository.AlertRepository alertRepository;
-    private final com.safarsathi.repository.BlockchainLogRepository blockchainLogRepository;
-    private final com.safarsathi.repository.NotificationRepository notificationRepository;
+    private final com.YatraX.repository.AlertRepository alertRepository;
+    private final com.YatraX.repository.BlockchainLogRepository blockchainLogRepository;
+    private final com.YatraX.repository.NotificationRepository notificationRepository;
 
     /**
      * Register a new tourist.

@@ -1,8 +1,8 @@
-package com.safarsathi.config;
+package com.YatraX.config;
 
-import com.safarsathi.entity.*;
-import com.safarsathi.repository.*;
-import com.safarsathi.util.HashUtil;
+import com.YatraX.entity.*;
+import com.YatraX.repository.*;
+import com.YatraX.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -56,7 +56,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         Tourist tourist = Tourist.builder()
                 .id("ca4b21f2-ce17-49ef-a829-57d063d20163")
                 .name("Aarav Sharma")
-                .email("tourist@safarsathi.in")
+                .email("tourist@YatraX.in")
                 .phone("+91-9876543211")
                 .passportNumber("IND1234567")
                 .dateOfBirth("1993-04-12")
@@ -218,8 +218,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 // Admin / Control Center — must stay
                 PoliceDepartment.builder()
                         .id("ss-control-center-001")
-                        .name("SafarSathi Control Center")
-                        .email("admin@safarsathi.in")
+                        .name("YatraX Control Center")
+                        .email("admin@YatraX.in")
                         .passwordHash(passwordEncoder.encode("admin123"))
                         .departmentCode("SS-CONTROL")
                         .latitude(31.2554).longitude(75.7048)

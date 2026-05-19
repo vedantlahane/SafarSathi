@@ -1,6 +1,6 @@
--- Sample admin user for SafarSathi system
+-- Sample admin user for YatraX system
 -- This creates a police department admin user with credentials:
--- Email: admin@safarsathi.in
+-- Email: admin@YatraX.in
 -- Password: admin123
 
 INSERT INTO police_departments (
@@ -18,8 +18,8 @@ INSERT INTO police_departments (
     is_active
 ) VALUES (
     UNHEX(REPLACE(UUID(), '-', '')),
-    'SafarSathi Control Center',
-    'admin@safarsathi.in',
+    'YatraX Control Center',
+    'admin@YatraX.in',
     '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', -- SHA-256 hash of 'admin123'
     'SS-CONTROL',
     26.1445,

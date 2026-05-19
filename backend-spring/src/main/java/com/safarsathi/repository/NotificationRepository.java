@@ -1,6 +1,6 @@
-package com.safarsathi.repository;
+package com.YatraX.repository;
 
-import com.safarsathi.entity.Notification;
+import com.YatraX.entity.Notification;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;

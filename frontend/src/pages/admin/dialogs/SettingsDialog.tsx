@@ -34,7 +34,7 @@ interface SettingsData {
   language: string;
 }
 
-const STORAGE_KEY = "safarsathi-admin-settings";
+const STORAGE_KEY = "YatraX-admin-settings";
 const DEFAULT_SETTINGS: SettingsData = {
   alertThreshold: 5,
   refreshInterval: 30,

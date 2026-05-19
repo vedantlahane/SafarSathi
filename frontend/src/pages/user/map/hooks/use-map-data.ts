@@ -27,6 +27,40 @@ import {
 export function useMapData() {
   const session = useSession();
 
+  // ── Permission & User Interaction state for geolocation ──
+  const [permissionState, setPermissionState] = useState<PermissionState | "unknown">("unknown");
+  const [userInteracted, setUserInteracted] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.permissions || !navigator.permissions.query) {
+      setPermissionState("prompt");
+      return;
+    }
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        setPermissionState(status.state);
+        status.onchange = () => {
+          setPermissionState(status.state);
+        };
+      })
+      .catch(() => {
+        setPermissionState("prompt");
+      });
+  }, []);
+
+  useEffect(() => {
+    const handleInteraction = () => {
+      setUserInteracted(true);
+    };
+    window.addEventListener("pointerdown", handleInteraction, { once: true });
+    window.addEventListener("keydown", handleInteraction, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handleInteraction);
+      window.removeEventListener("keydown", handleInteraction);
+    };
+  }, []);
+
   // ── Core position state ──
   const [position] = useState<[number, number]>(MAP_DEFAULTS.center);
   const [userPosition, setUserPosition] = useState<[number, number] | null>(
@@ -309,7 +343,7 @@ export function useMapData() {
         );
         setHospitals(
           hosp.map((h) => ({
-            id: h.hospitalId,
+            id: h.hospitalId ?? h.id,
             position: [h.latitude, h.longitude] as [number, number],
             name: h.name,
             contact: h.contact,
@@ -335,6 +369,8 @@ export function useMapData() {
 
   // ── Continuous GPS tracking via watchPosition ──
   useEffect(() => {
+    if (!userInteracted) return;
+    if (permissionState !== "granted") return;
     if (!navigator.geolocation) return;
 
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -373,7 +409,7 @@ export function useMapData() {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [session?.touristId]);
+  }, [session?.touristId, permissionState, userInteracted]);
 
   // ── Online/offline detection ──
   useEffect(() => {
@@ -412,6 +448,7 @@ export function useMapData() {
     if (!navigator.geolocation) return;
     hapticFeedback("light");
     setLocating(true);
+    setUserInteracted(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const p: [number, number] = [
@@ -422,6 +459,7 @@ export function useMapData() {
         setAccuracy(pos.coords.accuracy);
         setFlyTo(p);
         setLocating(false);
+        setPermissionState("granted");
       },
       () => {
         setLocating(false);

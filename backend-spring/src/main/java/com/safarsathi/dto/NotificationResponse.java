@@ -1,4 +1,4 @@
-package com.safarsathi.dto;
+package com.YatraX.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

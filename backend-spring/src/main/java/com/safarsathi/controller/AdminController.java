@@ -1,12 +1,12 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.entity.Alert;
-import com.safarsathi.entity.PoliceDepartment;
-import com.safarsathi.entity.Tourist;
-import com.safarsathi.service.AdminService;
-import com.safarsathi.service.AlertService;
-import com.safarsathi.service.AuthService;
-import com.safarsathi.service.BlockchainService;
+import com.YatraX.entity.Alert;
+import com.YatraX.entity.PoliceDepartment;
+import com.YatraX.entity.Tourist;
+import com.YatraX.service.AdminService;
+import com.YatraX.service.AlertService;
+import com.YatraX.service.AuthService;
+import com.YatraX.service.BlockchainService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

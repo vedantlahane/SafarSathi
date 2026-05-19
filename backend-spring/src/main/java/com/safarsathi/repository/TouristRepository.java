@@ -1,6 +1,6 @@
-package com.safarsathi.repository;
+package com.YatraX.repository;
 
-import com.safarsathi.entity.Tourist;
+import com.YatraX.entity.Tourist;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

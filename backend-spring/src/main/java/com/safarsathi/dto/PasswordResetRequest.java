@@ -1,4 +1,4 @@
-package com.safarsathi.dto;
+package com.YatraX.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

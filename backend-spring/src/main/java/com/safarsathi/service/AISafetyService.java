@@ -1,4 +1,4 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;

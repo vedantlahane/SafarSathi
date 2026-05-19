@@ -1,7 +1,7 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.BlockchainLog;
-import com.safarsathi.repository.BlockchainLogRepository;
+import com.YatraX.entity.BlockchainLog;
+import com.YatraX.repository.BlockchainLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;

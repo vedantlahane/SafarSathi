@@ -1,10 +1,10 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.dto.ApiResponse;
-import com.safarsathi.entity.RiskZone;
-import com.safarsathi.service.AISafetyService;
-import com.safarsathi.service.RiskZoneService;
-import com.safarsathi.util.GeoFenceUtil;
+import com.YatraX.dto.ApiResponse;
+import com.YatraX.entity.RiskZone;
+import com.YatraX.service.AISafetyService;
+import com.YatraX.service.RiskZoneService;
+import com.YatraX.util.GeoFenceUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;

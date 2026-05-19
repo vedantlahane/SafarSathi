@@ -1,6 +1,6 @@
-package com.safarsathi.repository;
+package com.YatraX.repository;
 
-import com.safarsathi.entity.PoliceDepartment;
+import com.YatraX.entity.PoliceDepartment;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

@@ -5,7 +5,7 @@ import type { Hospital, NewHospital } from '../../shared/db/schema.js';
 
 function toPublic(h: Hospital) {
   const { geom, ...rest } = h;
-  return rest;
+  return { ...rest, hospitalId: h.id };
 }
 
 export const hospitalService = {

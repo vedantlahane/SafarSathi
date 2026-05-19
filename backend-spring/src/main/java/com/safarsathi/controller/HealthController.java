@@ -1,4 +1,4 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;

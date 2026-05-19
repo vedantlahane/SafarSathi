@@ -1,7 +1,7 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.Notification;
-import com.safarsathi.repository.NotificationRepository;
+import com.YatraX.entity.Notification;
+import com.YatraX.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;

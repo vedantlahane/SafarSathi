@@ -16,7 +16,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
       },
       workbox: {
@@ -32,8 +32,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'apple-touch-icon.svg', 'masked-icon.svg'],
       manifest: {
-        name: 'SafarSathi',
-        short_name: 'SafarSathi',
+        name: 'YatraX',
+        short_name: 'YatraX',
         description: 'A safe travel companion app',
         theme_color: '#ffffff',
         background_color: '#ffffff',

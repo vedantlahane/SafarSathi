@@ -1,8 +1,8 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.dto.NotificationResponse;
-import com.safarsathi.entity.Notification;
-import com.safarsathi.service.NotificationService;
+import com.YatraX.dto.NotificationResponse;
+import com.YatraX.entity.Notification;
+import com.YatraX.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,6 @@
-package com.safarsathi.repository;
+package com.YatraX.repository;
 
-import com.safarsathi.entity.RiskZone;
+import com.YatraX.entity.RiskZone;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

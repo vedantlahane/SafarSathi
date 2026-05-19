@@ -76,7 +76,7 @@ export default function AdminLayout() {
                 <Shield className="h-4 w-4 text-white" />
               </div>
               <div className="hidden sm:block">
-                <div className="text-sm font-bold text-slate-900 tracking-tight leading-none">SafarSathi</div>
+                <div className="text-sm font-bold text-slate-900 tracking-tight leading-none">YatraX</div>
                 <div className="text-[9px] text-slate-400 uppercase tracking-widest font-semibold mt-0.5">Admin Console</div>
               </div>
             </div>

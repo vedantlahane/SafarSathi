@@ -7,8 +7,16 @@ export const UpdateProfileSchema = z
     dateOfBirth: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
     address: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
     gender: z.preprocess(
-      (v) => (v === '' ? undefined : v),
-      z.enum(['Male', 'Female', 'Non-binary', 'Prefer not to say']).optional()
+      (v) => {
+        if (v === '' || v === undefined || v === null) return undefined;
+        const str = String(v).trim().toLowerCase();
+        if (str === 'male') return 'Male';
+        if (str === 'female') return 'Female';
+        if (str === 'non-binary' || str === 'other') return 'Non-binary';
+        if (str === 'prefer not to say' || str === 'none') return 'Prefer not to say';
+        return String(v).trim();
+      },
+      z.string().min(1).max(50).optional()
     ),
     nationality: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
     emergencyContact: z

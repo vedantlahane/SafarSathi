@@ -419,7 +419,7 @@ export async function seedDatabase() {
   await createTourist({
     _id: "ca4b21f2-ce17-49ef-a829-57d063d20163",
     name: "Aarav Sharma",
-    email: "tourist@safarsathi.in",
+    email: "tourist@YatraX.in",
     phone: "+91-9876543211",
     passportNumber: "IND1234567",
     dateOfBirth: "1993-04-12",
@@ -474,8 +474,8 @@ export async function seedDatabase() {
   await PoliceDepartmentModel.insertMany([
     {
       _id: randomUUID(),
-      name: "SafarSathi Control Center",
-      email: "admin@safarsathi.in",
+      name: "YatraX Control Center",
+      email: "admin@YatraX.in",
       passwordHash: await hashPassword("admin123"),
       departmentCode: "SS-CONTROL",
       latitude: 26.1445,

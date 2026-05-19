@@ -1,4 +1,4 @@
-package com.safarsathi.util;
+package com.YatraX.util;
 
 import org.junit.jupiter.api.Test;
 

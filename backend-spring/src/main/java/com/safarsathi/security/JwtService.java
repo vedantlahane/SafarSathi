@@ -1,4 +1,4 @@
-package com.safarsathi.security;
+package com.YatraX.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

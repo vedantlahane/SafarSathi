@@ -1,7 +1,7 @@
-package com.safarsathi.controller;
+package com.YatraX.controller;
 
-import com.safarsathi.dto.*;
-import com.safarsathi.service.AuthService;
+import com.YatraX.dto.*;
+import com.YatraX.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -7,7 +7,7 @@ from shapely.geometry import Point
 import os
 from pathlib import Path
 
-app = FastAPI(title="SafarSathi Geospatial ML Engine", version="10.0.0")
+app = FastAPI(title="YatraX Geospatial ML Engine", version="10.0.0")
 
 # ==========================================
 # 1. LOCAL MAP LOADING

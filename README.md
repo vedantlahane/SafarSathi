@@ -1,4 +1,4 @@
-# SafarSathi (current state)
+# YatraX (current state)
 
 Tourist-safety prototype with a Spring Boot backend and a mobile-first React UI. The notes below reflect the present codebase (December 2025) rather than the earlier vision statements.
 
@@ -16,7 +16,7 @@ Tourist-safety prototype with a Spring Boot backend and a mobile-first React UI.
 ## Project layout
 
 ```
-SafarSathi/
+YatraX/
 ├── frontend/              # Vite + React app
 │   └── src/
 │       ├── pages/         # Home, Map, Identity (stub), Settings (stub)
@@ -24,7 +24,7 @@ SafarSathi/
 │       ├── components/ui  # Shadcn-style UI primitives
 │       └── assets, lib
 ├── backend/               # Spring Boot service
-│   ├── src/main/java/com/safarsathi/backendapi
+│   ├── src/main/java/com/YatraX/backendapi
 │   │   ├── controllers    # Auth, Admin, RiskZone, SOS, etc.
 │   │   ├── models         # Tourist, PoliceDepartment, RiskZone, Alert, BlockchainLog
 │   │   └── services       # Business logic layers
@@ -35,15 +35,15 @@ SafarSathi/
 
 ## Database
 
-- Connection config lives in [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties). Default values: database `safrsathi_db`, user `safarsathi_app`, password `teejnam`, MySQL driver, `spring.jpa.hibernate.ddl-auto=update`, port 8081.
+- Connection config lives in [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties). Default values: database `safrsathi_db`, user `YatraX_app`, password `teejnam`, MySQL driver, `spring.jpa.hibernate.ddl-auto=update`, port 8081.
 - Create the database and user, then import seeds:
 	1) Create DB/user:
 		 - `CREATE DATABASE safrsathi_db;`
-		 - `CREATE USER 'safarsathi_app'@'%' IDENTIFIED BY 'teejnam';`
-		 - `GRANT ALL PRIVILEGES ON safrsathi_db.* TO 'safarsathi_app'@'%';`
+		 - `CREATE USER 'YatraX_app'@'%' IDENTIFIED BY 'teejnam';`
+		 - `GRANT ALL PRIVILEGES ON safrsathi_db.* TO 'YatraX_app'@'%';`
 	2) Load seeds (orders are interchangeable):
-		 - `mysql -u safarsathi_app -p safrsathi_db < backend/src/main/resources/data.sql`
-		 - `mysql -u safarsathi_app -p safrsathi_db < admin_setup.sql` (adds admin police rows; overlaps with data.sql for the main control center)
+		 - `mysql -u YatraX_app -p safrsathi_db < backend/src/main/resources/data.sql`
+		 - `mysql -u YatraX_app -p safrsathi_db < admin_setup.sql` (adds admin police rows; overlaps with data.sql for the main control center)
 
 ### Tables (JPA models)
 
@@ -55,8 +55,8 @@ SafarSathi/
 
 ### Seeded records (from data.sql)
 
-- Tourist login: email `tourist@safarsathi.in`, password `password123` (SHA-256 stored).
-- Police admin: email `admin@safarsathi.in`, password `admin123`; plus Dispur and Paltan Bazaar stations with the same password.
+- Tourist login: email `tourist@YatraX.in`, password `password123` (SHA-256 stored).
+- Police admin: email `admin@YatraX.in`, password `admin123`; plus Dispur and Paltan Bazaar stations with the same password.
 - Risk zones: Kamakhya Hill Restricted Belt (HIGH, 750m) and Deepor Beel Wildlife Buffer (MEDIUM, 1200m).
 
 ## Backend API surface (implemented controllers)

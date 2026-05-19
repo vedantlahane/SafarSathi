@@ -1,7 +1,7 @@
-package com.safarsathi.service;
+package com.YatraX.service;
 
-import com.safarsathi.entity.RiskZone;
-import com.safarsathi.repository.RiskZoneRepository;
+import com.YatraX.entity.RiskZone;
+import com.YatraX.repository.RiskZoneRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
