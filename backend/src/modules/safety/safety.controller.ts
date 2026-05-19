@@ -5,9 +5,15 @@ import type { SafetyCheckQuery } from './safety.schema.js';
 export const safetyController = {
   async check(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const query = ((req as Record<string, unknown>).parsedQuery ?? req.query) as unknown as SafetyCheckQuery;
+      const query = ((req as unknown as Record<string, unknown>).parsedQuery ?? req.query) as unknown as SafetyCheckQuery;
       const data = await safetyService.check(query);
-      res.json({ ok: true, data });
+      res.json({
+        ok: true,
+        safety_score: data.overallScore,
+        status: data.status,
+        source: data.scoringSource,
+        data,
+      });
     } catch (e) {
       next(e);
     }

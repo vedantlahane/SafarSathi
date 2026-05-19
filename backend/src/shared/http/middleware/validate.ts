@@ -15,7 +15,7 @@ export const validate =
         // req.query is a getter-only property — cannot reassign directly.
         // For body and params we can assign; for query we attach to req as parsed data.
         if (source === 'query') {
-            (req as Record<string, unknown>)['parsedQuery'] = result.data;
+            (req as unknown as Record<string, unknown>)['parsedQuery'] = result.data;
         } else {
             (req as unknown as Record<Source, T>)[source] = result.data;
         }

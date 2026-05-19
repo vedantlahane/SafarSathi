@@ -5,6 +5,7 @@ import { hospitalRepo } from '../hospital/hospital.repo.js';
 import { alertRepo } from '../alert/alert.repo.js';
 import { estimateDriveSeconds } from './safety.phase1.js';
 import type { RiskZoneLevel } from './safety.phase1.js';
+import type { SafetyCheckQuery } from './safety.schema.js';
 
 const ZONE_RADIUS_KM = 2;
 const ALERT_RADIUS_KM = 3;
@@ -30,7 +31,7 @@ const LEVEL_ORDER: Record<RiskZoneLevel, number> = {
   LOW: 1,
 };
 
-export async function gatherContext(lat: number, lng: number): Promise<SafetyContext> {
+export async function gatherContext(lat: number, lng: number, query?: SafetyCheckQuery): Promise<any> {
   const [zonesNearby, nearestPolice, hospitalDist, activeAlerts] = await Promise.all([
     riskZoneRepo.nearby({ lat, lng, radiusKm: ZONE_RADIUS_KM }).catch(() => []),
     policeRepo.findNearestActive(lat, lng).catch(() => undefined),
@@ -44,7 +45,7 @@ export async function gatherContext(lat: number, lng: number): Promise<SafetyCon
     if (!worstZone || LEVEL_ORDER[lvl] > LEVEL_ORDER[worstZone]) worstZone = lvl;
   }
 
-  return {
+  const ctx: SafetyContext = {
     inRiskZone: zonesNearby.length > 0,
     riskZoneLevel: worstZone,
     activeAlertsNearby: activeAlerts.length,
@@ -52,4 +53,13 @@ export async function gatherContext(lat: number, lng: number): Promise<SafetyCon
     policeETASeconds: nearestPolice ? estimateDriveSeconds(nearestPolice.distanceMeters) : 30 * 60,
     hospitalETASeconds: hospitalDist != null ? estimateDriveSeconds(hospitalDist) : 60 * 60,
   };
+
+  const district: string | undefined = nearestPolice?.district || undefined;
+
+  if (query) {
+    const { safetyService } = await import('./safety.service.js');
+    return safetyService.synthesize(query, { ...ctx, district });
+  }
+
+  return { ...ctx, district };
 }
