@@ -81,7 +81,22 @@ export async function request<T>(
     if (response.status === 204) {
         return null as T;
     }
-    return (await response.json()) as T;
+    const json = await response.json();
+    if (json && typeof json === "object") {
+        const ok = (json as any).ok ?? (json as any).success;
+        if ((ok === true || ok === "true") && !("token" in json)) {
+            if ("data" in json) {
+                return (json as any).data as T;
+            }
+            if ("user" in json) {
+                return (json as any).user as T;
+            }
+            if ("alert" in json) {
+                return (json as any).alert as T;
+            }
+        }
+    }
+    return json as T;
 }
 
 export function getApiBaseUrl() {

@@ -86,6 +86,7 @@ export const alertRepo = {
         resolvedAt: alerts.resolvedAt,
         cancelledAt: alerts.cancelledAt,
         responseTimeMs: alerts.responseTimeMs,
+        assignedUnit: alerts.assignedUnit,
         createdAt: alerts.createdAt,
         updatedAt: alerts.updatedAt,
         distanceMeters: sql<number>`ST_Distance(${alerts.geom}, ${point})::float8`,

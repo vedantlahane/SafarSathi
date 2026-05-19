@@ -30,6 +30,13 @@ touristSelfRouter.post(
   touristController.changePassword,
 );
 
+touristSelfRouter.delete(
+  '/me',
+  requireAuth,
+  generalLimiter,
+  touristController.deleteMe,
+);
+
 export const touristAdminRouter: Router = Router();
 
 touristAdminRouter.get(

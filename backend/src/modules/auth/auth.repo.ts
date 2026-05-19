@@ -39,4 +39,9 @@ export const authRepo = {
       .returning();
     return row;
   },
+
+  async findByIdHash(hash: string): Promise<Tourist | undefined> {
+    const [row] = await db.select().from(tourists).where(eq(tourists.idHash, hash)).limit(1);
+    return row;
+  },
 };

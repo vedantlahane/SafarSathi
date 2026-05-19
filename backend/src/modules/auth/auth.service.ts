@@ -136,4 +136,43 @@ export const authService = {
 
     return { acknowledged: true };
   },
+
+  async verifyDigitalId(hash: string) {
+    const { db } = await import('../../shared/db/client.js');
+    const { blockchainLogs } = await import('../../shared/db/schema.js');
+    const { eq, desc } = await import('drizzle-orm');
+
+    const tourist = await authRepo.findByIdHash(hash);
+    if (!tourist) {
+      return {
+        valid: false,
+        name: '',
+        passport_partial: '',
+        id_expiry: '',
+        blockchain_status: 'INVALID',
+      };
+    }
+
+    const [log] = await db
+      .select()
+      .from(blockchainLogs)
+      .where(eq(blockchainLogs.touristId, tourist.id))
+      .orderBy(desc(blockchainLogs.createdAt))
+      .limit(1);
+
+    const blockchain_status = log?.status ?? 'NOT_ANCHORED';
+
+    const p = tourist.passportNumber || '';
+    const passport_partial = p.length > 4
+      ? `${p.slice(0, 2)}***${p.slice(-2)}`
+      : p;
+
+    return {
+      valid: true,
+      name: tourist.name,
+      passport_partial,
+      id_expiry: tourist.idExpiry ? tourist.idExpiry.toISOString() : '',
+      blockchain_status,
+    };
+  },
 };

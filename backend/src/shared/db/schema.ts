@@ -204,6 +204,7 @@ export const alerts = pgTable(
     resolvedAt: timestamp({ withTimezone: true }),
     cancelledAt: timestamp({ withTimezone: true }),
     responseTimeMs: integer(),
+    assignedUnit: text('assigned_unit'),
 
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

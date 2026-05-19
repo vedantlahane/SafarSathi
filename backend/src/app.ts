@@ -7,9 +7,11 @@ import { pinoHttp } from 'pino-http';
 import { env } from './shared/config/env.js';
 import { logger } from './shared/logger/index.js';
 import { errorHandler } from './shared/http/middleware/error-handler.js';
+import { requireAuth, requireRole } from './shared/http/middleware/auth.js';
 
 // Existing modules
 import authRoutes from './modules/auth/auth.routes.js';
+import { authController } from './modules/auth/auth.controller.js';
 import { touristSelfRouter, touristAdminRouter } from './modules/tourist/tourist.routes.js';
 import { alertActionRouter, alertAdminRouter } from './modules/alert/alert.routes.js';
 import { riskZonePublicRouter, riskZoneAdminRouter } from './modules/risk-zone/risk-zone.routes.js';
@@ -22,7 +24,7 @@ import notificationRoutes from './modules/notification/notification.routes.js';
 import { advisoryPublicRouter, advisoryAdminRouter } from './modules/advisory/advisory.routes.js';
 import broadcastRoutes from './modules/broadcast/broadcast.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
-import { dashboardAdminRouter, dashboardTouristRouter } from './modules/dashboard/dashboard.routes.js';
+import { dashboardAdminRouter, dashboardTouristRouter, touristDashboardCompatRouter } from './modules/dashboard/dashboard.routes.js';
 
 export function buildApp() {
   const app = express();
@@ -83,6 +85,10 @@ export function buildApp() {
   // ── Dashboard ─────────────────────────────────────────────────────────────
   app.use('/api/admin/dashboard', dashboardAdminRouter);
   app.use('/api/dashboard', dashboardTouristRouter);
+  app.use('/api/tourist', touristDashboardCompatRouter);
+
+  // ── ID Verification ──────────────────────────────────────────────────────
+  app.get('/api/admin/id/verify', requireAuth, requireRole('admin'), authController.verifyDigitalId);
 
   app.use(errorHandler);
   return app;

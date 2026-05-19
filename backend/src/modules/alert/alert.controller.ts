@@ -42,7 +42,13 @@ export const alertController = {
   async cancelAlert(req: Request, res: Response): Promise<void> {
     const { alertId } = req.params as unknown as AlertIdParam;
     const updated = await alertService.cancelAlert(alertId);
-    res.json({ ok: true, alert: updated });
+    res.json({
+      ok: true,
+      alertId: updated.id,
+      status: 'CANCELLED',
+      alertStatus: updated.status,
+      alert: updated,
+    });
   },
 
   async getStatus(req: Request, res: Response): Promise<void> {
@@ -75,6 +81,14 @@ export const alertController = {
     const { alertId } = req.params as unknown as AlertIdParam;
     const { status } = req.body as UpdateStatusInput;
     const updated = await alertService.updateStatus(alertId, status, req.user.sub);
+    res.json({ ok: true, alert: updated });
+  },
+
+  async adminAssignUnit(req: Request, res: Response): Promise<void> {
+    const { alertId } = req.params as unknown as AlertIdParam;
+    const { assignedUnit } = req.body as { assignedUnit: string };
+    if (!assignedUnit) throw new AppError('BAD_REQUEST', 'Missing assignedUnit in body');
+    const updated = await alertService.assignUnit(alertId, assignedUnit);
     res.json({ ok: true, alert: updated });
   },
 };

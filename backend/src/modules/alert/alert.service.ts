@@ -18,6 +18,7 @@ type AlertView = {
   lat: number | null;
   lng: number | null;
   createdAt: string;
+  assignedUnit?: string | null;
 };
 
 function toView(a: Alert): AlertView {
@@ -31,6 +32,7 @@ function toView(a: Alert): AlertView {
     lat: a.latitude,
     lng: a.longitude,
     createdAt: a.createdAt.toISOString(),
+    assignedUnit: a.assignedUnit,
   };
 }
 
@@ -173,7 +175,8 @@ export const alertService = {
       status: 'CANCELLED',
       cancelledAt: new Date(),
     });
-    if (updated) broadcastAlert(toView(updated));
+    if (!updated) throw new AppError('BAD_REQUEST', 'Failed to update alert');
+    broadcastAlert(toView(updated));
     return updated;
   },
 
@@ -236,7 +239,18 @@ export const alertService = {
     if (newStatus === 'CANCELLED') patch.cancelledAt = new Date();
 
     const updated = await alertRepo.update(alertId, patch);
-    if (updated) broadcastAlert(toView(updated));
+    if (!updated) throw new AppError('BAD_REQUEST', 'Failed to update alert status');
+    broadcastAlert(toView(updated));
+    return updated;
+  },
+
+  async assignUnit(alertId: number, unit: string) {
+    const alert = await alertRepo.findById(alertId);
+    if (!alert) throw new AppError('NOT_FOUND', 'Alert not found');
+
+    const updated = await alertRepo.update(alertId, { assignedUnit: unit });
+    if (!updated) throw new AppError('BAD_REQUEST', 'Failed to assign unit');
+    broadcastAlert(toView(updated));
     return updated;
   },
 };

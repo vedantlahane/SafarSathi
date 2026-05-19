@@ -74,3 +74,9 @@ alertAdminRouter.post(
   validate(UpdateStatusSchema),
   alertController.adminUpdateStatus,
 );
+
+alertAdminRouter.post(
+  '/:alertId/assign',
+  validate(AlertIdParamSchema, 'params'),
+  alertController.adminAssignUnit,
+);

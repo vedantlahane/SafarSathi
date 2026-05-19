@@ -38,4 +38,10 @@ export const touristController = {
     const result = await touristService.list(query);
     res.json({ ok: true, ...result });
   },
+
+  async deleteMe(req: Request, res: Response): Promise<void> {
+    if (!req.user) throw new AppError('UNAUTHORIZED', 'Not authenticated');
+    const result = await touristService.deleteProfile(req.user.sub);
+    res.json({ ok: true, ...result });
+  },
 };

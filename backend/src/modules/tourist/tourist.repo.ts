@@ -47,4 +47,9 @@ export const touristRepo = {
 
     return { items, total: totalRow[0]?.count ?? 0 };
   },
+
+  async deleteById(id: string): Promise<boolean> {
+    const res = await db.delete(tourists).where(eq(tourists.id, id)).returning();
+    return res.length > 0;
+  },
 };

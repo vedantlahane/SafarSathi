@@ -66,9 +66,15 @@ def evaluate_location(req: LocationRequest):
         }
         
     zone_base = base_match.iloc[0]
-    district = str(zone_base.get('district_name', 'Unknown')).title()
-    village = str(zone_base.get('village_name', 'Unknown')).title()
-    base_viirs = float(zone_base.get('viirs_annual_mean', 0.0))
+    
+    raw_district = zone_base.get('district_name')
+    district = "Unknown" if pd.isna(raw_district) else str(raw_district).title()
+    
+    raw_village = zone_base.get('village_name')
+    village = "Unknown" if pd.isna(raw_village) else str(raw_village).title()
+    
+    raw_viirs = zone_base.get('viirs_annual_mean', 0.0)
+    base_viirs = 0.0 if pd.isna(raw_viirs) else float(raw_viirs)
     
     # ---------------------------------------------------------
     # STEP 2: INFRASTRUCTURE CONTEXT
@@ -95,8 +101,11 @@ def evaluate_location(req: LocationRequest):
         }
     else:
         zone_scored = scored_match.iloc[0]
+        raw_status = zone_scored.get('village_status', 'NORMAL')
+        status_val = "NORMAL" if pd.isna(raw_status) else str(raw_status)
+        
         ml_payload = {
-            "status": str(zone_scored.get('village_status', 'NORMAL')),
+            "status": status_val,
             "is_anomaly": bool(zone_scored.get('hazard_zone', 0) == 1)
         }
         

@@ -15,6 +15,13 @@
       "when": 1778172478240,
       "tag": "0001_solid_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779224882519,
+      "tag": "0002_optimal_maddog",
+      "breakpoints": true
     }
   ]
 }

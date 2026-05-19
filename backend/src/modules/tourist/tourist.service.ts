@@ -84,4 +84,10 @@ export const touristService = {
     if (!t) throw new AppError('NOT_FOUND', 'Tourist not found');
     return toPublic(t);
   },
+
+  async deleteProfile(touristId: string) {
+    const deleted = await touristRepo.deleteById(touristId);
+    if (!deleted) throw new AppError('NOT_FOUND', 'Tourist not found');
+    return { acknowledged: true, message: 'Account deleted successfully' };
+  },
 };

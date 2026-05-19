@@ -38,4 +38,11 @@ export const authController = {
     const result = await authService.confirmPasswordReset(req.body as PasswordResetConfirmInput);
     res.json({ ok: true, ...result });
   },
+
+  async verifyDigitalId(req: Request, res: Response): Promise<void> {
+    const hash = req.query.hash as string;
+    if (!hash) throw new AppError('BAD_REQUEST', 'Missing query parameter hash');
+    const result = await authService.verifyDigitalId(hash);
+    res.json({ ok: true, ...result });
+  },
 };

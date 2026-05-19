@@ -18,3 +18,6 @@ dashboardAdminRouter.get(
 
 // GET /api/dashboard  (own dashboard)
 dashboardTouristRouter.get('/', requireAuth, dashboardController.tourist);
+
+export const touristDashboardCompatRouter = Router();
+touristDashboardCompatRouter.get('/:touristId/dashboard', requireAuth, dashboardController.tourist);
