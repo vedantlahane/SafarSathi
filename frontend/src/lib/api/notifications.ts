@@ -12,22 +12,22 @@ export interface NotificationDto {
   sourceTab?: "home" | "map" | "identity" | "settings";
 }
 
-export async function fetchNotifications(touristId: string) {
+export async function fetchNotifications(_touristId: string) {
   return request<NotificationDto[]>(
-    `/api/tourist/${encodeURIComponent(touristId)}/notifications`
+    `/api/notifications`
   );
 }
 
-export async function markNotificationRead(touristId: string, notificationId: string) {
+export async function markNotificationRead(_touristId: string, notificationId: string) {
   return request<{ acknowledged: boolean }>(
-    `/api/tourist/${encodeURIComponent(touristId)}/notifications/${encodeURIComponent(notificationId)}/read`,
+    `/api/notifications/${encodeURIComponent(notificationId)}/read`,
     { method: "POST" }
   );
 }
 
-export async function markAllNotificationsRead(touristId: string) {
+export async function markAllNotificationsRead(_touristId: string) {
   return request<{ acknowledged: boolean }>(
-    `/api/tourist/${encodeURIComponent(touristId)}/notifications/read-all`,
+    `/api/notifications/read-all`,
     { method: "POST" }
   );
 }

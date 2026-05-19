@@ -11,7 +11,11 @@ export const CreateHospitalSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   contact: z.string().min(3).max(200),
-  type: z.enum(['hospital', 'clinic', 'emergency_center', 'maternity', 'community_center']).default('hospital'),
+  type: z.preprocess((val) => {
+    const valid = ['hospital', 'clinic', 'emergency_center', 'maternity', 'community_center', 'pharmacy'];
+    if (typeof val === 'string' && valid.includes(val)) return val;
+    return 'hospital';
+  }, z.enum(['hospital', 'clinic', 'emergency_center', 'maternity', 'community_center', 'pharmacy']).default('hospital')),
   tier: z.string().optional(),
   emergency: z.boolean().default(false),
   city: z.string().min(1).max(100),

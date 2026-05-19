@@ -41,8 +41,8 @@ export async function fetchAdminDashboard() {
 /* ─── Alerts ───────────────────────────────────────────── */
 
 export async function fetchAdminAlerts() {
-    return request<
-        Array<{
+    const res = await request<{
+        items: Array<{
             id: number;
             touristId?: string;
             alertType: string;
@@ -58,8 +58,9 @@ export async function fetchAdminAlerts() {
             resolvedBy?: string;
             cancelledAt?: string;
             media?: string[];
-        }>
-    >("/api/admin/alerts/all");
+        }>;
+    }>("/api/admin/alerts/all");
+    return Array.isArray(res) ? res : (res?.items || []);
 }
 
 export async function resolveAlert(
@@ -83,8 +84,8 @@ export async function assignAlertUnit(alertId: number, unit: string) {
 /* ─── Tourists ─────────────────────────────────────────── */
 
 export async function fetchAdminTourists() {
-    return request<
-        Array<{
+    const res = await request<{
+        items: Array<{
             id: string;
             name: string;
             status?: string;
@@ -94,8 +95,9 @@ export async function fetchAdminTourists() {
             travelType?: string;
             speed?: number;
             heading?: number;
-        }>
-    >("/api/admin/tourists");
+        }>;
+    }>("/api/admin/tourists");
+    return Array.isArray(res) ? res : (res?.items || []);
 }
 
 /* ─── Risk Zones ───────────────────────────────────────── */
@@ -118,15 +120,18 @@ export async function updateAdminRiskZone(
     payload: Partial<RiskZone>
 ) {
     return request<RiskZone>(`/api/admin/risk-zones/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(payload),
     });
 }
 
 export async function toggleAdminRiskZone(id: number, active: boolean) {
     return request<RiskZone>(
-        `/api/admin/risk-zones/${id}/status?active=${active}`,
-        { method: "PATCH" }
+        `/api/admin/risk-zones/${id}/status`,
+        {
+            method: "PATCH",
+            body: JSON.stringify({ active }),
+        }
     );
 }
 
@@ -152,7 +157,7 @@ export async function updatePoliceDepartment(
     return request<PoliceDepartment>(
         `/api/admin/police/${encodeURIComponent(id)}`,
         {
-            method: "PUT",
+            method: "PATCH",
             body: JSON.stringify(payload),
         }
     );
@@ -186,7 +191,7 @@ export async function updateHospital(
     return request<HospitalResponse>(
         `/api/admin/hospitals/${encodeURIComponent(id)}`,
         {
-            method: "PUT",
+            method: "PATCH",
             body: JSON.stringify(payload),
         }
     );
@@ -227,7 +232,7 @@ export async function updateAdvisory(
     return request<TravelAdvisory>(
         `/api/admin/advisories/${encodeURIComponent(id)}`,
         {
-            method: "PUT",
+            method: "PATCH",
             body: JSON.stringify(payload),
         }
     );

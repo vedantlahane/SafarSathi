@@ -59,8 +59,7 @@ export const UpdateRiskZoneSchema = z
     centerLng: z.number().min(-180).max(180).optional(),
     radiusMeters: z.number().int().min(50).max(50_000).optional(),
     polygonCoordinates: z.array(latLngTuple).min(3).max(100).optional(),
-  })
-  .strict();
+  });
 export type UpdateRiskZoneInput = z.infer<typeof UpdateRiskZoneSchema>;
 
 export const ZoneIdParamSchema = z.object({

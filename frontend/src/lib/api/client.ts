@@ -72,10 +72,20 @@ export async function request<T>(
     });
 
     if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-            message || `Request failed with status ${response.status}`
-        );
+        let errMsg = "";
+        try {
+            // Clone response so we can try parsing both JSON and text safely
+            const clone = response.clone();
+            const json = await clone.json();
+            errMsg = json.message || json.error || `Request failed with status ${response.status}`;
+        } catch {
+            try {
+                errMsg = await response.text();
+            } catch {
+                errMsg = `Request failed with status ${response.status}`;
+            }
+        }
+        throw new Error(errMsg);
     }
 
     if (response.status === 204) {
@@ -93,6 +103,15 @@ export async function request<T>(
             }
             if ("alert" in json) {
                 return (json as any).alert as T;
+            }
+            if ("zones" in json) {
+                return (json as any).zones as T;
+            }
+            if ("hospitals" in json) {
+                return (json as any).hospitals as T;
+            }
+            if ("departments" in json) {
+                return (json as any).departments as T;
             }
         }
     }

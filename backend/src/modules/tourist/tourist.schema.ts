@@ -4,10 +4,13 @@ export const UpdateProfileSchema = z
   .object({
     name: z.string().min(1).max(200).optional(),
     phone: z.string().min(5).max(20).optional(),
-    dateOfBirth: z.string().optional(),
-    address: z.string().optional(),
-    gender: z.enum(['Male', 'Female', 'Non-binary', 'Prefer not to say']).optional(),
-    nationality: z.string().optional(),
+    dateOfBirth: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
+    address: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
+    gender: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.enum(['Male', 'Female', 'Non-binary', 'Prefer not to say']).optional()
+    ),
+    nationality: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
     emergencyContact: z
       .object({
         name: z.string().optional(),
@@ -15,11 +18,13 @@ export const UpdateProfileSchema = z
         relationship: z.string().optional(),
       })
       .optional(),
-    bloodType: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).optional(),
+    bloodType: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).optional()
+    ),
     allergies: z.array(z.string()).optional(),
     medicalConditions: z.array(z.string()).optional(),
-  })
-  .strict();
+  });
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 
 export const ChangePasswordSchema = z.object({

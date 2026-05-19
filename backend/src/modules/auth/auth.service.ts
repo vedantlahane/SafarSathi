@@ -75,9 +75,11 @@ export const authService = {
     const tourist = await authRepo.create(insert);
 
     return {
+      touristId: tourist.id,
       token: issueToken(tourist.id),
       user: toPublic(tourist),
       qrContent: `/api/admin/id/verify?hash=${tourist.idHash}`,
+      qr_content: `/api/admin/id/verify?hash=${tourist.idHash}`,
     };
   },
 
@@ -89,9 +91,11 @@ export const authService = {
     if (!ok) throw new AppError('UNAUTHORIZED', 'Invalid email or password');
 
     return {
+      touristId: tourist.id,
       token: issueToken(tourist.id),
       user: toPublic(tourist),
       qrContent: `/api/admin/id/verify?hash=${tourist.idHash}`,
+      qr_content: `/api/admin/id/verify?hash=${tourist.idHash}`,
     };
   },
 

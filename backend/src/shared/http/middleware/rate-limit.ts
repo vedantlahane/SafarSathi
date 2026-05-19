@@ -19,7 +19,11 @@ const make = (windowMs: number, max: number) =>
     message: { ok: false, code: 'RATE_LIMITED', message: 'Too many requests' },
   });
 
-export const authLimiter     = make(60_000, 5);    // 5 / min
-export const sosLimiter      = make(60_000, 3);    // 3 / min
-export const locationLimiter = make(60_000, 60);   // 60 / min
-export const generalLimiter  = make(60_000, 100);  // 100 / min
+import { env } from '../../config/env.js';
+
+const isDev = env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
+
+export const authLimiter     = make(60_000, isDev ? 1000 : 5);    // 5 / min
+export const sosLimiter      = make(60_000, isDev ? 1000 : 3);    // 3 / min
+export const locationLimiter = make(60_000, isDev ? 10000 : 60);   // 60 / min
+export const generalLimiter  = make(60_000, isDev ? 10000 : 100);  // 100 / min

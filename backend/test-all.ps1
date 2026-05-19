@@ -169,21 +169,18 @@ if ($dash) {
 # ── 12. Admin register ───────────────────────────────────────────────────────
 Write-Host "`n[12] Admin (Police)" -ForegroundColor White
 
-$adminReg = Test-Endpoint "POST /api/admin/register" `
-    -Method POST -Url "$BASE/api/admin/register" `
-    -Body '{"name":"Guwahati Central","email":"admin@yatrax.dev","password":"Admin@1234","departmentCode":"GHY001","latitude":26.1445,"longitude":91.7362,"city":"Guwahati","district":"Kamrup Metro","state":"Assam","contactNumber":"+913612345678","stationType":"headquarters"}'
-
-$ADMIN_TOKEN = $adminReg.token
-$ADMIN_AUTH  = @{ Authorization = "Bearer $ADMIN_TOKEN" }
-Write-Host "       admin token: $($ADMIN_TOKEN.Substring(0,20))..." -ForegroundColor DarkGray
-
-# Admin login
+# Admin login directly (register is seed-only)
 $adminLogin = Test-Endpoint "POST /api/admin/login" `
     -Method POST -Url "$BASE/api/admin/login" `
     -Body '{"email":"admin@yatrax.dev","password":"Admin@1234"}'
-if ($adminLogin.token) {
+if ($adminLogin -and $adminLogin.token) {
     $ADMIN_TOKEN = $adminLogin.token
     $ADMIN_AUTH  = @{ Authorization = "Bearer $ADMIN_TOKEN" }
+    Write-Host "       admin token: $($ADMIN_TOKEN.Substring(0,20))..." -ForegroundColor DarkGray
+} else {
+    $ADMIN_TOKEN = ""
+    $ADMIN_AUTH  = @{}
+    Write-Host "       Failed to login as admin" -ForegroundColor Red
 }
 
 # ── 13. Admin Alerts ─────────────────────────────────────────────────────────
@@ -195,7 +192,7 @@ Test-Endpoint "GET /api/admin/alerts" `
 Test-Endpoint "GET /api/admin/alerts/active" `
     -Url "$BASE/api/admin/alerts/active" -Headers $ADMIN_AUTH | Out-Null
 
-Test-Endpoint "PATCH /api/admin/alerts/:id/status (ACKNOWLEDGED)" `
+Test-Endpoint "PATCH /api/admin/alerts/status" `
     -Method PATCH -Url "$BASE/api/admin/alerts/$ALERT_ID/status" `
     -Headers $ADMIN_AUTH `
     -Body '{"status":"ACKNOWLEDGED"}' | Out-Null
