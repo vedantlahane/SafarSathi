@@ -10,11 +10,22 @@ export interface Tourist {
   riskLevel: "low" | "medium" | "high" | "critical";
   location: { lat: number; lng: number } | null;
   address?: string;
-  emergencyContact?: { name: string; phone: string };
+  emergencyContact?: { name?: string; phone?: string; relationship?: string };
   status?: string;
   travelType?: string;
   speed?: number;
   heading?: number;
+  locationAccuracy?: number;
+  // Rich profile fields
+  nationality?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  bloodType?: string;
+  allergies?: string[];
+  medicalConditions?: string[];
+  safetyScore?: number;
+  idHash?: string;
+  idExpiry?: string;
 }
 
 export interface RiskZone {
@@ -37,7 +48,15 @@ export interface Alert {
   touristId?: string | null;
   touristName?: string | null;
   type: string;
-  status: "ACTIVE" | "PENDING" | "RESOLVED" | "CANCELLED" | "PRE_ALERT" | string;
+  status:
+    | "OPEN"
+    | "PENDING"
+    | "ACKNOWLEDGED"
+    | "RESOLVED"
+    | "CANCELLED"
+    | "DISMISSED"
+    | "PRE_ALERT"
+    | string;
   timestamp: string;
   message?: string | null;
   location: { lat: number; lng: number } | null;
@@ -195,9 +214,22 @@ export interface DeleteConfirmation {
   name: string;
 }
 
-export type AlertFilter = "all" | "active" | "pending" | "resolved" | "cancelled" | "pre_alert" | "sos" | "geofence";
+// ACTIVE statuses the backend actually sends: OPEN | ACKNOWLEDGED | PENDING
+export const ACTIVE_ALERT_STATUSES = ["OPEN", "ACKNOWLEDGED", "PENDING"] as const;
+
+export type AlertFilter =
+  | "all"
+  | "open"
+  | "active"
+  | "pending"
+  | "acknowledged"
+  | "resolved"
+  | "cancelled"
+  | "dismissed"
+  | "pre_alert"
+  | "sos"
+  | "geofence";
 export type TouristFilter = "all" | "online" | "offline" | "highrisk" | "high-risk" | "medium-risk" | "low-risk";
 export type ZoneFilter = "all" | "active" | "inactive" | "critical" | "high" | "medium" | "low";
 export type BroadcastType = "all" | "zone" | "district" | "emergency";
 export type AdminSection = "dashboard" | "alerts" | "tourists" | "zones" | "police" | "hospitals" | "advisories" | "auditlog";
-

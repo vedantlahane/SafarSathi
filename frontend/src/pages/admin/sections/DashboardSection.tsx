@@ -49,11 +49,11 @@ export function DashboardSection({
   const { stats, alerts = [], tourists = [], zones = [], policeUnits: police = [] } = data || {};
 
   const quickStats = useMemo(() => ({
-    activeAlerts: alerts.filter((a) => a.status === "ACTIVE").length,
+    activeAlerts: alerts.filter((a) => ["OPEN","ACKNOWLEDGED"].includes(a.status)).length,
     pendingAlerts: alerts.filter((a) => a.status === "PENDING").length,
     resolvedAlerts: alerts.filter((a) => a.status === "RESOLVED").length,
     onlineTourists: tourists.filter((t) => t.isActive).length,
-    highRiskTourists: tourists.filter((t) => t.riskLevel === "high").length,
+    highRiskTourists: tourists.filter((t) => t.riskLevel === "high" || t.riskLevel === "critical").length,
     activeZones: zones.filter((z) => z.isActive).length,
     criticalZones: zones.filter((z) => z.severity === "critical").length,
     activePolice: police.filter((p) => p.isActive).length,
@@ -77,7 +77,7 @@ export function DashboardSection({
         title: `${alert.type.replaceAll("_", " ")} Alert`,
         description: `${alert.touristName || "Unknown tourist"}${alert.assignedUnit ? ` → ${alert.assignedUnit}` : ""}`,
         timestamp: new Date(alert.timestamp),
-        severity: alert.status === "ACTIVE" ? "critical" : alert.status === "PENDING" ? "high" : "info",
+        severity: ["OPEN","ACKNOWLEDGED"].includes(alert.status) ? "critical" : alert.status === "PENDING" ? "high" : "info",
       });
     });
 

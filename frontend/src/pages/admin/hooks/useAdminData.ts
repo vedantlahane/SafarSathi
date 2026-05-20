@@ -43,24 +43,39 @@ import type {
 } from "../types";
 
 // Normalizers
-const normalizeTourist = (t: any): Tourist => ({
-  id: t.id || t._id,
-  name: t.name || "Unknown",
-  email: t.email || "",
-  phoneNumber: t.phone || t.phoneNumber || "",
-  passportNumber: t.passportNumber || "",
-  isActive: Boolean(t.isActive ?? t.active ?? (t.lastSeen && (Date.now() - new Date(t.lastSeen).getTime() < 300000))),
-  lastSeen: t.lastSeen || new Date().toISOString(),
-  riskScore: typeof t.safetyScore === 'number' ? (100 - t.safetyScore) : 0,
-  riskLevel: (100 - (t.safetyScore || 0)) > 80 ? "critical" : (100 - (t.safetyScore || 0)) > 60 ? "high" : (100 - (t.safetyScore || 0)) > 40 ? "medium" : "low",
-  location: (t.currentLat && t.currentLng) ? { lat: t.currentLat, lng: t.currentLng } : null,
-  address: t.address,
-  emergencyContact: typeof t.emergencyContact === 'string' ? JSON.parse(t.emergencyContact) : t.emergencyContact,
-  status: t.status,
-  travelType: t.travelType,
-  speed: t.speed,
-  heading: t.heading,
-});
+const normalizeTourist = (t: any): Tourist => {
+  const score = typeof t.safetyScore === 'number' ? t.safetyScore : 100;
+  const risk = 100 - score;
+  return {
+    id: t.id || t._id,
+    name: t.name || "Unknown",
+    email: t.email || "",
+    phoneNumber: t.phone || t.phoneNumber || "",
+    passportNumber: t.passportNumber || "",
+    isActive: Boolean(t.isActive ?? t.active ?? (t.lastSeen && (Date.now() - new Date(t.lastSeen).getTime() < 300_000))),
+    lastSeen: t.lastSeen || new Date().toISOString(),
+    safetyScore: score,
+    riskScore: risk,
+    riskLevel: risk > 80 ? "critical" : risk > 60 ? "high" : risk > 40 ? "medium" : "low",
+    location: (t.currentLat != null && t.currentLng != null) ? { lat: t.currentLat, lng: t.currentLng } : null,
+    locationAccuracy: t.locationAccuracy,
+    speed: t.speed,
+    heading: t.heading,
+    address: t.address,
+    emergencyContact: typeof t.emergencyContact === 'string' ? JSON.parse(t.emergencyContact) : t.emergencyContact,
+    status: t.status,
+    travelType: t.travelType,
+    // Rich profile fields
+    nationality: t.nationality,
+    gender: t.gender,
+    dateOfBirth: t.dateOfBirth,
+    bloodType: t.bloodType,
+    allergies: Array.isArray(t.allergies) ? t.allergies : undefined,
+    medicalConditions: Array.isArray(t.medicalConditions) ? t.medicalConditions : undefined,
+    idHash: t.idHash,
+    idExpiry: t.idExpiry,
+  };
+};
 
 const normalizeRiskZone = (z: any): RiskZone => ({
   id: z.zoneId || z.id,
@@ -188,14 +203,18 @@ export function useAdminData(isAuthenticated: boolean) {
         getAuditLogs(1, 50).catch(() => ({ items: [], total: 0, page: 1, pages: 1 })),
       ]);
 
+      const s = (dashData as any)?.stats;
       setData({
-        stats: dashData ? {
-          ...dashData,
-          riskZones: zonesData?.length || 0,
-          responseUnits: policeData?.length || 0,
-          activeTouristCount: (dashData as any).stats?.activeTouristCount ?? touristsData?.filter((t: any) => t.isActive).length ?? 0,
-          avgResponseTimeMs: (dashData as any).stats?.avgResponseTimeMs ?? 0,
-        } as any : null,
+        stats: s ? {
+          criticalAlerts:     s.criticalAlerts     ?? 0,
+          activeAlerts:       s.activeAlerts        ?? 0,
+          monitoredTourists:  s.monitoredTourists   ?? 0,
+          totalTourists:      s.totalTourists       ?? touristsData?.length ?? 0,
+          riskZones:          zonesData?.length      ?? 0,
+          responseUnits:      policeData?.length     ?? 0,
+          activeTouristCount: s.activeTouristCount  ?? 0,
+          avgResponseTimeMs:  s.avgResponseTimeMs   ?? 0,
+        } : null,
         alerts: (alertsData || []).map(normalizeAlert),
         tourists: (touristsData || []).map(normalizeTourist),
         zones: (zonesData || []).map(normalizeRiskZone),
@@ -232,13 +251,20 @@ export function useFilteredData(
 ) {
   const filteredAlerts = useMemo(() => {
     let result = data.alerts;
-    if (alertFilter !== "all") {
-      result = result.filter((a) => a.status.toLowerCase() === alertFilter);
+    if (alertFilter === "open" || alertFilter === "active") {
+      result = result.filter((a) => ["OPEN", "ACKNOWLEDGED"].includes(a.status));
+    } else if (alertFilter === "pending") {
+      result = result.filter((a) => a.status === "PENDING");
+    } else if (alertFilter === "acknowledged") {
+      result = result.filter((a) => a.status === "ACKNOWLEDGED");
+    } else if (alertFilter !== "all") {
+      result = result.filter((a) => a.status.toUpperCase() === alertFilter.toUpperCase());
     }
     if (globalSearch) {
       const search = globalSearch.toLowerCase();
       result = result.filter((a) =>
         (a.type || "").toLowerCase().includes(search) ||
+        (a.touristName || "").toLowerCase().includes(search) ||
         (a.touristId || "").toLowerCase().includes(search)
       );
     }
@@ -393,8 +419,8 @@ export function usePoliceActions(refetch: () => Promise<void>) {
         await createPoliceDepartment({
           ...payload,
           passwordHash: "admin123", // Default password
-          district: "", // Should be added to form if needed/required
-          state: "Assam", // Should be added to form if needed
+          district: payload.city || "Punjab",
+          state: "Punjab",
         });
       }
       await refetch();
@@ -419,16 +445,19 @@ export function usePoliceActions(refetch: () => Promise<void>) {
   return { save: handleSavePolice, delete: handleDeletePolice };
 }
 
+const OPEN_STATUSES = ["OPEN", "ACKNOWLEDGED", "PENDING"];
+
 export function useQuickStats(data: AdminData) {
   return useMemo(() => ({
-    activeAlerts: data.alerts.filter((a) => a.status === "ACTIVE").length,
+    activeAlerts: data.stats?.activeAlerts ?? data.alerts.filter((a) => OPEN_STATUSES.includes(a.status)).length,
+    criticalAlerts: data.stats?.criticalAlerts ?? data.alerts.filter((a) => a.priority === "CRITICAL" && OPEN_STATUSES.includes(a.status)).length,
     onlineTourists: data.tourists.filter((t) => t.isActive).length,
     highRiskTourists: data.tourists.filter((t) => t.riskScore > 70).length,
     activeZones: data.zones.filter((z) => z.isActive).length,
     onDutyPolice: data.policeUnits.filter((p) => p.isActive).length,
     resolvedToday: data.alerts.filter((a) => a.status === "RESOLVED").length,
     totalAlerts: data.alerts.length,
-    totalTourists: data.tourists.length,
+    totalTourists: data.stats?.totalTourists ?? data.tourists.length,
     totalZones: data.zones.length,
     totalPolice: data.policeUnits.length,
     totalHospitals: data.hospitals.length,
@@ -541,13 +570,30 @@ export function useBroadcastAction() {
   const handleBroadcast = useCallback(async (payload: {
     title: string;
     message: string;
-    target?: "all" | "zone" | "district";
-    priority?: "low" | "medium" | "high" | "critical";
+    target?: "all" | "zone" | "district" | "emergency";
+    priority?: "low" | "normal" | "medium" | "high" | "critical" | "urgent";
     zoneId?: string;
     district?: string;
+    touristId?: string;
   }) => {
     try {
-      const result = await sendBroadcast(payload);
+      // Map frontend target enum → backend target string format
+      let backendTarget = "all";
+      if (payload.touristId) backendTarget = `tourist:${payload.touristId}`;
+      else if (payload.zoneId) backendTarget = `zone:${payload.zoneId}`;
+
+      // Map priority: frontend uses "critical", backend uses "urgent"
+      const priorityMap: Record<string, string> = {
+        critical: "urgent", medium: "normal", low: "low", high: "high", urgent: "urgent", normal: "normal",
+      };
+      const backendPriority = priorityMap[payload.priority ?? "normal"] ?? "normal";
+
+      const result = await sendBroadcast({
+        title: payload.title,
+        message: payload.message,
+        target: backendTarget as any,
+        priority: backendPriority as any,
+      });
       return result;
     } catch (e) {
       console.error("Failed to send broadcast", e);

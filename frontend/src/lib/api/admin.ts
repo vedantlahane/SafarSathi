@@ -273,16 +273,21 @@ export async function fetchAuditLogs(
 export async function sendBroadcast(payload: {
     title: string;
     message: string;
-    target?: "all" | "zone" | "district";
-    priority?: "low" | "medium" | "high" | "critical";
-    zoneId?: string;
-    district?: string;
+    /** Backend format: "all" | "tourist:<uuid>" | "zone:<zoneId>" */
+    target?: string;
+    /** Backend values: "low" | "normal" | "high" | "urgent" */
+    priority?: "low" | "normal" | "high" | "urgent";
 }) {
     return request<{ acknowledged: boolean; target: string; recipientCount: number }>(
         "/api/admin/broadcast",
         {
             method: "POST",
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                title: payload.title,
+                message: payload.message,
+                target: payload.target ?? "all",
+                priority: payload.priority ?? "normal",
+            }),
         }
     );
 }

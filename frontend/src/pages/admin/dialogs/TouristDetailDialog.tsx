@@ -1,21 +1,14 @@
-import { format } from "date-fns";
+import { useState } from "react";
+import { format, formatDistanceToNow } from "date-fns";
 import {
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Activity,
-  AlertTriangle,
-  Navigation,
+  Phone, MapPin, Clock, AlertTriangle,
+  Navigation, Radio, QrCode, Heart, User, Gauge, Wind,
+  Compass, Shield, Calendar, Fingerprint, Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import type { Tourist } from "../types";
 
@@ -25,135 +18,309 @@ interface TouristDetailDialogProps {
   tourist: Tourist | null;
   onContact?: (tourist: Tourist) => void;
   onTrack?: (tourist: Tourist) => void;
-
+  onBroadcast?: (tourist: Tourist) => void;
 }
 
-const riskColors = {
-  critical: "bg-red-200 text-red-800 border-red-300",
-  high: "bg-red-100 text-red-700 border-red-200",
-  medium: "bg-amber-100 text-amber-700 border-amber-200",
-  low: "bg-emerald-100 text-emerald-700 border-emerald-200",
+const RISK_PILL: Record<string, string> = {
+  critical: "bg-red-100 text-red-700 border-red-300",
+  high:     "bg-orange-100 text-orange-700 border-orange-300",
+  medium:   "bg-amber-100 text-amber-700 border-amber-300",
+  low:      "bg-emerald-100 text-emerald-700 border-emerald-300",
 };
 
+function ScoreRing({ score }: { score: number }) {
+  const clamped = Math.max(0, Math.min(100, score));
+  const danger = 100 - clamped;
+  const r = 28;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - clamped / 100);
+  const color = clamped >= 80 ? "#22c55e" : clamped >= 50 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="relative w-16 h-16 flex items-center justify-center">
+      <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
+        <circle cx="32" cy="32" r={r} fill="none" stroke="#e2e8f0" strokeWidth="5" />
+        <circle
+          cx="32" cy="32" r={r} fill="none"
+          stroke={color} strokeWidth="5"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-sm font-bold" style={{ color }}>{clamped}</span>
+        <span className="text-[9px] text-slate-400">{danger > 60 ? "Danger" : danger > 30 ? "Caution" : "Safe"}</span>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ icon: Icon, label, value }: { icon: typeof MapPin; label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      <Icon className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0">
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider block">{label}</span>
+        <span className="text-slate-700 font-medium break-words">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+      {children}
+    </span>
+  );
+}
+
 export function TouristDetailDialog({
-  open,
-  onOpenChange,
-  tourist,
-  onContact,
-  onTrack,
+  open, onOpenChange, tourist, onContact, onTrack, onBroadcast,
 }: TouristDetailDialogProps) {
+  const [tab, setTab] = useState<"profile" | "medical" | "location">("profile");
+
   if (!tourist) return null;
 
   const risk = tourist.riskLevel || "low";
-  const riskClass = riskColors[risk as keyof typeof riskColors] || riskColors.low;
+  const riskClass = RISK_PILL[risk] ?? RISK_PILL.low;
+  const safetyScore = tourist.safetyScore ?? (100 - tourist.riskScore);
+
+  const headingLabel = tourist.heading != null
+    ? (() => {
+        const h = ((tourist.heading % 360) + 360) % 360;
+        const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+        return dirs[Math.round(h / 45) % 8];
+      })()
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col p-0">
+        {/* Header */}
+        <DialogHeader className="px-5 pt-5 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
                 {tourist.name?.charAt(0) || "T"}
               </div>
-              <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${tourist.isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${tourist.isActive ? "bg-emerald-500" : "bg-slate-400"}`} />
             </div>
-            <div>
-              <span className="block">{tourist.name}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${riskClass}`}>
-                {risk.charAt(0).toUpperCase() + risk.slice(1)} Risk
-              </span>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
+                {tourist.name}
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${riskClass}`}>
+                  {risk.charAt(0).toUpperCase() + risk.slice(1)} Risk
+                </span>
+              </DialogTitle>
+              <DialogDescription className="text-xs mt-0.5 text-slate-500">
+                {tourist.email} · {tourist.isActive ? "🟢 Online" : "⚫ Offline"}
+              </DialogDescription>
             </div>
-          </DialogTitle>
-          <DialogDescription>Tourist ID: {tourist.id}</DialogDescription>
+            <ScoreRing score={safetyScore} />
+          </div>
+          {/* Tab bar */}
+          <div className="flex gap-1 mt-3">
+            {(["profile","medical","location"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  tab === t ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Contact Info */}
-          <div className="p-4 bg-slate-50 rounded-lg space-y-3">
-            <h4 className="font-medium text-slate-700">Contact Information</h4>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-slate-400" />
-                <span>{tourist.phoneNumber || "N/A"}</span>
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* ── Profile Tab ── */}
+          {tab === "profile" && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <InfoRow icon={Phone} label="Phone" value={tourist.phoneNumber} />
+                <InfoRow icon={Globe} label="Nationality" value={tourist.nationality} />
+                <InfoRow icon={User} label="Gender" value={tourist.gender} />
+                <InfoRow icon={Calendar} label="Date of Birth" value={tourist.dateOfBirth ? format(new Date(tourist.dateOfBirth), "dd MMM yyyy") : null} />
+                <InfoRow icon={Fingerprint} label="Passport" value={tourist.passportNumber || null} />
+                <InfoRow icon={Shield} label="Travel Type" value={tourist.travelType} />
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-slate-400" />
-                <span className="truncate">{tourist.email || "N/A"}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Location & Activity */}
-          <div className="p-4 bg-slate-50 rounded-lg space-y-3">
-            <h4 className="font-medium text-slate-700 flex items-center gap-2">
-              <MapPin className="w-4 h-4" /> Current Location
-            </h4>
-            {tourist.location ? (
-              <p className="text-sm font-mono text-slate-600">
-                {tourist.location.lat.toFixed(6)}, {tourist.location.lng.toFixed(6)}
-              </p>
-            ) : (
-              <p className="text-sm text-slate-500">Location not available</p>
-            )}
-          </div>
+              {tourist.idHash && (
+                <div className="p-3 bg-slate-50 rounded-lg flex items-center gap-3 border border-slate-200">
+                  <QrCode className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Digital ID Hash</p>
+                    <p className="text-xs font-mono text-slate-600 truncate">{tourist.idHash}</p>
+                    {tourist.idExpiry && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Expires: {format(new Date(tourist.idExpiry), "dd MMM yyyy")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
-          {/* Status Info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                <Activity className="w-4 h-4" /> Status
-              </div>
-              <p className={`font-medium ${tourist.isActive ? "text-emerald-600" : "text-slate-500"}`}>
-                {tourist.isActive ? "Online" : "Offline"}
-              </p>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                <Clock className="w-4 h-4" /> Last Seen
-              </div>
-              <p className="font-medium text-slate-700">
-                {tourist.lastSeen
-                  ? format(new Date(tourist.lastSeen), "MMM d, h:mm a")
-                  : "N/A"}
-              </p>
-            </div>
-          </div>
+              {tourist.emergencyContact && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <h4 className="text-xs font-bold text-red-800 mb-2 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Emergency Contact
+                  </h4>
+                  <p className="text-sm text-red-700 font-medium">{tourist.emergencyContact.name}</p>
+                  <p className="text-xs text-red-600">{tourist.emergencyContact.phone} · {tourist.emergencyContact.relationship}</p>
+                </div>
+              )}
 
-          {/* Emergency Contact */}
-          {tourist.emergencyContact && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="font-medium text-red-800 mb-2 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Emergency Contact
-              </h4>
-              <p className="text-sm text-red-700">
-                {tourist.emergencyContact.name}: {tourist.emergencyContact.phone}
-              </p>
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Last Seen</p>
+                  <p className="text-xs font-medium text-slate-700 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {tourist.lastSeen
+                      ? formatDistanceToNow(new Date(tourist.lastSeen), { addSuffix: true })
+                      : "N/A"}
+                  </p>
+                </div>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Safety Score</p>
+                  <p className="text-xs font-bold" style={{ color: safetyScore >= 80 ? "#22c55e" : safetyScore >= 50 ? "#f59e0b" : "#ef4444" }}>
+                    {safetyScore} / 100
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Medical Tab ── */}
+          {tab === "medical" && (
+            <>
+              {tourist.bloodType ? (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+                  <Heart className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-red-400 uppercase tracking-wider">Blood Type</p>
+                    <p className="text-xl font-bold text-red-700">{tourist.bloodType}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 italic">No blood type on file</p>
+              )}
+
+              {tourist.allergies && tourist.allergies.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5">Allergies</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tourist.allergies.map((a) => (
+                      <Tag key={a}>{a}</Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tourist.medicalConditions && tourist.medicalConditions.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1.5">Medical Conditions</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {tourist.medicalConditions.map((c) => (
+                      <Tag key={c}>{c}</Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!tourist.bloodType && !tourist.allergies?.length && !tourist.medicalConditions?.length && (
+                <div className="text-center py-8 text-slate-400">
+                  <Heart className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No medical information on file</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Location Tab ── */}
+          {tab === "location" && (
+            <>
+              {tourist.location ? (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-[10px] text-blue-400 uppercase tracking-wider mb-1">Current Coordinates</p>
+                  <p className="text-sm font-mono text-blue-700">
+                    {tourist.location.lat.toFixed(6)}, {tourist.location.lng.toFixed(6)}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-slate-50 rounded-lg border border-dashed border-slate-300 text-center">
+                  <MapPin className="w-5 h-5 mx-auto text-slate-300 mb-1" />
+                  <p className="text-xs text-slate-400">Location not available</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-2">
+                {tourist.speed != null && (
+                  <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <Gauge className="w-4 h-4 mx-auto text-slate-400 mb-1" />
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Speed</p>
+                    <p className="text-sm font-bold text-slate-700">{tourist.speed.toFixed(1)} <span className="text-[10px] font-normal">km/h</span></p>
+                  </div>
+                )}
+                {headingLabel && (
+                  <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <Compass className="w-4 h-4 mx-auto text-slate-400 mb-1" />
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Heading</p>
+                    <p className="text-sm font-bold text-slate-700">{headingLabel}</p>
+                  </div>
+                )}
+                {tourist.locationAccuracy != null && (
+                  <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                    <Wind className="w-4 h-4 mx-auto text-slate-400 mb-1" />
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Accuracy</p>
+                    <p className="text-sm font-bold text-slate-700">±{tourist.locationAccuracy.toFixed(0)}<span className="text-[10px] font-normal">m</span></p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Last Seen</p>
+                <p className="text-sm text-slate-700">
+                  {tourist.lastSeen ? format(new Date(tourist.lastSeen), "dd MMM yyyy, h:mm a") : "N/A"}
+                </p>
+              </div>
+            </>
           )}
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="px-5 py-3 border-t border-slate-100 gap-2">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Close
           </Button>
+          {onBroadcast && (
+            <Button
+              variant="outline" size="sm"
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+              onClick={() => { onBroadcast(tourist); onOpenChange(false); }}
+            >
+              <Radio className="w-3.5 h-3.5 mr-1.5" /> Message
+            </Button>
+          )}
           {onContact && (
             <Button
-              variant="outline"
+              variant="outline" size="sm"
               className="border-blue-200 text-blue-700 hover:bg-blue-50"
               onClick={() => onContact(tourist)}
             >
-              <Phone className="w-4 h-4 mr-1.5" />
-              Contact
+              <Phone className="w-3.5 h-3.5 mr-1.5" /> Call
             </Button>
           )}
-          {onTrack && (
+          {onTrack && tourist.location && (
             <Button
+              size="sm"
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => { onTrack(tourist); onOpenChange(false); }}
             >
-              <Navigation className="w-4 h-4 mr-1.5" />
-              Track on Map
+              <Navigation className="w-3.5 h-3.5 mr-1.5" /> Track
             </Button>
           )}
         </DialogFooter>

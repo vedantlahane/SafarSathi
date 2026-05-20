@@ -10,3 +10,4 @@ export {
   useAuditLogPagination,
   useQuickStats,
 } from "./useAdminData";
+export { useAdminWS } from "./useAdminWS";

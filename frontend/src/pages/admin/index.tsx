@@ -29,6 +29,7 @@ import {
   useHospitalActions,
   useAdvisoryActions,
   useBroadcastAction,
+  useAdminWS,
 } from "./hooks";
 import type {
   Alert,
@@ -73,13 +74,51 @@ export function AdminPanel({
   const [authError, setAuthError] = useState("");
 
   // Data hooks
-  const { data, refreshing: isLoading, refetch: refresh } = useAdminData(isAuthenticated);
+  const { data, refreshing: isLoading, refetch: refresh, setData } = useAdminData(isAuthenticated);
   const alertActions = useAlertActions(refresh);
   const zoneActions = useZoneActions(refresh);
   const policeActions = usePoliceActions(refresh);
   const hospitalActions = useHospitalActions(refresh);
   const advisoryActions = useAdvisoryActions(refresh);
   const { broadcast: sendBroadcastApi } = useBroadcastAction();
+
+  // Real-time WebSocket — admin room
+  useAdminWS({
+    enabled: isAuthenticated,
+    onNewAlert: (rawAlert) => {
+      setData((prev) => ({
+        ...prev,
+        alerts: [{
+          id: rawAlert.id,
+          touristId: rawAlert.touristId,
+          touristName: rawAlert.touristName ?? null,
+          type: rawAlert.alertType || rawAlert.type || "ALERT",
+          status: rawAlert.status || "OPEN",
+          timestamp: rawAlert.createdAt || new Date().toISOString(),
+          message: rawAlert.message ?? null,
+          location: (rawAlert.lat != null && rawAlert.lng != null)
+            ? { lat: rawAlert.lat, lng: rawAlert.lng } : null,
+          priority: rawAlert.priority,
+          assignedUnit: rawAlert.assignedUnit ?? undefined,
+        }, ...prev.alerts].slice(0, 200),
+      }));
+    },
+    onNewAdvisory: (rawAdvisory) => {
+      setData((prev) => ({
+        ...prev,
+        advisories: [{
+          id: String(rawAdvisory.advisoryId || rawAdvisory.id || Date.now()),
+          title: rawAdvisory.title || "New Advisory",
+          description: "",
+          severity: rawAdvisory.severity || "info",
+          region: "",
+          isActive: true,
+          issuedBy: "System",
+          issuedAt: new Date().toISOString(),
+        }, ...prev.advisories],
+      }));
+    },
+  });
 
   // Dialog states
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
