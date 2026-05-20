@@ -52,7 +52,7 @@ async function getImdHeaders(): Promise<Record<string, string>> {
       imdTokenExpiresAt = now + (response.data.expires_in * 1000); 
       logger.info('Successfully acquired IMD JWT token.');
       
-    } catch (error) {
+    } catch (error: unknown) {
       const msg = axios.isAxiosError(error) ? error.message : (error as Error).message;
       logger.error({ err: msg }, 'Failed to authenticate with IMD OAuth. Check credentials.');
       throw new Error('IMD Auth Failed');
@@ -114,7 +114,7 @@ export const externalApiService = {
           ? ((response.data as { data?: ImdWarningPayload[] }).data ?? [])
           : [];
 
-      return warnings.find((entry) => {
+      return warnings.find((entry: ImdWarningPayload) => {
         const district = String(entry.District ?? entry.district ?? '').trim().toLowerCase();
         return district === districtName.trim().toLowerCase();
       }) ?? null;
@@ -140,7 +140,7 @@ export const externalApiService = {
           ? ((response.data as { data?: ImdNowcastPayload[] }).data ?? [])
           : [];
 
-      return nowcasts.find((entry) => {
+      return nowcasts.find((entry: ImdNowcastPayload) => {
         const station = String(entry.Station ?? '').trim().toLowerCase();
         return station === districtName.trim().toLowerCase();
       }) ?? null;
