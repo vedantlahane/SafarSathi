@@ -11,6 +11,11 @@ interface SafetyScoreHeroProps {
   dangerScore: number;
   recommendation: string;
   factors: SafetyFactor[];
+  anomaly?: {
+    detected: boolean;
+    severity: string;
+    explanation: string;
+  };
   loading: boolean;
   scanning: boolean;
 }
@@ -19,6 +24,7 @@ function SafetyScoreHeroInner({
   dangerScore,
   recommendation,
   factors,
+  anomaly,
   loading,
   scanning,
 }: SafetyScoreHeroProps) {
@@ -57,12 +63,14 @@ function SafetyScoreHeroInner({
   const shouldPulse = !scanning && normalizedDangerScore > 0.7;
   const message = scanning
     ? "Scanning..."
-    : recommendation ||
-    (riskState.label === "High Danger"
-      ? "High risk activity likely nearby. Consider rerouting immediately."
-      : riskState.label === "Caution"
-        ? "Proceed with caution and stay aware of your surroundings."
-        : "Low risk detected. Continue with normal precautions.");
+    : anomaly?.detected
+      ? anomaly.explanation
+      : recommendation ||
+      (riskState.label === "High Danger"
+        ? "High risk activity likely nearby. Consider rerouting immediately."
+        : riskState.label === "Caution"
+          ? "Proceed with caution and stay aware of your surroundings."
+          : "Low risk detected. Continue with normal precautions.");
 
   if (loading) {
     return <Skeleton className="h-56 w-full rounded-2xl" />;

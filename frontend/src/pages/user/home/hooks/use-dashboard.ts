@@ -81,7 +81,7 @@ export function useDashboard() {
 
   // ── GPS Tracking ──
   useEffect(() => {
-    if (!hasSession || !navigator.geolocation) {
+    if (!navigator.geolocation) {
       setGpsLocation(null);
       return;
     }
@@ -96,7 +96,7 @@ export function useDashboard() {
       { enableHighAccuracy: true, timeout: 20_000, maximumAge: 10_000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [hasSession]);
+  }, []);
 
   // ── Realtime Safety Query ──
   const { 
@@ -106,7 +106,7 @@ export function useDashboard() {
   } = useQuery({
     queryKey: ["realtimeSafety", gpsLocation?.lat, gpsLocation?.lon],
     queryFn: () => fetchRealTimeSafety(gpsLocation!.lat, gpsLocation!.lon),
-    enabled: hasSession && !!gpsLocation,
+    enabled: !!gpsLocation,
     refetchInterval: REFRESH_INTERVAL,
   });
 
@@ -147,7 +147,7 @@ export function useDashboard() {
     } else if (!gpsLocation) {
       setRealTimeSafety({
         ...EMPTY_REALTIME_SAFETY,
-        scanning: false,
+        scanning: true,
         recommendation: navigator.geolocation ? "Locating..." : "Location Unavailable",
       });
     }

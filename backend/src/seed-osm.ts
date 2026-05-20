@@ -56,29 +56,30 @@ type OSMElement = OSMNode | OSMWay;
 async function overpassFetch(query: string): Promise<OSMElement[]> {
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
-      console.log(`  ↗ Querying ${endpoint.replace('https://', '').split('/')[0]}…`);
+      const host = endpoint.replace('https://', '').split('/')[0];
+      console.log(`  ↗ Querying ${host}…`);
       const params = new URLSearchParams({ data: query });
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-          'User-Agent': 'YatraX-OSM-Seeder/1.0 (yatrax@example.com)',
+          // No custom Accept — let node use default */* to avoid 406
         },
         body: params.toString(),
         signal: AbortSignal.timeout(55_000),
       });
       if (!res.ok) {
-        console.warn(`    ⚠ ${res.status} from ${endpoint} — trying next`);
+        console.warn(`    ⚠ HTTP ${res.status} from ${host} — trying next`);
         continue;
       }
       const json = await res.json() as { elements: OSMElement[] };
+      console.log(`    ✓ Got ${json.elements?.length ?? 0} elements`);
       return json.elements ?? [];
     } catch (err) {
-      console.warn(`    ⚠ Error from endpoint: ${(err as Error).message?.slice(0, 80)} — trying next`);
+      console.warn(`    ⚠ ${(err as Error).message?.slice(0, 100)} — trying next`);
     }
   }
-  throw new Error('All Overpass endpoints failed');
+  throw new Error('All Overpass endpoints failed — check network/proxy');
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

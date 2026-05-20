@@ -41,6 +41,7 @@ export default function Home() {
           dangerScore={realTimeSafety.dangerScore}
           recommendation={realTimeSafety.recommendation}
           factors={realTimeSafety.factors ?? data.factors}
+          anomaly={realTimeSafety.anomaly}
           loading={loading}
           scanning={realTimeSafety.scanning}
         />

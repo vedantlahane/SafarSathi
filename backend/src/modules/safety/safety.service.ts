@@ -45,58 +45,7 @@ export const safetyService = {
 
     logger.info({ lat, lon, currentHour }, 'Starting safety check risk synthesis');
 
-    let E_hist = 0;
-    let baseViirs = 0;
-    let village = 'Unknown';
-    let districtName = ctx.district || 'Unknown';
-    let isAnomaly = false;
-    let isUnlit = false;
-    let isNight = currentHour < 6 || currentHour > 19;
-    let socioTemporalPenaltyActive = false;
-    let mlApiUsed = false;
-    let modelVersion = 'unknown';
-
-    // 1. Call Python ML engine
-    if (env.ML_API_URL) {
-      try {
-        const ml = await mlClient.evaluate({
-          lat,
-          lon,
-          local_hour: currentHour,
-        });
-
-        if (ml) {
-          const status = ml.historicalStatus;
-          if (status === 'PERSISTENT_HAZARD') {
-            E_hist = 25;
-          } else if (status === 'EMERGING') {
-            E_hist = 15;
-          } else {
-            E_hist = 0;
-          }
-          baseViirs = ml.baseViirs;
-          village = ml.village;
-          if (ml.district && ml.district !== 'Unknown') {
-            districtName = ml.district;
-          }
-          isAnomaly = ml.isAnomaly;
-          isUnlit = ml.isUnlit;
-          isNight = ml.isNight;
-          socioTemporalPenaltyActive = ml.socioTemporalPenaltyActive;
-          mlApiUsed = true;
-          modelVersion = '10.0.0';
-          logger.info({ village, districtName, historicalStatus: ml.historicalStatus }, 'Python ML engine evaluated successfully');
-        } else {
-          logger.warn('Python ML engine returned empty response');
-        }
-      } catch (err) {
-        logger.error({ err }, 'Python ML engine offline or failed during evaluation');
-      }
-    } else {
-      logger.warn('ML_API_URL not configured');
-    }
-
-    // 2. Fetch Air Quality (E_live)
+    // 1. Fetch Air Quality
     let pm25 = 0;
     let pm10 = 0;
     let E_live = 0;
@@ -111,17 +60,16 @@ export const safetyService = {
         if (pm25 > 60) {
           E_live = 15;
         }
-        logger.info({ pm25, pm10, E_live }, 'Air quality fetched successfully');
-      } else {
-        logger.warn({ status: aqiRes.status }, 'Air quality api returned non-ok status');
       }
     } catch (err) {
       logger.error({ err }, 'Air quality api failed');
     }
 
-    // 3. Fetch Weather Alert (W_live)
+    // 2. Fetch Weather Alert
     let W_live = 0;
     let imdStatus = '1';
+    let districtName = ctx.district || 'Unknown';
+    let weatherSeverity = 20; // Default baseline
     try {
       const weatherRes = await fetch('https://api.imd.gov.in/api/v1/districtwarning');
       if (weatherRes.ok) {
@@ -135,141 +83,110 @@ export const safetyService = {
             imdStatus = String(code);
             if (code === 3 || code === 4) {
               W_live = 50;
+              weatherSeverity = 80; // High severity
             }
-            logger.info({ districtName, code, W_live }, 'IMD weather warning found');
-          } else {
-            logger.info({ districtName }, 'No IMD weather warning found for district');
           }
         }
-      } else {
-        logger.warn({ status: weatherRes.status }, 'IMD weather api returned non-ok status');
       }
     } catch (err) {
       logger.error({ err }, 'IMD weather api failed');
     }
 
-    // 4. Calculate socio-temporal penalty (S_infra * C_human)
-    let socioTemporalPenalty = 0;
-    if (mlApiUsed) {
-      if (socioTemporalPenaltyActive) {
-        socioTemporalPenalty = 15;
-      }
-    } else {
-      if (isNight) {
-        socioTemporalPenalty = 15;
-      }
-    }
-
-    // 5. Placeholders for traffic and crowd
-    const T_traffic = 0;
-    const C_crowd = 0;
-
-    // 6. Risk Synthesis Equation
-    const Risk_total = Math.max(E_hist, E_live) + W_live + socioTemporalPenalty + T_traffic + C_crowd;
-    const overallScore = Math.max(0, Math.min(100, Math.round(100 - Risk_total)));
-
-    // Determine status
-    let status: 'safe' | 'caution' | 'danger' = 'safe';
-    if (overallScore >= 70) {
-      status = 'safe';
-    } else if (overallScore >= 45) {
-      status = 'caution';
-    } else {
-      status = 'danger';
-    }
-
-    const riskLabel = status === 'safe' ? 'Low Risk' : status === 'caution' ? 'Caution' : 'High Danger';
-
-    // Factors
-    const factors: any[] = [];
-    const factorLabels: string[] = [];
-
-    if (E_hist > 0) {
-      const label = 'Historical Risk';
-      factors.push({
-        label,
-        score: E_hist,
-        trend: 'stable',
-        detail: `Inside historical high risk area (Status: ${E_hist === 25 ? 'PERSISTENT_HAZARD' : 'EMERGING'}).`,
-      });
-      factorLabels.push(label);
-    }
-
-    if (E_live > 0) {
-      const label = 'Poor Air Quality';
-      factors.push({
-        label,
-        score: E_live,
-        trend: 'stable',
-        detail: `High PM2.5 level (${pm25} µg/m³) exceeding the safe threshold.`,
-      });
-      factorLabels.push(label);
-    }
-
-    if (W_live > 0) {
-      const label = 'Severe Weather Alert';
-      factors.push({
-        label,
-        score: W_live,
-        trend: 'stable',
-        detail: `IMD issued Orange or Red weather warning (Status code: ${imdStatus}).`,
-      });
-      factorLabels.push(label);
-    }
-
-    if (socioTemporalPenalty > 0) {
-      const label = 'Unlit Night Environment';
-      factors.push({
-        label,
-        score: socioTemporalPenalty,
-        trend: 'stable',
-        detail: `Socio-temporal risk active: Nighttime in an unlit area.`,
-      });
-      factorLabels.push(label);
-    }
-
-    const dangerScore = Number(((100 - overallScore) / 100).toFixed(4));
-
-    // Recommendations
-    let recommendation = 'Conditions are favourable — enjoy your visit!';
-    if (status === 'danger') {
-      recommendation = 'Danger level detected. Leave this area or seek shelter immediately.';
-    } else if (status === 'caution') {
-      recommendation = 'Stay aware of your surroundings and keep emergency contacts ready.';
-    }
-
-    const result = {
-      overallScore,
-      dangerScore,
-      status,
-      riskLabel,
-      cappedBy: null,
-      recommendation,
-      isNearAdminZone: ctx.inRiskZone,
-      factors,
-      factorLabels,
-      forecast: [],
-      anomaly: isAnomaly ? { detected: true } : null,
-      scoringSource: mlApiUsed ? 'ml_v2' : 'phase1_fallback',
-      mlApiConfigured: Boolean(env.ML_API_URL),
-      mlApiUsed,
-      modelVersion,
-    };
-
-    // Cache the result
+    // Cache key for saving responses
     const cacheKey = [
       'safety',
       snapToCell(lat, lon),
       currentHour,
       input.networkType || '4g',
-      Math.round((input.weatherSeverity ?? 0) / 10),
-      Math.round((input.aqi ?? 50) / 50),
+      Math.round((input.weatherSeverity ?? weatherSeverity) / 10),
+      Math.round((input.aqi ?? pm25) / 50),
     ].join(':');
 
+    // 3. Call Python ML engine (V2)
+    if (env.ML_API_URL) {
+      try {
+        const ml = await mlClient.evaluate({
+          lat,
+          lon,
+          local_hour: currentHour,
+          network_type: input.networkType || '4g',
+          weather_severity: input.weatherSeverity ?? weatherSeverity,
+          aqi: input.aqi ?? pm25,
+        });
+
+        if (ml) {
+          logger.info({ lat, lon }, 'Python ML engine returned V2 safety payload');
+          const result = { ...ml, cached: false };
+          await redis.setex(cacheKey, 60, JSON.stringify(result)).catch(() => undefined);
+          return result;
+        }
+      } catch (err) {
+        logger.error({ err }, 'Python ML engine offline or failed during evaluation');
+      }
+    }
+
+    logger.warn('Falling back to legacy rule-based safety calculator');
+
+    // 4. Legacy Fallback Calculator
+    let E_hist = 0;
+    let isNight = currentHour < 6 || currentHour > 19;
+    let socioTemporalPenalty = isNight ? 15 : 0;
+    const T_traffic = 0;
+    const C_crowd = 0;
+
+    const Risk_total = Math.max(E_hist, E_live) + W_live + socioTemporalPenalty + T_traffic + C_crowd;
+    const overallScore = Math.max(0, Math.min(100, Math.round(100 - Risk_total)));
+
+    let status: 'safe' | 'caution' | 'danger' = 'safe';
+    if (overallScore >= 70) status = 'safe';
+    else if (overallScore >= 45) status = 'caution';
+    else status = 'danger';
+
+    const riskLabel = status === 'safe' ? 'Low Risk' : status === 'caution' ? 'Caution' : 'High Danger';
+
+    const factors: any[] = [];
+    if (E_live > 0) {
+      factors.push({
+        label: 'Poor Air Quality',
+        score: E_live,
+        detail: `High PM2.5 level (${pm25} µg/m³) exceeding the safe threshold.`,
+      });
+    }
+    if (W_live > 0) {
+      factors.push({
+        label: 'Severe Weather Alert',
+        score: W_live,
+        detail: `IMD issued Orange or Red weather warning (Status code: ${imdStatus}).`,
+      });
+    }
+    if (socioTemporalPenalty > 0) {
+      factors.push({
+        label: 'Unlit Night Environment',
+        score: socioTemporalPenalty,
+        detail: `Socio-temporal risk active: Nighttime in an unlit area.`,
+      });
+    }
+
+    const dangerScore = Number(((100 - overallScore) / 100).toFixed(4));
+    let recommendation = 'Conditions are favourable — enjoy your visit!';
+    if (status === 'danger') recommendation = 'Danger level detected. Leave this area or seek shelter immediately.';
+    else if (status === 'caution') recommendation = 'Stay aware of your surroundings and keep emergency contacts ready.';
+
+    const result = {
+      safety_score: overallScore,
+      danger_score: dangerScore,
+      status,
+      riskLabel,
+      recommendation,
+      prediction_confidence: 0.1,
+      factors,
+      forecast: [],
+      recommended_alert_action: 'wait',
+      model_version: 'fallback',
+      source: 'fallback',
+    };
+
     await redis.setex(cacheKey, 60, JSON.stringify(result)).catch(() => undefined);
-
-    logger.info({ overallScore, status }, 'Safety check risk synthesis completed successfully');
-
     return { ...result, cached: false };
   }
 };

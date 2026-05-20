@@ -28,6 +28,12 @@ function ZoneOverlayInner({ zones }: ZoneOverlayProps) {
       }
 
       // Main Zone Feature
+      let height = 0;
+      if (isCritical) height = 150;
+      else if (level === "high") height = 100;
+      else if (level === "medium") height = 50;
+      else height = 20;
+
       features.push({
         type: "Feature",
         properties: {
@@ -36,6 +42,7 @@ function ZoneOverlayInner({ zones }: ZoneOverlayProps) {
           fillOpacity: opacity,
           strokeColor: c.stroke,
           strokeWidth: isCritical ? 3 : isHighOrCritical ? 2.5 : 2,
+          height: height,
           isCritical,
           isHighOrCritical,
           type: "main",
@@ -54,7 +61,7 @@ function ZoneOverlayInner({ zones }: ZoneOverlayProps) {
             zone.polygonCoordinates.map(([lat, lng]) => {
               const dLat = lat - zone.centerLat;
               const dLng = lng - zone.centerLng;
-              return [zone.centerLng + dLng * 0.4, zone.centerLat + dLat * 0.4];
+              return [lng + dLng * 0.4, lat + dLat * 0.4];
             }),
           ];
         } else {
@@ -65,9 +72,10 @@ function ZoneOverlayInner({ zones }: ZoneOverlayProps) {
           type: "Feature",
           properties: {
             fillColor: "#7c3aed",
-            fillOpacity: 0.3,
+            fillOpacity: 0.5,
             strokeColor: "#581c87",
             strokeWidth: 1.5,
+            height: height + 50, // Core is slightly taller
             type: "core",
           },
           geometry: {
@@ -88,10 +96,12 @@ function ZoneOverlayInner({ zones }: ZoneOverlayProps) {
     <Source id="zones-source" type="geojson" data={geojsonData}>
       <Layer
         id="zones-fill"
-        type="fill"
+        type="fill-extrusion"
         paint={{
-          "fill-color": ["get", "fillColor"],
-          "fill-opacity": ["get", "fillOpacity"],
+          "fill-extrusion-color": ["get", "fillColor"],
+          "fill-extrusion-opacity": 0.6,
+          "fill-extrusion-height": ["get", "height"],
+          "fill-extrusion-base": 0,
         }}
       />
       <Layer

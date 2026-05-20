@@ -46,10 +46,17 @@ function getDangerScoreFromNode(node: unknown): number | null {
     }
 
     const candidate = node as Record<string, unknown>;
-    const raw = candidate.dangerScore ?? candidate.danger_score;
-    if (typeof raw === "number") {
-        return clampDangerScore(raw);
+    const dangerRaw = candidate.dangerScore ?? candidate.danger_score;
+    if (typeof dangerRaw === "number") {
+        return clampDangerScore(dangerRaw);
     }
+
+    // V2 ML Schema returns safety_score (0-100). Convert to dangerScore (0.0-1.0)
+    const safetyRaw = candidate.safetyScore ?? candidate.safety_score;
+    if (typeof safetyRaw === "number") {
+        return clampDangerScore(1.0 - (safetyRaw / 100.0));
+    }
+
     return null;
 }
 
@@ -108,6 +115,13 @@ function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
     const cappedBy =
         typeof node.cappedBy === "string" ? node.cappedBy : null;
 
+    const rawAnomaly = node.anomaly as Record<string, unknown> | undefined;
+    const anomaly = rawAnomaly ? {
+        detected: Boolean(rawAnomaly.detected),
+        severity: typeof rawAnomaly.severity === "string" ? rawAnomaly.severity : "Low",
+        explanation: typeof rawAnomaly.explanation === "string" ? rawAnomaly.explanation : ""
+    } : undefined;
+
     return {
         dangerScore,
         isNearAdminZone: Boolean(node.isNearAdminZone),
@@ -118,6 +132,7 @@ function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
         status,
         cappedBy,
         factors,
+        anomaly,
     };
 }
 

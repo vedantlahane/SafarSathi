@@ -3,8 +3,13 @@
 export const MAP_DEFAULTS = {
   center: [31.2554, 75.7048] as [number, number], // LPU, Phagwara, Punjab
   zoom: 13,
-  minZoom: 8,
+  minZoom: 10, // Prevent zooming out too far
   maxZoom: 18,
+  // Bounding box for Punjab (Southwest [Lng, Lat], Northeast [Lng, Lat])
+  maxBounds: [
+    [73.5, 29.3], // Southwest coordinates
+    [77.0, 32.5], // Northeast coordinates
+  ] as [[number, number], [number, number]],
 } as const;
 
 export const TILE_URLS = {

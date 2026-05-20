@@ -124,6 +124,7 @@ const Map = () => {
         zoneCount={data.zones.length}
         stationCount={data.stations.length}
         hospitalCount={data.hospitals.length}
+        poiCount={data.pois.length}
         isDarkMode={data.isDarkMode}
       />
 

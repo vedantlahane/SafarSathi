@@ -25,6 +25,7 @@ import { advisoryPublicRouter, advisoryAdminRouter } from './modules/advisory/ad
 import broadcastRoutes from './modules/broadcast/broadcast.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
 import { dashboardAdminRouter, dashboardTouristRouter, touristDashboardCompatRouter } from './modules/dashboard/dashboard.routes.js';
+import touristPOIRouter from './modules/tourist-poi/tourist-poi.routes.js';
 
 export function buildApp() {
   const app = express();
@@ -68,6 +69,9 @@ export function buildApp() {
   // ── Hospitals ─────────────────────────────────────────────────────────────
   app.use('/api/hospitals', hospitalPublicRouter);
   app.use('/api/admin/hospitals', hospitalAdminRouter);
+
+  // ── Tourist POIs (OSM) ────────────────────────────────────────────────────
+  app.use('/api/tourist-pois', touristPOIRouter);
 
   // ── Notifications ─────────────────────────────────────────────────────────
   app.use('/api/notifications', notificationRoutes);

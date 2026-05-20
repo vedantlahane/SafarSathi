@@ -148,6 +148,7 @@ export function useMapData() {
     police: true,
     hospitals: true,
     routes: true,
+    pois: true,
   });
 
   // ── Derived state ──
@@ -416,7 +417,7 @@ export function useMapData() {
     zones,
     stations,
     hospitals: visibleHospitals,
-    pois: rawPOIs ?? [],
+    pois: showLayers.pois ? (rawPOIs ?? []) : [],
     nearestStation,
     nearestHospital,
     riskFilter,

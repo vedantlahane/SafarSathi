@@ -46,6 +46,11 @@ export type RealTimeSafety = {
     status?: "safe" | "caution" | "danger";
     cappedBy?: string | null;
     factors?: RealTimeSafetyFactor[];
+    anomaly?: {
+        detected: boolean;
+        severity: string;
+        explanation: string;
+    };
 };
 
 export type TouristProfile = {

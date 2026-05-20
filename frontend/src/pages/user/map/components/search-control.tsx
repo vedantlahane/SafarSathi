@@ -2,8 +2,8 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { useMap } from "react-map-gl/mapbox";
 import { Search, Loader2, X, MapPin, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { hapticFeedback } from "@/lib/store";
 import { SEARCH_DEBOUNCE_MS } from "../constants";
 import type { SearchResult } from "../types";
@@ -18,6 +18,7 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -93,6 +94,7 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
       setShowResults(false);
       setQuery("");
       setResults([]);
+      setFocused(false);
     },
     [map, onSelectDestination]
   );
@@ -112,6 +114,7 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
         !containerRef.current.contains(e.target as Node)
       ) {
         setShowResults(false);
+        setFocused(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -128,56 +131,80 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
 
   return (
     <div ref={containerRef} className="absolute top-4 left-4 right-4 z-[1000]">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
-          type="text"
-          value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => results.length > 0 && setShowResults(true)}
-          placeholder="Search places, landmarks..."
-          className="pl-12 pr-12 h-14 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl border-0 text-base"
-          aria-label="Search map locations"
-        />
-        {loading && (
-          <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-primary" />
-        )}
-        {query && !loading && (
-          <button
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-            onClick={clearSearch}
-            aria-label="Clear search"
-          >
-            <X className="h-5 w-5 text-muted-foreground" />
-          </button>
-        )}
-      </div>
-      {showResults && results.length > 0 && (
-        <Card className="mt-2 shadow-xl border-0 overflow-hidden rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl">
-          <CardContent className="p-0 max-h-[300px] overflow-auto">
-            {results.map((r) => (
-              <button
-                key={r.id}
-                className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700 transition-colors text-left border-b border-slate-100 dark:border-slate-800 last:border-0"
-                onClick={() => selectResult(r)}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                  <MapPin className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{r.name}</p>
-                  {r.address && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {r.address}
-                    </p>
-                  )}
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-              </button>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+      <motion.div 
+        animate={{ 
+          scale: focused ? 1.01 : 1,
+          boxShadow: focused ? "0 25px 50px -12px rgba(0,0,0,0.25)" : "0 10px 15px -3px rgba(0,0,0,0.1)"
+        }}
+        transition={{ duration: 0.2 }}
+        className="relative rounded-2xl overflow-hidden bg-white/80 dark:bg-black/60 backdrop-blur-2xl backdrop-saturate-150 border border-white/20 dark:border-white/10"
+      >
+        <div className="relative">
+          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors duration-300 ${focused ? "text-primary" : "text-muted-foreground"}`} />
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={() => {
+              setFocused(true);
+              if (results.length > 0) setShowResults(true);
+            }}
+            placeholder="Search places, landmarks..."
+            className="pl-12 pr-12 h-14 bg-transparent border-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/70"
+            aria-label="Search map locations"
+          />
+          {loading && (
+            <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-primary" />
+          )}
+          {query && !loading && (
+            <button
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {showResults && results.length > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="border-t border-white/10 dark:border-white/5"
+            >
+              <div className="max-h-[300px] overflow-auto py-2">
+                {results.map((r, i) => (
+                  <motion.button
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    key={r.id}
+                    className="w-full flex items-center gap-4 px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors text-left"
+                    onClick={() => selectResult(r)}
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <MapPin className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate text-slate-800 dark:text-slate-200">{r.name}</p>
+                      {r.address && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {r.address}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

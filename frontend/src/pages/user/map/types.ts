@@ -83,6 +83,7 @@ export interface LayerVisibility {
   police: boolean;
   hospitals: boolean;
   routes: boolean;
+  pois: boolean;
 }
 
 export interface MapViewState {

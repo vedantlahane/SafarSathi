@@ -87,8 +87,8 @@ export function UserIcon({ heading }: { heading: number | null }) {
     <div className="relative flex items-center justify-center" style={{ width: 48, height: 48 }}>
       {/* Outer accuracy pulse ring */}
       <div
-        className="absolute inset-0 rounded-full animate-ping"
-        style={{ background: "rgba(59,130,246,0.25)" }}
+        className="absolute rounded-full animate-ping"
+        style={{ inset: "-16px", background: "rgba(59,130,246,0.4)" }}
       />
       {/* Mid glow ring */}
       <div

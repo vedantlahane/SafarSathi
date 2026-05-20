@@ -77,10 +77,13 @@ export function MapView({
                 }}
                 minZoom={MAP_DEFAULTS.minZoom}
                 maxZoom={MAP_DEFAULTS.maxZoom}
+                maxBounds={MAP_DEFAULTS.maxBounds}
                 mapStyle={tileUrl}
                 mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
                 style={{ width: "100%", height: "100%" }}
                 attributionControl={true}
+                pitchWithRotate={true}
+                dragRotate={true}
                 interactiveLayerIds={["zones-fill"]}
                 onClick={(e: any) => {
                     const feature = e.features?.[0];
@@ -88,7 +91,14 @@ export function MapView({
                         const zone = data.zones.find((z) => z.id === feature.properties!.id);
                         if (zone) {
                             onZoneClick(zone);
+                            return;
                         }
+                    }
+                    
+                    // Tap-to-Route: If no interactive feature was clicked, set a destination pin
+                    if (e.lngLat) {
+                        const { lng, lat } = e.lngLat;
+                        nav.handleSelectDestination("Dropped Pin", lat, lng);
                     }
                 }}
             >

@@ -9,9 +9,9 @@ export const safetyController = {
       const data = await safetyService.check(query);
       res.json({
         ok: true,
-        safety_score: data.overallScore,
+        safety_score: data.safety_score,
         status: data.status,
-        source: data.scoringSource,
+        source: data.source,
         data,
       });
     } catch (e) {
