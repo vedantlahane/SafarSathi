@@ -1,69 +1,81 @@
-# YatraX Frontend 🚀
+# YatraX Client HUD (React Frontend) 🚀
 
-A premium, modern React application serving as a real-time safe travel companion. Built with visual excellence in mind, utilizing high-quality styling, glassmorphism, responsive components, and smooth micro-animations.
+A mobile-first, high-fidelity React 19 application designed to act as a real-time safety companion for tourists. Built with state-of-the-art UI principles, featuring rich glassmorphism HUD overlays, smooth Framer Motion transitions, and fully responsive map controls.
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Core Framework**: React 19 (utilizing the new React Compiler)
-- **Build Tool**: Vite 7
+- **Core Framework**: React 19 (compiled)
+- **Build Server**: Vite 7
 - **Styling**: TailwindCSS & custom Vanilla CSS configurations
-- **Animations**: Framer Motion (for smooth HUD expansions, list transitions, and pulsing indicator scales)
-- **Map Engine**: Mapbox GL JS via `react-map-gl`
-- **Data Fetching**: TanStack Query (React Query)
+- **Interactive Maps**: Mapbox GL JS via `react-map-gl`
+- **Data Queries**: TanStack Query (React Query) for optimized state caching
+- **Animations**: Framer Motion (micro-animations, smooth panel expansions, pulse states)
 - **Icons**: Lucide React
-- **PWA (Progressive Web App)**: Service Worker and manifest integrated for offline capabilities
+
+---
+
+## 🎨 Design & Interaction Systems
+
+- **Semantic Over Numeric**: Safety metrics focus on actionable words and colors (e.g., "Safe", "Caution", "Elevated Risk") instead of anxiety-inducing bare numbers, preventing the *School Grade Fallacy*.
+- **Glassmorphism Design**: Layout panels leverage translucent layers (`backdrop-blur-xl bg-white/70`) with soft drop shadows and thin borders to overlay cleanly on maps.
+- **Coordinate Drift Stabilization**: Home page safety evaluation query keys round latitude and longitude to **3 decimal places** (approx. 110m). This stops tiny GPS drifts from triggering redundant API requests.
+- **Smart Polling**: Automatic polling requests refresh background safety stats once every **5 minutes** (`300_000` ms) to preserve device battery and server resources.
 
 ---
 
 ## 📦 Directory Structure
 
-```
+```text
 frontend/
-├── public/                 # Static assets (PWA icons, manifest)
+├── public/                 # PWA manifests, icons, and static assets
 └── src/
-    ├── components/         # Shared UI components (Glass cards, alerts, pull-to-refresh)
-    ├── lib/                # Shared utilities, state store, session logic, API client
+    ├── components/         # Shadcn-based primitive components & custom UI cards
+    ├── layout/             # Responsive tab layouts (User and Admin panels)
+    ├── lib/                # API Axios instances and auth/session helpers
     └── pages/
+        ├── admin/          # Control center (alerts log, advisories manager, broadcasts)
         └── user/
-            ├── home/       # Dashboard, Safety Score Hero card, alerts list
-            └── map/        # Interactive HUD map, custom Layers controllers
+            ├── home/       # Main feed dashboard (Safety Score Hero, dynamic alerts list)
+            └── map/        # Interactive HUD Mapbox with active layers & polygon risk zones
 ```
 
 ---
 
 ## 🚀 Setup and Development
 
-### Prerequisites
-Make sure you have Node.js (version 20+ recommended) installed.
+### 1. Environment Configuration (`.env`)
+Create a `.env` file in the root of the `frontend/` directory:
 
-### Installation
+```env
+VITE_MAPBOX_ACCESS_TOKEN="your-mapbox-access-token"
+```
+
+### 2. Installation
+Navigate to the folder and install dependencies:
+
 ```bash
-# Navigate to the frontend directory
+# Navigate to the frontend folder
 cd frontend
 
-# Install dependencies
+# Install package packages
 npm install
 ```
 
-### Running Locally
-To launch the Vite development server:
+### 3. Running Locally
+Run the Vite development server:
+
 ```bash
 npm run dev
 ```
-The application will start on **`http://localhost:5173`**. It includes a built-in proxy in `vite.config.ts` to redirect `/api/*` and `/ws-connect` traffic to the Node backend at `http://localhost:8081`.
+- The local client will be available at **`http://localhost:5173`**.
+- Vite features a built-in proxy configuration (`vite.config.ts`) that forwards `/api/*` and WebSocket traffic directly to the local backend gateway at `http://localhost:8081`.
 
-### Production Build
-To compile the application (includes PWA service worker generation):
+### 4. Build & Production
+To generate a production-optimized build:
+
 ```bash
 npm run build
 ```
-
----
-
-## 🎨 Aesthetic Design Principles
-
-- **Glassmorphism**: Translucent panels featuring `backdrop-blur-xl`, balanced `bg-white/70` overlays, and premium border micro-highlights.
-- **Dynamic HUD**: Map controls, destination cards, and nearest facilities widgets animate on mount and respond cleanly to gestures.
-- **Status Indicators**: Safety score colors are dynamically driven by risk values, shifting smoothly from Forest Green (`Low Risk`) to Amber (`Caution`) and Vibrant Red (`High Danger`).
+The compiled output is compiled into the `dist/` directory, ready to deploy.

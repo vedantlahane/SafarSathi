@@ -92,7 +92,7 @@ Test-Endpoint "PATCH /api/tourists/me (update profile)" `
 Write-Host "`n[4] Safety" -ForegroundColor White
 
 $safety = Test-Endpoint "GET /api/v1/safety/check" `
-    -Url "$BASE/api/v1/safety/check?lat=26.2`&lon=92.9"
+    -Url "$BASE/api/v1/safety/check?lat=31.3260`&lon=75.5762"
 if ($safety) {
     Write-Host "       safety_score: $($safety.safety_score), status: $($safety.status), source: $($safety.source)" -ForegroundColor DarkGray
 }
@@ -103,12 +103,12 @@ Write-Host "`n[5] Location / SOS / Alert" -ForegroundColor White
 Test-Endpoint "POST /api/action/location/:id" `
     -Method POST -Url "$BASE/api/action/location/$TOURIST_ID" `
     -Headers $AUTH `
-    -Body '{"lat":26.1445,"lng":91.7362,"speed":0,"accuracy":10}' | Out-Null
+    -Body '{"lat":31.3260,"lng":75.5762,"speed":0,"accuracy":10}' | Out-Null
 
 $sos = Test-Endpoint "POST /api/action/sos/:id" `
     -Method POST -Url "$BASE/api/action/sos/$TOURIST_ID" `
     -Headers $AUTH `
-    -Body '{"lat":26.1445,"lng":91.7362,"message":"Test SOS"}'
+    -Body '{"lat":31.3260,"lng":75.5762,"message":"Test SOS"}'
 
 $ALERT_ID = $sos.alertId
 Write-Host "       alert_id: $ALERT_ID" -ForegroundColor DarkGray
@@ -122,7 +122,7 @@ Test-Endpoint "POST /api/action/sos/:alertId/cancel" `
 Test-Endpoint "POST /api/action/sos/:id (pre-alert)" `
     -Method POST -Url "$BASE/api/action/sos/$TOURIST_ID/pre-alert" `
     -Headers $AUTH `
-    -Body '{"lat":26.1445,"lng":91.7362}' | Out-Null
+    -Body '{"lat":31.3260,"lng":75.5762}' | Out-Null
 
 # ── 6. Risk Zones (public) ───────────────────────────────────────────────────
 Write-Host "`n[6] Risk Zones" -ForegroundColor White
@@ -203,7 +203,7 @@ Write-Host "`n[14] Admin — Risk Zones" -ForegroundColor White
 $zone = Test-Endpoint "POST /api/admin/risk-zones" `
     -Method POST -Url "$BASE/api/admin/risk-zones" `
     -Headers $ADMIN_AUTH `
-    -Body '{"name":"Test Zone","shapeType":"circle","centerLat":26.1445,"centerLng":91.7362,"radiusMeters":500,"riskLevel":"HIGH","category":"crime"}'
+    -Body '{"name":"Test Zone","shapeType":"circle","centerLat":31.3260,"centerLng":75.5762,"radiusMeters":500,"riskLevel":"HIGH","category":"crime"}'
 
 $ZONE_ID = $zone.data.id
 Write-Host "       zone_id: $ZONE_ID" -ForegroundColor DarkGray
@@ -223,7 +223,7 @@ Write-Host "`n[16] Admin — Hospitals" -ForegroundColor White
 $hosp = Test-Endpoint "POST /api/admin/hospitals" `
     -Method POST -Url "$BASE/api/admin/hospitals" `
     -Headers $ADMIN_AUTH `
-    -Body '{"name":"GMCH Guwahati","latitude":26.1377,"longitude":91.8027,"contact":"+913612344000","city":"Guwahati","district":"Kamrup Metro","state":"Assam","type":"government","emergency":true,"bedCapacity":1000,"ambulanceAvailable":true}'
+    -Body '{"name":"Jalandhar Civil Hospital","latitude":31.3256,"longitude":75.5792,"contact":"+911812345679","city":"Jalandhar","district":"Jalandhar","state":"Punjab","type":"government","emergency":true,"bedCapacity":1000,"ambulanceAvailable":true}'
 
 Test-Endpoint "GET /api/hospitals" -Url "$BASE/api/hospitals" -Headers $AUTH | Out-Null
 
@@ -233,7 +233,7 @@ Write-Host "`n[17] Admin — Advisories" -ForegroundColor White
 $adv = Test-Endpoint "POST /api/admin/advisories" `
     -Method POST -Url "$BASE/api/admin/advisories" `
     -Headers $ADMIN_AUTH `
-    -Body '{"title":"Heavy Rainfall Warning","body":"Assam valleys expecting heavy monsoon rainfall. Avoid river crossings.","severity":"WARNING","affectedArea":"Assam"}'
+    -Body '{"title":"Heavy Rainfall Warning","body":"Punjab regions expecting heavy monsoon rainfall. Avoid river crossings.","severity":"WARNING","affectedArea":"Punjab"}'
 
 $ADV_ID = $adv.data.id
 Write-Host "       advisory_id: $ADV_ID" -ForegroundColor DarkGray

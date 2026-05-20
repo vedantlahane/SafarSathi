@@ -11,12 +11,18 @@ async function seed() {
     const adminHash = await bcrypt.hash(adminPassword, 12);
     
     const existingAdmin = await db.select().from(policeDepartments).where(eq(policeDepartments.email, adminEmail)).limit(1);
-    const wkt = `SRID=4326;POINT(91.7362 26.1445)`;
+    const wkt = `SRID=4326;POINT(75.5762 31.3260)`;
 
     if (existingAdmin.length > 0) {
       await db.update(policeDepartments)
         .set({
           passwordHash: adminHash,
+          latitude: 31.3260,
+          longitude: 75.5762,
+          geom: sql`ST_GeogFromText(${wkt})` as any,
+          city: "Jalandhar",
+          district: "Jalandhar",
+          state: "Punjab",
           isActive: true,
           updatedAt: new Date()
         })
@@ -24,17 +30,17 @@ async function seed() {
       console.log("Updated existing admin!");
     } else {
       await db.insert(policeDepartments).values({
-        name: "Guwahati Central",
+        name: "Jalandhar Central",
         email: adminEmail,
         passwordHash: adminHash,
-        departmentCode: "GHY001",
-        latitude: 26.1445,
-        longitude: 91.7362,
+        departmentCode: "JAL001",
+        latitude: 31.3260,
+        longitude: 75.5762,
         geom: sql`ST_GeogFromText(${wkt})` as any,
-        city: "Guwahati",
-        district: "Kamrup Metro",
-        state: "Assam",
-        contactNumber: "+913612345678",
+        city: "Jalandhar",
+        district: "Jalandhar",
+        state: "Punjab",
+        contactNumber: "+911812345678",
         stationType: "headquarters",
         jurisdictionRadiusKm: 10,
         officerCount: 50,
@@ -54,6 +60,8 @@ async function seed() {
       await db.update(tourists)
         .set({
           passwordHash: touristHash,
+          currentLat: 31.3260,
+          currentLng: 75.5762,
           isActive: true,
           updatedAt: new Date()
         })
@@ -74,8 +82,8 @@ async function seed() {
         allergies: ["peanuts"],
         medicalConditions: ["asthma"],
         emergencyContact: { name: "Jane Doe", phone: "+15550199", relationship: "Spouse" },
-        currentLat: 26.1445,
-        currentLng: 91.7362,
+        currentLat: 31.3260,
+        currentLng: 75.5762,
         safetyScore: 100,
         isActive: true,
       });

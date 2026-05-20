@@ -25,9 +25,9 @@ const defaultFormData: PoliceFormData = {
   departmentCode: "",
   contactNumber: "",
   email: "",
-  city: "Guwahati",
-  lat: "26.1445",
-  lng: "91.7362",
+  city: "Jalandhar",
+  lat: "31.3260",
+  lng: "75.5762",
 };
 
 export function PoliceDialog({
@@ -45,9 +45,9 @@ export function PoliceDialog({
         departmentCode: police.departmentCode || "",
         contactNumber: police.contactNumber || "",
         email: police.email || "",
-        city: police.city || "Guwahati",
-        lat: String(police.location?.lat || 26.1445),
-        lng: String(police.location?.lng || 91.7362),
+        city: police.city || "Jalandhar",
+        lat: String(police.location?.lat || 31.3260),
+        lng: String(police.location?.lng || 75.5762),
       });
     } else {
       setFormData(defaultFormData);
@@ -82,7 +82,7 @@ export function PoliceDialog({
                   id="policeName"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Guwahati Central PS"
+                  placeholder="e.g., Jalandhar Central PS"
                   required
                 />
               </div>
