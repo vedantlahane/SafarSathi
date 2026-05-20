@@ -18,7 +18,7 @@ import { useThemeColors } from "@/lib/theme/use-theme-colors";
 import { type GpsLocation } from "@/lib/geo";
 import type { DashboardData, SafetyStatus, AlertView } from "../types";
 
-const REFRESH_INTERVAL = 30_000;
+const REFRESH_INTERVAL = 300_000; // 5 minutes
 
 const EMPTY_DATA: DashboardData = {
   safetyScore: 100,
@@ -104,10 +104,15 @@ export function useDashboard() {
     isLoading: loadingRealTime, 
     refetch: refetchRealTime 
   } = useQuery({
-    queryKey: ["realtimeSafety", gpsLocation?.lat, gpsLocation?.lon],
+    queryKey: [
+      "realtimeSafety", 
+      gpsLocation ? Math.round(gpsLocation.lat * 1000) / 1000 : null, 
+      gpsLocation ? Math.round(gpsLocation.lon * 1000) / 1000 : null
+    ],
     queryFn: () => fetchRealTimeSafety(gpsLocation!.lat, gpsLocation!.lon),
     enabled: !!gpsLocation,
     refetchInterval: REFRESH_INTERVAL,
+    refetchOnWindowFocus: false,
   });
 
   // ── State Syncs ──
