@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useMapData } from "./hooks/use-map-data";
 import { useMapNavigation } from "./hooks/use-map-navigation";
 import { useNavigation } from "./hooks/use-navigation";
-import type { RiskZone } from "./types";
+import type { RiskZone, MapboxConfig } from "./types";
 import { MapView } from "./components/map-view";
 import { MapOverlays } from "./components/map-overlays";
 import { LayersSheet } from "./components/layers-sheet";
@@ -24,7 +24,15 @@ const Map = () => {
   const [showHighRiskAlert, setShowHighRiskAlert] = useState(false);
   const [highRiskScore, setHighRiskScore] = useState<number | null>(null);
 
+  const [mapboxConfig, setMapboxConfig] = useState<MapboxConfig>({
+    show3dBuildings: true,
+    showPointOfInterestLabels: true,
+    showTransitLabels: true,
+    lightPreset: data.isDarkMode ? "night" : "day",
+  });
 
+  // Sync preset if system dark mode changes, only if we haven't manually overriden to dusk/dawn maybe?
+  // Let's just rely on initial state and manual overrides for now.
   const alertTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,6 +90,7 @@ const Map = () => {
 
         <MapView
           data={data}
+          mapboxConfig={mapboxConfig}
           nav={nav}
           onZoneClick={setSelectedZone}
           onLayersOpen={() => setLayersOpen(true)}
@@ -122,6 +131,8 @@ const Map = () => {
         hospitalCount={data.hospitals.length}
         poiCount={data.pois.length}
         isDarkMode={data.isDarkMode}
+        mapboxConfig={mapboxConfig}
+        setMapboxConfig={setMapboxConfig}
       />
 
       <ZoneDialog

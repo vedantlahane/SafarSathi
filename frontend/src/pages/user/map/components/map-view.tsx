@@ -1,6 +1,6 @@
 // src/pages/user/map/components/map-view.tsx
 import { Suspense, useRef, useEffect } from "react";
-import Map, { Source, Layer } from "react-map-gl/mapbox";
+import Map, { Source, Layer, NavigationControl, GeolocateControl, ScaleControl } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -17,7 +17,6 @@ import type {
 import { FlyToLocation } from "./fly-to-location";
 import { SearchControl } from "./search-control";
 import { StatsPill } from "./stats-pill";
-import { MapControls } from "./map-controls";
 import { ZoneOverlay } from "./zone-overlay";
 import { StationMarkers } from "./station-markers";
 import { HospitalMarkers } from "./hospital-markers";
@@ -31,6 +30,13 @@ import type { TouristPOI } from "@/lib/api/public";
 interface MapViewProps {
     /** Computed tile URL (light/dark). */
     tileUrl: string;
+    /** Mapbox Native configuration settings */
+    mapboxConfig: {
+        show3dBuildings: boolean;
+        showPointOfInterestLabels: boolean;
+        showTransitLabels: boolean;
+        lightPreset: "dawn" | "day" | "dusk" | "night";
+    };
     /** Map data from useMapData. */
     data: {
         position: [number, number];
@@ -46,10 +52,6 @@ interface MapViewProps {
         userInZone: boolean;
         currentZoneName: string | null;
         showLayers: LayerVisibility;
-        handleLocate: () => void;
-        locating: boolean;
-        bearing: number;
-        resetBearing: () => void;
     };
     /** Navigation state from useMapNavigation. */
     nav: {
@@ -63,6 +65,7 @@ interface MapViewProps {
 }
 export function MapView({
     data,
+    mapboxConfig,
     nav,
     onZoneClick,
     onLayersOpen,
@@ -75,18 +78,23 @@ export function MapView({
         
         const setStandardConfig = () => {
             try {
-                map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+                map.setConfigProperty('basemap', 'lightPreset', mapboxConfig.lightPreset);
+                map.setConfigProperty('basemap', 'show3dObjects', mapboxConfig.show3dBuildings);
+                map.setConfigProperty('basemap', 'showPointOfInterestLabels', mapboxConfig.showPointOfInterestLabels);
+                map.setConfigProperty('basemap', 'showTransitLabels', mapboxConfig.showTransitLabels);
                 map.setConfigProperty('basemap', 'theme', 'faded');
             } catch (e) {
-                // ignore
+                console.warn("Failed to set mapbox standard config:", e);
             }
         };
         
-        map.on('style.load', setStandardConfig);
-        return () => {
-            map.off('style.load', setStandardConfig);
-        };
-    }, []);
+        // Map might already be loaded or we wait for style.load
+        if (map.isStyleLoaded()) {
+            setStandardConfig();
+        } else {
+            map.once('style.load', setStandardConfig);
+        }
+    }, [mapboxConfig]);
 
     return (
         <Suspense fallback={<MapLoading />}>
@@ -145,37 +153,15 @@ export function MapView({
                     }}
                 />
 
-                {/* ── 3D Buildings ── */}
-                <Layer
-                    id="3d-buildings"
-                    source="composite"
-                    source-layer="building"
-                    filter={["==", "extrude", "true"]}
-                    type="fill-extrusion"
-                    minzoom={15}
-                    paint={{
-                        "fill-extrusion-color": "#aaa",
-                        "fill-extrusion-height": [
-                            "interpolate",
-                            ["linear"],
-                            ["zoom"],
-                            15,
-                            0,
-                            15.05,
-                            ["get", "height"]
-                        ],
-                        "fill-extrusion-base": [
-                            "interpolate",
-                            ["linear"],
-                            ["zoom"],
-                            15,
-                            0,
-                            15.05,
-                            ["get", "min_height"]
-                        ],
-                        "fill-extrusion-opacity": 0.6
-                    }}
+                {/* ── Native Mapbox Controls ── */}
+                <NavigationControl position="bottom-right" showCompass={true} showZoom={true} />
+                <GeolocateControl 
+                    position="bottom-right" 
+                    trackUserLocation={true} 
+                    showAccuracyCircle={true} 
+                    showUserLocation={false} 
                 />
+                <ScaleControl position="bottom-left" />
 
                 {/* ── Traffic Layer ── */}
                 <Source id="traffic" type="vector" url="mapbox://mapbox.mapbox-traffic-v1">
@@ -209,12 +195,6 @@ export function MapView({
                     userInZone={data.userInZone}
                     zoneName={data.currentZoneName}
                     onPress={onLayersOpen}
-                />
-                <MapControls
-                    onLocate={data.handleLocate}
-                    locating={data.locating}
-                    bearing={data.bearing}
-                    onResetBearing={data.resetBearing}
                 />
 
                 <ZoneOverlay zones={data.zones} onZoneClick={onZoneClick} />

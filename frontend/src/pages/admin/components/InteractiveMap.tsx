@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
-import Map, { Source, Layer, Marker, NavigationControl } from "react-map-gl/mapbox";
+import Map, { Source, Layer, Marker, NavigationControl, GeolocateControl, ScaleControl } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapRef, MapMouseEvent } from "react-map-gl/mapbox";
 import {
@@ -7,7 +7,7 @@ import {
   Shield, User, AlertTriangle, MapPin, Pentagon, Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { RiskZone, Tourist, Alert, PoliceDepartment } from "../types";
+import type { RiskZone, Tourist, Alert, PoliceDepartment, MapboxConfig } from "../types";
 import { createCirclePolygon } from "@/lib/geo";
 import { useIsochrones } from "../hooks/use-isochrone";
 
@@ -151,6 +151,13 @@ export function InteractiveMap({
     policeReach: false,
   });
 
+  const [mapboxConfig, setMapboxConfig] = useState<MapboxConfig>({
+    show3dBuildings: true,
+    showPointOfInterestLabels: true,
+    showTransitLabels: true,
+    lightPreset: "dusk",
+  });
+
   const isochroneGeoJSON = useIsochrones(policeUnits as any, layerToggles.policeReach);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [cursor, setCursor] = useState<string>("grab");
@@ -216,18 +223,22 @@ export function InteractiveMap({
     
     const setStandardConfig = () => {
       try {
-        map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+        map.setConfigProperty('basemap', 'lightPreset', mapboxConfig.lightPreset);
+        map.setConfigProperty('basemap', 'show3dObjects', mapboxConfig.show3dBuildings);
+        map.setConfigProperty('basemap', 'showPointOfInterestLabels', mapboxConfig.showPointOfInterestLabels);
+        map.setConfigProperty('basemap', 'showTransitLabels', mapboxConfig.showTransitLabels);
         map.setConfigProperty('basemap', 'theme', 'faded'); // 'default', 'faded', 'monochrome'
       } catch (e) {
         // config might not be available immediately
       }
     };
     
-    map.on('style.load', setStandardConfig);
-    return () => {
-      map.off('style.load', setStandardConfig);
-    };
-  }, []);
+    if (map.isStyleLoaded()) {
+      setStandardConfig();
+    } else {
+      map.once('style.load', setStandardConfig);
+    }
+  }, [mapboxConfig]);
 
   // Map click handler
   const handleMapClick = useCallback((e: MapMouseEvent) => {
@@ -269,8 +280,15 @@ export function InteractiveMap({
         pitchWithRotate={true}
         dragRotate={true}
       >
-        {/* Navigation controls (zoom +/-) */}
-        <NavigationControl position="top-right" showCompass={false} />
+        {/* Navigation controls */}
+        <NavigationControl position="bottom-right" showCompass={true} showZoom={true} />
+        <GeolocateControl 
+            position="bottom-right" 
+            trackUserLocation={true} 
+            showAccuracyCircle={true} 
+            showUserLocation={false} 
+        />
+        <ScaleControl position="bottom-left" />
 
         {/* ── 3D Terrain & Sky ── */}
         <Source
@@ -287,38 +305,6 @@ export function InteractiveMap({
             "sky-type": "atmosphere",
             "sky-atmosphere-sun": [0.0, 0.0],
             "sky-atmosphere-sun-intensity": 15
-          }}
-        />
-
-        {/* ── 3D Buildings ── */}
-        <Layer
-          id="3d-buildings"
-          source="composite"
-          source-layer="building"
-          filter={["==", "extrude", "true"]}
-          type="fill-extrusion"
-          minzoom={15}
-          paint={{
-            "fill-extrusion-color": "#aaa",
-            "fill-extrusion-height": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              15,
-              0,
-              15.05,
-              ["get", "height"]
-            ],
-            "fill-extrusion-base": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              15,
-              0,
-              15.05,
-              ["get", "min_height"]
-            ],
-            "fill-extrusion-opacity": 0.6
           }}
         />
 
@@ -643,6 +629,52 @@ export function InteractiveMap({
                   <span>{label}</span>
                 </button>
               ))}
+              <div className="pt-2 border-t border-white/20 mt-2 space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Mapbox Layers</p>
+                <button
+                  onClick={() => setMapboxConfig((c) => ({ ...c, show3dBuildings: !c.show3dBuildings }))}
+                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    mapboxConfig.show3dBuildings ? "bg-white/50 text-slate-800" : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {mapboxConfig.show3dBuildings ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>3D Buildings</span>
+                </button>
+                <button
+                  onClick={() => setMapboxConfig((c) => ({ ...c, showPointOfInterestLabels: !c.showPointOfInterestLabels }))}
+                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    mapboxConfig.showPointOfInterestLabels ? "bg-white/50 text-slate-800" : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {mapboxConfig.showPointOfInterestLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>POIs</span>
+                </button>
+                <button
+                  onClick={() => setMapboxConfig((c) => ({ ...c, showTransitLabels: !c.showTransitLabels }))}
+                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    mapboxConfig.showTransitLabels ? "bg-white/50 text-slate-800" : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {mapboxConfig.showTransitLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>Transit Labels</span>
+                </button>
+              </div>
+              <div className="pt-2 border-t border-white/20 mt-2">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Theme</p>
+                <div className="flex gap-1">
+                  {(["dawn", "day", "dusk", "night"] as const).map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => setMapboxConfig((c) => ({ ...c, lightPreset: preset }))}
+                      className={`flex-1 py-1 rounded text-[10px] capitalize transition-all ${
+                        mapboxConfig.lightPreset === preset ? "bg-blue-500 text-white shadow-sm" : "bg-white/30 text-slate-600 hover:bg-white/50"
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           <button

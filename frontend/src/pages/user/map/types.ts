@@ -86,6 +86,13 @@ export interface LayerVisibility {
   pois: boolean;
 }
 
+export interface MapboxConfig {
+  show3dBuildings: boolean;
+  showPointOfInterestLabels: boolean;
+  showTransitLabels: boolean;
+  lightPreset: "dawn" | "day" | "dusk" | "night";
+}
+
 export interface MapViewState {
   isOnline: boolean;
   isDarkMode: boolean;

@@ -1,5 +1,5 @@
 // src/pages/user/map/hooks/use-map-data.ts
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { haversineMeters } from "@/lib/geo";
 import {
@@ -65,7 +65,6 @@ export function useMapData() {
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [heading, setHeading] = useState<number | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);
-  const [locating, setLocating] = useState(false);
   const [flyTo, setFlyTo] = useState<[number, number] | null>(null);
 
   // ── Data fetching (React Query) – live backend only ──
@@ -162,8 +161,6 @@ export function useMapData() {
   const [isDarkMode, setIsDarkMode] = useState(
     document.documentElement.classList.contains("dark")
   );
-  const [bearing, setBearing] = useState(0);
-
   // ── Refs ──
   const prevZonesRef = useRef<Set<string | number>>(new Set());
   const watchIdRef = useRef<number | null>(null);
@@ -376,34 +373,7 @@ export function useMapData() {
     return () => observer.disconnect();
   }, []);
 
-  // ── Manual locate ──
-  const handleLocate = useCallback(() => {
-    if (!navigator.geolocation) return;
-    hapticFeedback("light");
-    setLocating(true);
-    setUserInteracted(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-        setUserPosition(p);
-        setAccuracy(pos.coords.accuracy);
-        setFlyTo(p);
-        setLocating(false);
-        setPermissionState("granted");
-      },
-      () => {
-        setLocating(false);
-        toast.error("Could not get your location");
-      },
-      { enableHighAccuracy: true }
-    );
-  }, []);
 
-  // ── Reset bearing ──
-  const resetBearing = useCallback(() => {
-    setBearing(0);
-    hapticFeedback("light");
-  }, []);
 
   return {
     position,
@@ -413,7 +383,6 @@ export function useMapData() {
     speed,
     flyTo,
     setFlyTo,
-    locating,
     zones,
     stations,
     hospitals: visibleHospitals,
@@ -426,11 +395,7 @@ export function useMapData() {
     setShowLayers,
     userInZone,
     currentZoneName,
-    handleLocate,
     isOnline,
     isDarkMode,
-    bearing,
-    setBearing,
-    resetBearing,
   };
 }

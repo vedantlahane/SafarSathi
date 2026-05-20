@@ -6,9 +6,10 @@ import {
   Shield,
   Cross,
   Map as MapIcon,
-  Moon,
-  Sun,
   Compass,
+  Building,
+  Landmark,
+  Bus,
 } from "lucide-react";
 import {
   Sheet,
@@ -21,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/store";
-import type { RiskFilter, LayerVisibility } from "../types";
+import type { RiskFilter, LayerVisibility, MapboxConfig } from "../types";
 
 interface LayersSheetProps {
   open: boolean;
@@ -37,6 +38,8 @@ interface LayersSheetProps {
   hospitalCount: number;
   poiCount: number;
   isDarkMode: boolean;
+  mapboxConfig: MapboxConfig;
+  setMapboxConfig: React.Dispatch<React.SetStateAction<MapboxConfig>>;
 }
 
 function LayersSheetInner({
@@ -52,7 +55,9 @@ function LayersSheetInner({
   stationCount,
   hospitalCount,
   poiCount,
-  isDarkMode,
+  isDarkMode: _isDarkMode, // keeping in props for ABI compat if it's used elsewhere, but unused here
+  mapboxConfig,
+  setMapboxConfig,
 }: LayersSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -212,25 +217,78 @@ function LayersSheetInner({
 
           <Separator className="bg-slate-200 dark:bg-slate-800/50" />
 
-          {/* Map Style */}
+          {/* Mapbox Native Config */}
           <div>
             <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide px-1">
-              MAP STYLE
+              MAP CONFIGURATION
             </p>
-            <div className="flex items-center gap-3 p-4 rounded-3xl bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-800/50">
-              <div className={cn("p-2 rounded-xl", isDarkMode ? "bg-indigo-500/10" : "bg-amber-500/10")}>
-                {isDarkMode ? (
-                  <Moon className="h-5 w-5 text-indigo-400" />
-                ) : (
-                  <Sun className="h-5 w-5 text-amber-500" />
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <Button
+                variant={mapboxConfig.show3dBuildings ? "default" : "outline"}
+                className={cn(
+                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
+                  mapboxConfig.show3dBuildings ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 )}
-              </div>
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                {isDarkMode ? "Dark (CartoDB Dark Matter)" : "Light (OpenStreetMap)"}
-              </span>
-              <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 ml-auto bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-md">
-                App Theme
-              </span>
+                onClick={() => {
+                  hapticFeedback("light");
+                  setMapboxConfig((c) => ({ ...c, show3dBuildings: !c.show3dBuildings }));
+                }}
+              >
+                <Building className="h-5 w-5" />
+                3D Buildings
+              </Button>
+              <Button
+                variant={mapboxConfig.showPointOfInterestLabels ? "default" : "outline"}
+                className={cn(
+                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
+                  mapboxConfig.showPointOfInterestLabels ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                )}
+                onClick={() => {
+                  hapticFeedback("light");
+                  setMapboxConfig((c) => ({ ...c, showPointOfInterestLabels: !c.showPointOfInterestLabels }));
+                }}
+              >
+                <Landmark className="h-5 w-5" />
+                POIs
+              </Button>
+              <Button
+                variant={mapboxConfig.showTransitLabels ? "default" : "outline"}
+                className={cn(
+                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
+                  mapboxConfig.showTransitLabels ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                )}
+                onClick={() => {
+                  hapticFeedback("light");
+                  setMapboxConfig((c) => ({ ...c, showTransitLabels: !c.showTransitLabels }));
+                }}
+              >
+                <Bus className="h-5 w-5" />
+                Transit Labels
+              </Button>
+            </div>
+            
+            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide px-1">
+              LIGHTING PRESET
+            </p>
+            <div className="flex gap-2 p-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 overflow-x-auto custom-scrollbar">
+              {(["dawn", "day", "dusk", "night"] as const).map((preset) => (
+                <Button
+                  key={preset}
+                  variant={mapboxConfig.lightPreset === preset ? "default" : "ghost"}
+                  className={cn(
+                    "rounded-xl capitalize flex-1 shadow-none font-bold text-xs h-10",
+                    mapboxConfig.lightPreset === preset 
+                      ? "bg-white dark:bg-slate-700 text-primary shadow-sm" 
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                  )}
+                  onClick={() => {
+                    hapticFeedback("light");
+                    setMapboxConfig((c) => ({ ...c, lightPreset: preset }));
+                  }}
+                >
+                  {preset}
+                </Button>
+              ))}
             </div>
           </div>
 

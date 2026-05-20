@@ -233,3 +233,9 @@ export type TouristFilter = "all" | "online" | "offline" | "highrisk" | "high-ri
 export type ZoneFilter = "all" | "active" | "inactive" | "critical" | "high" | "medium" | "low";
 export type BroadcastType = "all" | "zone" | "district" | "emergency";
 export type AdminSection = "dashboard" | "alerts" | "tourists" | "zones" | "police" | "hospitals" | "advisories" | "auditlog";
+export interface MapboxConfig {
+  show3dBuildings: boolean;
+  showPointOfInterestLabels: boolean;
+  showTransitLabels: boolean;
+  lightPreset: "dawn" | "day" | "dusk" | "night";
+}
