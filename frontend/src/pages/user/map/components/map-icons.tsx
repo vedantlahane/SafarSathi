@@ -4,7 +4,7 @@ export function PoliceIcon() {
   return (
     <div className="relative group cursor-pointer">
       {/* Glow ring */}
-      <div className="absolute inset-0 rounded-full bg-blue-500 opacity-20 blur-sm scale-150" />
+      <div className="absolute inset-0 rounded-full bg-blue-500 opacity-20 blur-sm scale-150 animate-pulse" />
       {/* Pin body */}
       <div
         className="relative flex items-center justify-center w-9 h-9 rounded-full shadow-xl border-2 border-white"
@@ -87,8 +87,8 @@ export function UserIcon({ heading }: { heading: number | null }) {
     <div className="relative flex items-center justify-center" style={{ width: 48, height: 48 }}>
       {/* Outer accuracy pulse ring */}
       <div
-        className="absolute rounded-full animate-ping"
-        style={{ inset: "-16px", background: "rgba(59,130,246,0.4)" }}
+        className="absolute rounded-full animate-[ping_2s_ease-in-out_infinite]"
+        style={{ inset: "-16px", background: "rgba(59,130,246,0.3)" }}
       />
       {/* Mid glow ring */}
       <div

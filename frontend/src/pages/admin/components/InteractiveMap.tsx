@@ -209,6 +209,26 @@ export function InteractiveMap({
     }
   }, [zones, visibleTourists, activeAlerts, policeUnits]);
 
+  // Configure Mapbox Standard Style
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    
+    const setStandardConfig = () => {
+      try {
+        map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+        map.setConfigProperty('basemap', 'theme', 'faded'); // 'default', 'faded', 'monochrome'
+      } catch (e) {
+        // config might not be available immediately
+      }
+    };
+    
+    map.on('style.load', setStandardConfig);
+    return () => {
+      map.off('style.load', setStandardConfig);
+    };
+  }, []);
+
   // Map click handler
   const handleMapClick = useCallback((e: MapMouseEvent) => {
     if (!isAddingZone) return;
@@ -237,7 +257,7 @@ export function InteractiveMap({
         minZoom={8}
         maxZoom={18}
         maxBounds={MAX_BOUNDS}
-        mapStyle="mapbox://styles/mapbox/light-v11"
+        mapStyle="mapbox://styles/mapbox/standard"
         mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: "100%", height: "100%" }}
         terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
@@ -335,6 +355,16 @@ export function InteractiveMap({
                 "fill-extrusion-opacity": 0.4,
                 "fill-extrusion-height": ["get", "height"],
                 "fill-extrusion-base": 0,
+              }}
+            />
+            <Layer
+              id="zones-outline-glow"
+              type="line"
+              paint={{
+                "line-color": ["get", "strokeColor"],
+                "line-width": ["*", ["get", "strokeWidth"], 2.5],
+                "line-blur": 6,
+                "line-opacity": 0.6,
               }}
             />
             <Layer
@@ -459,16 +489,46 @@ export function InteractiveMap({
           </Marker>
         ))}
 
-        {/* ── Alert Markers ───────────────────────────────── */}
+        {/* ── Alert Heatmap & Markers ─────────────────────── */}
+        {layerToggles.alerts && (
+          <Source id="alerts-heat-source" type="geojson" data={{
+            type: "FeatureCollection",
+            features: activeAlerts.map(a => ({
+              type: "Feature",
+              properties: { weight: a.priority === "CRITICAL" ? 1 : 0.5 },
+              geometry: { type: "Point", coordinates: [a.location!.lng, a.location!.lat] }
+            }))
+          }}>
+            <Layer
+              id="alerts-heat"
+              type="heatmap"
+              paint={{
+                "heatmap-weight": ["get", "weight"],
+                "heatmap-intensity": 1,
+                "heatmap-color": [
+                  "interpolate", ["linear"], ["heatmap-density"],
+                  0, "rgba(239,68,68,0)",
+                  0.2, "rgba(239,68,68,0.2)",
+                  0.5, "rgba(239,68,68,0.5)",
+                  0.8, "rgba(239,68,68,0.8)",
+                  1, "rgba(239,68,68,1)"
+                ],
+                "heatmap-radius": 40,
+                "heatmap-opacity": 0.6
+              }}
+            />
+          </Source>
+        )}
+
         {layerToggles.alerts && activeAlerts.map((a) => (
           <Marker key={`alert-${a.id}`} longitude={a.location!.lng} latitude={a.location!.lat} anchor="center">
             <div className="relative flex items-center justify-center" title={`${a.type?.replaceAll("_", " ")}\n${a.touristName ?? "Unknown tourist"}${a.assignedUnit ? `\nAssigned: ${a.assignedUnit}` : ""}`}>
-              <div className="absolute inset-[-8px] rounded-full bg-red-500/25 animate-ping" />
+              <div className="absolute inset-[-12px] rounded-full bg-red-500/30 animate-[ping_1.5s_ease-in-out_infinite]" />
               <div
                 className="relative flex items-center justify-center rounded-full border-2 border-white shadow-lg"
-                style={{ width: 26, height: 26, background: "#ef4444", boxShadow: "0 2px 10px rgba(239,68,68,0.55)" }}
+                style={{ width: 28, height: 28, background: "#ef4444", boxShadow: "0 4px 14px rgba(239,68,68,0.6)" }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
                   <path d="M12 9v4"/><path d="M12 17h.01"/>
                 </svg>

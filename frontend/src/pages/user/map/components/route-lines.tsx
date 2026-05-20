@@ -1,6 +1,6 @@
 // src/pages/user/map/components/route-lines.tsx
-import { memo, useMemo } from "react";
-import { Source, Layer } from "react-map-gl/mapbox";
+import { memo, useMemo, useEffect, useRef } from "react";
+import { Source, Layer, useMap } from "react-map-gl/mapbox";
 import type { SafeRoute } from "../types";
 
 interface RouteLinesProps {
@@ -9,6 +9,46 @@ interface RouteLinesProps {
 }
 
 function RouteLinesInner({ routes, visible }: RouteLinesProps) {
+  const { current: map } = useMap();
+  const reqRef = useRef<number>(0);
+  const stepRef = useRef<number>(0);
+
+  // Animation loop
+  useEffect(() => {
+    if (!visible || !map) return;
+
+    const animateDashArray = () => {
+      const mapInstance = map.getMap();
+      if (!mapInstance || !mapInstance.getLayer("route-layer-animated")) return;
+      
+      const step = stepRef.current;
+      stepRef.current = (step + 1) % 100;
+      
+      // Moving dash array for a "flowing" effect
+      // Format: [dash length, gap length]
+      // We offset the array by using a prefix gap
+      const dashLength = 2;
+      const gapLength = 4;
+      const offset = (step / 5) % (dashLength + gapLength);
+      
+      // Since mapbox doesn't support a direct dash offset, we simulate it by altering the first segment
+      let dasharray;
+      if (offset < dashLength) {
+        dasharray = [dashLength - offset, gapLength, offset, 0];
+      } else {
+        dasharray = [0, offset - dashLength, dashLength, gapLength - (offset - dashLength)];
+      }
+
+      if (mapInstance && mapInstance.getLayer("route-layer-animated")) {
+        mapInstance.setPaintProperty("route-layer-animated", "line-dasharray", dasharray);
+      }
+      reqRef.current = requestAnimationFrame(animateDashArray);
+    };
+
+    reqRef.current = requestAnimationFrame(animateDashArray);
+    return () => cancelAnimationFrame(reqRef.current);
+  }, [visible, map]);
+
   const geojsonData = useMemo(() => {
     if (!visible || routes.length === 0) return null;
 
@@ -43,6 +83,7 @@ function RouteLinesInner({ routes, visible }: RouteLinesProps) {
             weight,
             opacity,
             isDashed,
+            isSafest
           },
           geometry: {
             type: "LineString" as const,
@@ -58,17 +99,17 @@ function RouteLinesInner({ routes, visible }: RouteLinesProps) {
 
   return (
     <>
-      {/* Dashed Routes Layer */}
-      <Source id="route-source-dashed" type="geojson" data={geojsonData}>
+      {/* Glow for safest routes */}
+      <Source id="route-source-glow" type="geojson" data={geojsonData}>
         <Layer
-          id="route-layer-dashed"
+          id="route-layer-glow"
           type="line"
-          filter={["==", "isDashed", true]}
+          filter={["==", "isSafest", true]}
           paint={{
             "line-color": ["get", "color"],
-            "line-width": ["get", "weight"],
-            "line-opacity": ["get", "opacity"],
-            "line-dasharray": [2, 2],
+            "line-width": 12,
+            "line-blur": 10,
+            "line-opacity": 0.4,
           }}
           layout={{
             "line-cap": "round",
@@ -76,8 +117,8 @@ function RouteLinesInner({ routes, visible }: RouteLinesProps) {
           }}
         />
       </Source>
-      
-      {/* Solid Routes Layer */}
+
+      {/* Solid background for safest routes */}
       <Source id="route-source-solid" type="geojson" data={geojsonData}>
         <Layer
           id="route-layer-solid"
@@ -86,7 +127,25 @@ function RouteLinesInner({ routes, visible }: RouteLinesProps) {
           paint={{
             "line-color": ["get", "color"],
             "line-width": ["get", "weight"],
+            "line-opacity": 0.5,
+          }}
+          layout={{
+            "line-cap": "round",
+            "line-join": "round",
+          }}
+        />
+      </Source>
+      
+      {/* Animated Dash Layer for all routes */}
+      <Source id="route-source-animated" type="geojson" data={geojsonData}>
+        <Layer
+          id="route-layer-animated"
+          type="line"
+          paint={{
+            "line-color": ["get", "color"],
+            "line-width": ["get", "weight"],
             "line-opacity": ["get", "opacity"],
+            "line-dasharray": [2, 4],
           }}
           layout={{
             "line-cap": "round",

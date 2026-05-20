@@ -105,14 +105,24 @@ function ZoneOverlayInner({ zones }: ZoneOverlayProps) {
         }}
       />
       <Layer
+        id="zones-outline-glow"
+        type="line"
+        paint={{
+          "line-color": ["get", "strokeColor"],
+          "line-width": ["*", ["get", "strokeWidth"], 2.5],
+          "line-blur": 6,
+          "line-opacity": 0.8,
+        }}
+      />
+      <Layer
         id="zones-outline"
         type="line"
         paint={{
           "line-color": ["get", "strokeColor"],
           "line-width": ["get", "strokeWidth"],
+          "line-dasharray": ["case", ["get", "isCritical"], ["literal", [4, 2]], ["literal", [1, 0]]],
         }}
       />
-      {/* We can add dashed styles for core layers using filters if needed */}
     </Source>
   );
 }

@@ -12,8 +12,15 @@ export function FlyToLocation({ position, zoom }: FlyToLocationProps) {
   
   useEffect(() => {
     if (position && map) {
-      // position is [lat, lng], mapbox expects [lng, lat]
-      map.flyTo({ center: [position[1], position[0]], zoom: zoom ?? map.getZoom(), duration: 1000 });
+      map.flyTo({ 
+        center: [position[1], position[0]], 
+        zoom: zoom ?? map.getZoom(),
+        pitch: 65,
+        bearing: 45,
+        duration: 3500,
+        curve: 1.5,
+        essential: true
+      });
     }
   }, [position, zoom, map]);
 

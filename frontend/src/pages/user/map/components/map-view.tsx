@@ -1,6 +1,7 @@
 // src/pages/user/map/components/map-view.tsx
-import { Suspense } from "react";
+import { Suspense, useRef, useEffect } from "react";
 import Map, { Source, Layer } from "react-map-gl/mapbox";
+import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import { MAP_DEFAULTS } from "../constants";
@@ -61,15 +62,36 @@ interface MapViewProps {
     onLayersOpen: () => void;
 }
 export function MapView({
-    tileUrl,
     data,
     nav,
     onZoneClick,
     onLayersOpen,
-}: Omit<MapViewProps, "tileAttr">) {
+}: Omit<MapViewProps, "tileAttr" | "tileUrl">) {
+    const mapRef = useRef<MapRef>(null);
+
+    useEffect(() => {
+        const map = mapRef.current?.getMap();
+        if (!map) return;
+        
+        const setStandardConfig = () => {
+            try {
+                map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+                map.setConfigProperty('basemap', 'theme', 'faded');
+            } catch (e) {
+                // ignore
+            }
+        };
+        
+        map.on('style.load', setStandardConfig);
+        return () => {
+            map.off('style.load', setStandardConfig);
+        };
+    }, []);
+
     return (
         <Suspense fallback={<MapLoading />}>
             <Map
+                ref={mapRef}
                 initialViewState={{
                     longitude: data.position[1],
                     latitude: data.position[0],
@@ -78,7 +100,7 @@ export function MapView({
                 minZoom={MAP_DEFAULTS.minZoom}
                 maxZoom={MAP_DEFAULTS.maxZoom}
                 maxBounds={MAP_DEFAULTS.maxBounds}
-                mapStyle={tileUrl}
+                mapStyle="mapbox://styles/mapbox/standard"
                 mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
                 style={{ width: "100%", height: "100%" }}
                 terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}

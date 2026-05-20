@@ -6,7 +6,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useMapData } from "./hooks/use-map-data";
 import { useMapNavigation } from "./hooks/use-map-navigation";
 import { useNavigation } from "./hooks/use-navigation";
-import { TILE_URLS } from "./constants";
 import type { RiskZone } from "./types";
 import { MapView } from "./components/map-view";
 import { MapOverlays } from "./components/map-overlays";
@@ -27,8 +26,6 @@ const Map = () => {
 
 
   const alertTimeoutRef = useRef<number | null>(null);
-
-  const tileUrl = data.isDarkMode ? TILE_URLS.dark : TILE_URLS.light;
 
   useEffect(() => {
     return () => {
@@ -84,7 +81,6 @@ const Map = () => {
         )}
 
         <MapView
-          tileUrl={tileUrl}
           data={data}
           nav={nav}
           onZoneClick={setSelectedZone}
