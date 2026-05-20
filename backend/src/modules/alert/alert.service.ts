@@ -31,7 +31,7 @@ function toView(a: Alert): AlertView {
     message: a.message,
     lat: a.latitude,
     lng: a.longitude,
-    createdAt: a.createdAt.toISOString(),
+    createdAt: new Date(a.createdAt).toISOString(),
     assignedUnit: a.assignedUnit,
   };
 }

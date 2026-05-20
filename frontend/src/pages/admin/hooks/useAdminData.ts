@@ -366,7 +366,7 @@ export function useZoneActions(refetch: () => Promise<void>) {
     if (isPolygon) {
       payload.polygonCoordinates = formData.polygonCoordinates;
     } else {
-      payload.radiusMeters = Number(formData.radius);
+      payload.radiusMeters = Math.round(Number(formData.radius));
       payload.centerLat = Number(formData.lat);
       payload.centerLng = Number(formData.lng);
     }

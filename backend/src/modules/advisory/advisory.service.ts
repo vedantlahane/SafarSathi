@@ -14,9 +14,9 @@ function toView(a: TravelAdvisory) {
     affectedArea: a.affectedArea,
     source: a.source,
     active: a.active,
-    expiresAt: a.expiresAt?.toISOString() ?? null,
-    createdAt: a.createdAt.toISOString(),
-    updatedAt: a.updatedAt.toISOString(),
+    expiresAt: a.expiresAt ? new Date(a.expiresAt).toISOString() : null,
+    createdAt: new Date(a.createdAt).toISOString(),
+    updatedAt: new Date(a.updatedAt).toISOString(),
   };
 }
 

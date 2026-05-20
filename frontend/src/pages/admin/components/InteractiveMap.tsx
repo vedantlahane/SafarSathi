@@ -240,6 +240,7 @@ export function InteractiveMap({
         mapStyle="mapbox://styles/mapbox/light-v11"
         mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: "100%", height: "100%" }}
+        terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
         cursor={isAddingZone ? "crosshair" : cursor}
         interactiveLayerIds={onZoneClick ? ["zones-fill"] : []}
         onClick={isAddingZone ? handleMapClick : handleLayerClick}
@@ -268,7 +269,6 @@ export function InteractiveMap({
             "sky-atmosphere-sun-intensity": 15
           }}
         />
-        <Map.Terrain source="mapbox-dem" exaggeration={1.5} />
 
         {/* ── 3D Buildings ── */}
         <Layer

@@ -81,6 +81,7 @@ export function MapView({
                 mapStyle={tileUrl}
                 mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
                 style={{ width: "100%", height: "100%" }}
+                terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
                 attributionControl={true}
                 pitchWithRotate={true}
                 dragRotate={true}
@@ -121,7 +122,6 @@ export function MapView({
                         "sky-atmosphere-sun-intensity": 15
                     }}
                 />
-                <Map.Terrain source="mapbox-dem" exaggeration={1.5} />
 
                 {/* ── 3D Buildings ── */}
                 <Layer

@@ -4,7 +4,6 @@ import { haversineMeters } from "@/lib/geo";
 import { hapticFeedback } from "@/lib/store";
 import {
   SAFE_ROUTE_WEIGHTS,
-  ROUTE_INTERPOLATION_STEPS,
   POLICE_PROXIMITY_RADIUS_M,
 } from "../constants";
 import {

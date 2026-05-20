@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import type { PoliceUnit } from '@/types/api';
+import { useState, useEffect } from 'react';
+import type { PoliceDepartment as PoliceUnit } from '../types';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
