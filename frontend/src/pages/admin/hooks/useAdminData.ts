@@ -85,7 +85,9 @@ const normalizeAlert = (a: any): Alert => ({
   status: a.status,
   timestamp: a.createdAt || a.createdTime || a.timestamp || new Date().toISOString(),
   message: a.message,
-  location: (a.locationLat && a.locationLng) ? { lat: a.locationLat, lng: a.locationLng } : null,
+  location: ((a.lat ?? a.locationLat) != null && (a.lng ?? a.locationLng) != null)
+    ? { lat: a.lat ?? a.locationLat, lng: a.lng ?? a.locationLng }
+    : null,
   priority: a.priority,
   escalationLevel: a.escalationLevel,
   responseTimeMs: a.responseTimeMs,
@@ -96,6 +98,7 @@ const normalizeAlert = (a: any): Alert => ({
   cancelledAt: a.cancelledAt,
   media: a.media,
 });
+
 
 const normalizePolice = (p: any): PoliceDepartment => ({
   id: p.id || p._id,

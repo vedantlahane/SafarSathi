@@ -1,115 +1,29 @@
-import { useMemo, useEffect, useState, useCallback } from "react";
-import { MapContainer, TileLayer, Circle, Polygon as LeafletPolygon, Polyline, Marker, Tooltip, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
+import Map, { Source, Layer, Marker, NavigationControl } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
+import type { MapRef, MapMouseEvent } from "react-map-gl/mapbox";
 import {
-  Plus, X, Layers, ZoomIn, ZoomOut, Locate, Eye, EyeOff,
+  Plus, X, Layers, Eye, EyeOff,
   Shield, User, AlertTriangle, MapPin, Pentagon, Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RiskZone, Tourist, Alert, PoliceDepartment } from "../types";
+import { createCirclePolygon } from "@/lib/geo";
 
-// ── Fix default marker icon ─────────────────────────────
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
+// ── Map defaults (Punjab-centred, same as user map) ────────
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
+const INITIAL_VIEW = { longitude: 75.7048, latitude: 31.2554, zoom: 10 };
+const MAX_BOUNDS: [[number, number], [number, number]] = [[73.5, 29.3], [77.0, 32.5]];
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
-
-// ── Custom Icons ─────────────────────────────────────────
-const PoliceIcon = L.divIcon({
-  html: `<div style="background:#2563eb;padding:4px;border-radius:9999px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-  </div>`,
-  className: "",
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-});
-
-const PoliceInactiveIcon = L.divIcon({
-  html: `<div style="background:#94a3b8;padding:4px;border-radius:9999px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-  </div>`,
-  className: "",
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-});
-
-const AlertIcon = L.divIcon({
-  html: `<div style="position:relative">
-    <div style="position:absolute;inset:-6px;background:rgba(239,68,68,.3);border-radius:9999px;animation:ping 1.5s cubic-bezier(0,0,.2,1) infinite"></div>
-    <div style="background:#ef4444;padding:4px;border-radius:9999px;border:2px solid #fff;box-shadow:0 2px 8px rgba(239,68,68,.5);display:flex;align-items:center;justify-content:center;position:relative">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-    </div>
-  </div>`,
-  className: "",
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-});
-
-const TouristDot = (active: boolean) =>
-  L.divIcon({
-    html: `<div style="width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);background:${active ? "#3b82f6" : "#94a3b8"}"></div>`,
-    className: "",
-    iconSize: [10, 10],
-    iconAnchor: [5, 5],
-  });
-
-const CrosshairIcon = L.divIcon({
-  html: `<div style="background:#2563eb;padding:6px;border-radius:9999px;border:3px solid #fff;box-shadow:0 4px 12px rgba(37,99,235,.4);display:flex;align-items:center;justify-content:center">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M22 12h-4"/><path d="M6 12H2"/><path d="M12 6V2"/><path d="M12 22v-4"/></svg>
-  </div>`,
-  className: "",
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
-});
-
-// ── Zone severity colors ─────────────────────────────────
-const severityColor: Record<string, { stroke: string; fill: string }> = {
-  critical: { stroke: "#ef4444", fill: "#ef4444" },
-  high: { stroke: "#f97316", fill: "#f97316" },
-  medium: { stroke: "#f59e0b", fill: "#f59e0b" },
-  low: { stroke: "#22c55e", fill: "#22c55e" },
+// ── Severity colour palette ─────────────────────────────────
+const SEVERITY_COLORS: Record<string, { fill: string; stroke: string }> = {
+  critical: { fill: "#ef4444", stroke: "#b91c1c" },
+  high:     { fill: "#f97316", stroke: "#c2410c" },
+  medium:   { fill: "#f59e0b", stroke: "#b45309" },
+  low:      { fill: "#22c55e", stroke: "#15803d" },
 };
 
-// ── Map defaults ─────────────────────────────────────────
-const CENTER: [number, number] = [26.1445, 91.7362];
-const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-
-// ── Resize handler (fixes map inside flex containers) ────
-function ResizeHandler() {
-  const map = useMap();
-  useEffect(() => {
-    const obs = new ResizeObserver(() => map.invalidateSize());
-    obs.observe(map.getContainer());
-    return () => obs.disconnect();
-  }, [map]);
-  return null;
-}
-
-// ── Click handler for adding zones ───────────────────────
-function ClickHandler({ onMapClick, drawMode, onPolygonVertex }: { onMapClick?: (lat: number, lng: number) => void; drawMode?: string; onPolygonVertex?: (lat: number, lng: number) => void }) {
-  const map = useMap();
-  useEffect(() => {
-    const handler = (e: L.LeafletMouseEvent) => {
-      if (drawMode === "polygon" && onPolygonVertex) {
-        onPolygonVertex(e.latlng.lat, e.latlng.lng);
-      } else if (onMapClick) {
-        onMapClick(e.latlng.lat, e.latlng.lng);
-      }
-    };
-    map.on("click", handler);
-    return () => { map.off("click", handler); };
-  }, [map, onMapClick, drawMode, onPolygonVertex]);
-  return null;
-}
-
-// ── Props ────────────────────────────────────────────────
+// ── Props ───────────────────────────────────────────────────
 interface InteractiveMapProps {
   zones: RiskZone[];
   tourists: Tourist[];
@@ -133,60 +47,78 @@ interface InteractiveMapProps {
   onPolygonUndo?: () => void;
 }
 
-// ── Zoom Controls ────────────────────────────────────────
-function ZoomControls() {
-  const map = useMap();
-  return (
-    <div className="absolute top-3 right-3 z-1000 flex flex-col gap-1">
-      <button
-        onClick={() => map.zoomIn()}
-        className="glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm"
-        title="Zoom in"
-      >
-        <ZoomIn className="w-3.5 h-3.5 text-slate-700" />
-      </button>
-      <button
-        onClick={() => map.zoomOut()}
-        className="glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm"
-        title="Zoom out"
-      >
-        <ZoomOut className="w-3.5 h-3.5 text-slate-700" />
-      </button>
-      <button
-        onClick={() => map.setView(CENTER, 13)}
-        className="glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm mt-1"
-        title="Reset view"
-      >
-        <Locate className="w-3.5 h-3.5 text-slate-700" />
-      </button>
-    </div>
-  );
-}
+// ── Build zone GeoJSON (same logic as user-side ZoneOverlay) ─
+function buildZoneGeoJSON(zones: RiskZone[], selectedId?: number | string | null) {
+  const features: GeoJSON.Feature[] = [];
 
-// ── FitBounds helper ─────────────────────────────────────
-function FitBoundsOnData({ zones, tourists, alerts, policeUnits }: { zones: RiskZone[]; tourists: Tourist[]; alerts: Alert[]; policeUnits?: PoliceDepartment[] }) {
-  const map = useMap();
-  useEffect(() => {
-    const points: [number, number][] = [];
-    zones.forEach(z => {
-      if (z.shape === "polygon" && z.polygonCoordinates) {
-        z.polygonCoordinates.forEach(c => points.push(c));
-      } else {
-        points.push([z.center.lat, z.center.lng]);
-      }
-    });
-    tourists.filter(t => t.location).forEach(t => points.push([t.location!.lat, t.location!.lng]));
-    alerts.filter(a => a.location).forEach(a => points.push([a.location!.lat, a.location!.lng]));
-    policeUnits?.forEach(p => points.push([p.location.lat, p.location.lng]));
-    if (points.length >= 2) {
-      map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 15 });
+  zones.forEach((zone) => {
+    const c = SEVERITY_COLORS[zone.severity] ?? SEVERITY_COLORS.medium;
+    const isSelected = selectedId != null && zone.id === selectedId;
+    const level = zone.severity?.toLowerCase();
+    const isCritical = level === "critical";
+
+    let coordinates: [number, number][][];
+    if (zone.shape === "polygon" && zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
+      // polygonCoordinates are stored as [lat, lng]; Mapbox needs [lng, lat]
+      coordinates = [zone.polygonCoordinates.map(([lat, lng]) => [lng, lat] as [number, number])];
+    } else {
+      coordinates = [createCirclePolygon({ lat: zone.center.lat, lon: zone.center.lng }, zone.radius)];
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // only on mount
-  return null;
+
+    const height = isCritical ? 200 : level === "high" ? 120 : level === "medium" ? 60 : 25;
+
+    features.push({
+      type: "Feature",
+      properties: {
+        id: zone.id,
+        fillColor: c.fill,
+        strokeColor: c.stroke,
+        height,
+        opacity: zone.isActive ? (isSelected ? 0.55 : 0.32) : 0.14,
+        strokeWidth: isSelected ? 3 : isCritical ? 2.5 : 2,
+        name: zone.name,
+        severity: zone.severity,
+        isActive: zone.isActive,
+        radius: zone.radius,
+      },
+      geometry: { type: "Polygon", coordinates },
+    });
+  });
+
+  return { type: "FeatureCollection" as const, features };
 }
 
-// ── Component ────────────────────────────────────────────
+// ── Build polygon-drawing preview GeoJSON ───────────────────
+function buildDrawingGeoJSON(vertices: [number, number][]) {
+  if (vertices.length < 2) return null;
+  // vertices are [lat, lng]; Mapbox needs [lng, lat]
+  const coords = vertices.map(([lat, lng]) => [lng, lat] as [number, number]);
+  return {
+    type: "FeatureCollection" as const,
+    features: [
+      {
+        type: "Feature" as const,
+        properties: {},
+        geometry: {
+          type: "LineString" as const,
+          coordinates: [...coords, coords[0]], // close visually
+        },
+      },
+      ...(vertices.length >= 3
+        ? [{
+            type: "Feature" as const,
+            properties: {},
+            geometry: {
+              type: "Polygon" as const,
+              coordinates: [[...coords, coords[0]]],
+            },
+          }]
+        : []),
+    ],
+  };
+}
+
+// ── Component ───────────────────────────────────────────────
 export function InteractiveMap({
   zones,
   tourists,
@@ -208,6 +140,8 @@ export function InteractiveMap({
   onPolygonComplete,
   onPolygonUndo,
 }: InteractiveMapProps) {
+  const mapRef = useRef<MapRef>(null);
+
   const [layerToggles, setLayerToggles] = useState({
     zones: true,
     police: initialShowPolice,
@@ -215,221 +149,244 @@ export function InteractiveMap({
     alerts: initialShowAlerts,
   });
   const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [cursor, setCursor] = useState<string>("grab");
 
   const toggleLayer = useCallback((layer: keyof typeof layerToggles) => {
-    setLayerToggles(prev => ({ ...prev, [layer]: !prev[layer] }));
+    setLayerToggles((prev) => ({ ...prev, [layer]: !prev[layer] }));
   }, []);
 
+  // Derived data
   const activeAlerts = useMemo(
-    () => alerts.filter((a) => a.status === "ACTIVE" && a.location?.lat && a.location?.lng),
+    () => alerts.filter((a) => ["ACTIVE", "OPEN"].includes(a.status) && a.location?.lat != null && a.location?.lng != null),
     [alerts]
   );
-
   const visibleTourists = useMemo(
-    () => tourists.filter((t) => t.location?.lat && t.location?.lng).slice(0, 50),
+    () => tourists.filter((t) => t.location?.lat != null && t.location?.lng != null).slice(0, 80),
     [tourists]
   );
-
   const mapStats = useMemo(() => ({
-    zones: zones.filter(z => z.isActive).length,
-    tourists: visibleTourists.filter(t => t.isActive).length,
+    zones: zones.filter((z) => z.isActive).length,
+    tourists: visibleTourists.filter((t) => t.isActive).length,
     alerts: activeAlerts.length,
-    police: policeUnits?.filter(p => p.isActive).length ?? 0,
+    police: policeUnits?.filter((p) => p.isActive).length ?? 0,
   }), [zones, visibleTourists, activeAlerts, policeUnits]);
 
+  // GeoJSON memos
+  const zoneGeoJSON = useMemo(() => buildZoneGeoJSON(zones, selectedZone?.id), [zones, selectedZone]);
+  const drawingGeoJSON = useMemo(() => buildDrawingGeoJSON(polygonVertices), [polygonVertices]);
+
+  // Auto-fit bounds when data arrives (once)
+  const didFit = useRef(false);
+  useEffect(() => {
+    if (didFit.current) return;
+    const points: [number, number][] = [];
+    zones.forEach((z) => {
+      if (z.shape === "polygon" && z.polygonCoordinates?.length) {
+        z.polygonCoordinates.forEach(([lat, lng]) => points.push([lng, lat]));
+      } else {
+        points.push([z.center.lng, z.center.lat]);
+      }
+    });
+    visibleTourists.forEach((t) => points.push([t.location!.lng, t.location!.lat]));
+    activeAlerts.forEach((a) => points.push([a.location!.lng, a.location!.lat]));
+    policeUnits?.forEach((p) => points.push([p.location.lng, p.location.lat]));
+
+    if (points.length >= 2) {
+      const lngs = points.map((p) => p[0]);
+      const lats = points.map((p) => p[1]);
+      const bounds: [[number, number], [number, number]] = [
+        [Math.min(...lngs), Math.min(...lats)],
+        [Math.max(...lngs), Math.max(...lats)],
+      ];
+      setTimeout(() => {
+        mapRef.current?.fitBounds(bounds, { padding: 60, maxZoom: 14 });
+        didFit.current = true;
+      }, 300);
+    }
+  }, [zones, visibleTourists, activeAlerts, policeUnits]);
+
+  // Map click handler
+  const handleMapClick = useCallback((e: MapMouseEvent) => {
+    if (!isAddingZone) return;
+    const { lat, lng } = e.lngLat;
+    if (drawMode === "polygon" && onPolygonVertexAdd) {
+      onPolygonVertexAdd(lat, lng);
+    } else if (drawMode === "circle" && onMapClick) {
+      onMapClick(lat, lng);
+    }
+  }, [isAddingZone, drawMode, onPolygonVertexAdd, onMapClick]);
+
+  // Zone click via layer interaction
+  const handleLayerClick = useCallback((e: MapMouseEvent) => {
+    const feature = e.features?.[0];
+    if (!feature || !onZoneClick) return;
+    const zoneId = feature.properties?.id;
+    const zone = zones.find((z) => String(z.id) === String(zoneId));
+    if (zone) onZoneClick(zone);
+  }, [zones, onZoneClick]);
+
   return (
-    <div className="relative h-full w-full group">
-      <MapContainer
-        center={CENTER}
-        zoom={13}
+    <div className="relative h-full w-full">
+      <Map
+        ref={mapRef}
+        initialViewState={INITIAL_VIEW}
         minZoom={8}
         maxZoom={18}
-        scrollWheelZoom
-        zoomControl={false}
-        style={{ height: "100%", width: "100%" }}
-        className="z-0 rounded-b-lg"
+        maxBounds={MAX_BOUNDS}
+        mapStyle="mapbox://styles/mapbox/light-v11"
+        mapboxAccessToken={MAPBOX_TOKEN}
+        style={{ width: "100%", height: "100%" }}
+        cursor={isAddingZone ? "crosshair" : cursor}
+        interactiveLayerIds={onZoneClick ? ["zones-fill"] : []}
+        onClick={isAddingZone ? handleMapClick : handleLayerClick}
+        onMouseEnter={() => setCursor("pointer")}
+        onMouseLeave={() => setCursor("grab")}
       >
-        <ResizeHandler />
-        <TileLayer attribution={TILE_ATTR} url={TILE_URL} />
-        <FitBoundsOnData zones={zones} tourists={tourists} alerts={alerts} policeUnits={policeUnits} />
+        {/* Navigation controls (zoom +/-) */}
+        <NavigationControl position="top-right" showCompass={false} />
 
-        {/* Zone Add Click */}
-        {isAddingZone && <ClickHandler onMapClick={onMapClick} drawMode={drawMode} onPolygonVertex={onPolygonVertexAdd} />}
-
-        {/* Risk Zones — circles and polygons */}
-        {layerToggles.zones && zones.map((zone) => {
-          const c = severityColor[zone.severity] || severityColor.medium;
-          const isSelected = selectedZone?.id === zone.id;
-          const pathOpts = {
-            color: c.stroke,
-            fillColor: c.fill,
-            fillOpacity: isSelected ? 0.25 : 0.12,
-            weight: isSelected ? 3 : 1.5,
-            dashArray: zone.isActive ? undefined : "6 4",
-          };
-
-          if (zone.shape === "polygon" && zone.polygonCoordinates && zone.polygonCoordinates.length >= 3) {
-            return (
-              <LeafletPolygon
-                key={zone.id}
-                positions={zone.polygonCoordinates}
-                pathOptions={pathOpts}
-                eventHandlers={{ click: () => onZoneClick?.(zone) }}
-              >
-                <Tooltip direction="center" permanent={false}>
-                  <div className="text-center">
-                    <p className="text-xs font-semibold">{zone.name}</p>
-                    <p className="text-[10px] text-slate-500">{zone.severity} severity · polygon</p>
-                    {!zone.isActive && <p className="text-[10px] text-amber-600 font-medium">Inactive</p>}
-                  </div>
-                </Tooltip>
-              </LeafletPolygon>
-            );
-          }
-
-          return (
-            <Circle
-              key={zone.id}
-              center={[zone.center.lat, zone.center.lng]}
-              radius={zone.radius}
-              pathOptions={pathOpts}
-              eventHandlers={{ click: () => onZoneClick?.(zone) }}
-            >
-              <Tooltip direction="center" permanent={false}>
-                <div className="text-center">
-                  <p className="text-xs font-semibold">{zone.name}</p>
-                  <p className="text-[10px] text-slate-500">{zone.severity} severity · {zone.radius}m radius</p>
-                  {!zone.isActive && <p className="text-[10px] text-amber-600 font-medium">Inactive</p>}
-                </div>
-              </Tooltip>
-            </Circle>
-          );
-        })}
-
-        {/* Police Stations */}
-        {layerToggles.police &&
-          policeUnits?.map((p) => (
-            <Marker
-              key={p.id}
-              position={[p.location.lat, p.location.lng]}
-              icon={p.isActive ? PoliceIcon : PoliceInactiveIcon}
-            >
-              <Tooltip>
-                <div>
-                  <p className="text-xs font-semibold">{p.name}</p>
-                  <p className="text-[10px] text-slate-500">
-                    {p.isActive ? "🟢 On Duty" : "⚫ Off Duty"}
-                    {p.officerCount ? ` · ${p.officerCount} officers` : ""}
-                  </p>
-                  {p.jurisdictionRadiusKm && <p className="text-[10px] text-slate-400">{p.jurisdictionRadiusKm}km jurisdiction</p>}
-                </div>
-              </Tooltip>
-            </Marker>
-          ))}
-
-        {/* Tourists */}
-        {layerToggles.tourists &&
-          visibleTourists.map((t) => (
-            <Marker
-              key={t.id}
-              position={[t.location!.lat, t.location!.lng]}
-              icon={TouristDot(t.isActive)}
-            >
-              <Tooltip>
-                <div>
-                  <p className="text-xs font-medium">{t.name}</p>
-                  <p className="text-[10px] text-slate-500">
-                    {t.isActive ? "Online" : "Offline"} · Risk: {t.riskLevel}
-                  </p>
-                </div>
-              </Tooltip>
-            </Marker>
-          ))}
-
-        {/* Active Alerts */}
-        {layerToggles.alerts &&
-          activeAlerts.map((a) => (
-            <Marker
-              key={a.id}
-              position={[a.location!.lat, a.location!.lng]}
-              icon={AlertIcon}
-            >
-              <Tooltip>
-                <div>
-                  <p className="text-xs font-semibold text-red-600">{a.type.replaceAll("_", " ")}</p>
-                  <p className="text-[10px] text-slate-500">{a.touristName || "Unknown tourist"}</p>
-                  {a.assignedUnit && <p className="text-[10px] text-blue-600">Assigned: {a.assignedUnit}</p>}
-                </div>
-              </Tooltip>
-            </Marker>
-          ))}
-
-        {/* Polygon Drawing Preview */}
-        {isAddingZone && drawMode === "polygon" && polygonVertices.length > 0 && (
-          <>
-            <Polyline
-              positions={polygonVertices}
-              pathOptions={{ color: "#2563eb", weight: 2.5, dashArray: "6 4" }}
+        {/* ── Zone Fill-Extrusion Layers ──────────────────── */}
+        {layerToggles.zones && (
+          <Source id="zones-source" type="geojson" data={zoneGeoJSON}>
+            <Layer
+              id="zones-fill"
+              type="fill-extrusion"
+              paint={{
+                "fill-extrusion-color": ["get", "fillColor"],
+                "fill-extrusion-opacity": ["get", "opacity"],
+                "fill-extrusion-height": ["get", "height"],
+                "fill-extrusion-base": 0,
+              }}
             />
-            {polygonVertices.length >= 3 && (
-              <LeafletPolygon
-                positions={polygonVertices}
-                pathOptions={{ color: "#2563eb", fillColor: "#2563eb", fillOpacity: 0.08, weight: 0, dashArray: "0" }}
-              />
-            )}
-            {polygonVertices.map((v, i) => (
-              <Marker
-                key={`vertex-${i}`}
-                position={v}
-                icon={L.divIcon({
-                  html: `<div style="width:${i === 0 ? 14 : 10}px;height:${i === 0 ? 14 : 10}px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);background:${i === 0 ? '#2563eb' : '#60a5fa'}"></div>`,
-                  className: "",
-                  iconSize: [i === 0 ? 14 : 10, i === 0 ? 14 : 10],
-                  iconAnchor: [i === 0 ? 7 : 5, i === 0 ? 7 : 5],
-                })}
-              >
-                <Tooltip direction="top" permanent={i === 0 && polygonVertices.length >= 3}>
-                  <span className="text-[10px] font-medium">
-                    {i === 0 && polygonVertices.length >= 3 ? "Click to close" : `Point ${i + 1}`}
-                  </span>
-                </Tooltip>
-              </Marker>
-            ))}
-          </>
+            <Layer
+              id="zones-outline"
+              type="line"
+              paint={{
+                "line-color": ["get", "strokeColor"],
+                "line-width": ["get", "strokeWidth"],
+                "line-dasharray": ["case", ["!", ["get", "isActive"]], ["literal", [6, 4]], ["literal", [1, 0]]],
+              }}
+            />
+          </Source>
         )}
 
-        {/* New Zone Marker (circle mode) */}
-        {newZonePosition && (
-          <Marker
-            position={[newZonePosition.lat, newZonePosition.lng]}
-            icon={CrosshairIcon}
-          >
-            <Tooltip direction="top" permanent>
-              <span className="text-xs font-medium">
-                {newZonePosition.lat.toFixed(4)}, {newZonePosition.lng.toFixed(4)}
-              </span>
-            </Tooltip>
+        {/* ── Polygon drawing preview ─────────────────────── */}
+        {isAddingZone && drawingGeoJSON && (
+          <Source id="drawing-source" type="geojson" data={drawingGeoJSON as any}>
+            <Layer
+              id="drawing-fill"
+              type="fill"
+              filter={["==", "$type", "Polygon"]}
+              paint={{ "fill-color": "#2563eb", "fill-opacity": 0.08 }}
+            />
+            <Layer
+              id="drawing-line"
+              type="line"
+              filter={["==", "$type", "LineString"]}
+              paint={{ "line-color": "#2563eb", "line-width": 2.5, "line-dasharray": [6, 4] }}
+            />
+          </Source>
+        )}
+
+        {/* ── New-zone crosshair marker (circle mode) ─────── */}
+        {isAddingZone && newZonePosition && (
+          <Marker longitude={newZonePosition.lng} latitude={newZonePosition.lat} anchor="center">
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-[-10px] rounded-full bg-blue-500/20 animate-ping" />
+              <div className="w-9 h-9 rounded-full bg-blue-600 border-3 border-white shadow-lg shadow-blue-500/40 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/>
+                </svg>
+              </div>
+            </div>
           </Marker>
         )}
 
-        {/* Map-level zoom controls */}
-        <ZoomControls />
-      </MapContainer>
+        {/* ── Polygon vertex markers ──────────────────────── */}
+        {isAddingZone && drawMode === "polygon" && polygonVertices.map(([lat, lng], i) => (
+          <Marker key={`vertex-${i}`} longitude={lng} latitude={lat} anchor="center">
+            <div
+              className="rounded-full border-2 border-white shadow"
+              style={{
+                width: i === 0 ? 14 : 10,
+                height: i === 0 ? 14 : 10,
+                background: i === 0 ? "#2563eb" : "#60a5fa",
+              }}
+              title={i === 0 && polygonVertices.length >= 3 ? "First point — click to close" : `Point ${i + 1}`}
+            />
+          </Marker>
+        ))}
 
-      {/* ── Live Stats Overlay (top-left) ─────────────────── */}
-      <div className="absolute top-3 left-3 z-1000 flex flex-col gap-1.5">
-        {/* Add Zone Toggle */}
+        {/* ── Police Station Markers ──────────────────────── */}
+        {layerToggles.police && policeUnits?.map((p) => (
+          <Marker key={`police-${p.id}`} longitude={p.location.lng} latitude={p.location.lat} anchor="center">
+            <div
+              title={`${p.name}\n${p.isActive ? "🟢 On Duty" : "⚫ Off Duty"}${p.officerCount ? ` · ${p.officerCount} officers` : ""}`}
+              className="flex items-center justify-center rounded-full border-2 border-white shadow-md transition-transform hover:scale-110"
+              style={{
+                width: 28,
+                height: 28,
+                background: p.isActive ? "#2563eb" : "#94a3b8",
+                boxShadow: p.isActive ? "0 2px 8px rgba(37,99,235,0.45)" : "0 2px 6px rgba(0,0,0,0.2)",
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+          </Marker>
+        ))}
+
+        {/* ── Tourist Markers ─────────────────────────────── */}
+        {layerToggles.tourists && visibleTourists.map((t) => (
+          <Marker key={`tourist-${t.id}`} longitude={t.location!.lng} latitude={t.location!.lat} anchor="center">
+            <div
+              title={`${t.name}\n${t.isActive ? "Online" : "Offline"} · Risk: ${t.riskLevel}`}
+              className="rounded-full border-2 border-white shadow transition-transform hover:scale-125"
+              style={{
+                width: 11,
+                height: 11,
+                background: t.riskLevel === "critical" ? "#ef4444"
+                  : t.riskLevel === "high" ? "#f97316"
+                  : t.isActive ? "#3b82f6"
+                  : "#94a3b8",
+                boxShadow: t.riskLevel === "critical" ? "0 0 0 3px rgba(239,68,68,0.3)" : undefined,
+              }}
+            />
+          </Marker>
+        ))}
+
+        {/* ── Alert Markers ───────────────────────────────── */}
+        {layerToggles.alerts && activeAlerts.map((a) => (
+          <Marker key={`alert-${a.id}`} longitude={a.location!.lng} latitude={a.location!.lat} anchor="center">
+            <div className="relative flex items-center justify-center" title={`${a.type?.replaceAll("_", " ")}\n${a.touristName ?? "Unknown tourist"}${a.assignedUnit ? `\nAssigned: ${a.assignedUnit}` : ""}`}>
+              <div className="absolute inset-[-8px] rounded-full bg-red-500/25 animate-ping" />
+              <div
+                className="relative flex items-center justify-center rounded-full border-2 border-white shadow-lg"
+                style={{ width: 26, height: 26, background: "#ef4444", boxShadow: "0 2px 10px rgba(239,68,68,0.55)" }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                  <path d="M12 9v4"/><path d="M12 17h.01"/>
+                </svg>
+              </div>
+            </div>
+          </Marker>
+        ))}
+      </Map>
+
+      {/* ── Overlays (rendered outside Map so they sit on top) ── */}
+
+      {/* Top-left: Add-zone controls + live stats */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-auto">
+        {/* Add Zone toggle */}
         {onAddZone && (
           <Button
             size="sm"
             onClick={onAddZone}
             className={`shadow-lg h-8 text-xs ${isAddingZone ? "bg-red-500 hover:bg-red-600" : "bg-blue-600 hover:bg-blue-700"}`}
           >
-            {isAddingZone ? (
-              <><X className="h-3.5 w-3.5 mr-1" /> Cancel</>
-            ) : (
-              <><Plus className="h-3.5 w-3.5 mr-1" /> Add Zone</>
-            )}
+            {isAddingZone ? <><X className="h-3.5 w-3.5 mr-1" />Cancel</> : <><Plus className="h-3.5 w-3.5 mr-1" />Add Zone</>}
           </Button>
         )}
 
@@ -442,8 +399,7 @@ export function InteractiveMap({
                 drawMode === "circle" ? "bg-blue-500/20 text-blue-700" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <Target className="w-3 h-3" />
-              Circle
+              <Target className="w-3 h-3" />Circle
             </button>
             <button
               onClick={() => onDrawModeChange("polygon")}
@@ -451,8 +407,7 @@ export function InteractiveMap({
                 drawMode === "polygon" ? "bg-blue-500/20 text-blue-700" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              <Pentagon className="w-3 h-3" />
-              Polygon
+              <Pentagon className="w-3 h-3" />Polygon
             </button>
           </div>
         )}
@@ -500,11 +455,11 @@ export function InteractiveMap({
         </div>
       </div>
 
-      {/* ── Layer Toggle Panel (bottom-right) ─────────────── */}
-      <div className="absolute bottom-3 right-3 z-1000">
+      {/* Bottom-right: Layer toggle panel */}
+      <div className="absolute bottom-8 right-3 z-10 pointer-events-auto">
         <div className="flex flex-col items-end gap-1.5">
           {showLayerPanel && (
-            <div className="glass-elevated rounded-xl border border-white/40 p-2.5 shadow-lg animate-in scale-in space-y-1">
+            <div className="glass-elevated rounded-xl border border-white/40 p-2.5 shadow-lg space-y-1">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Map Layers</p>
               {([
                 { key: "zones" as const, label: "Risk Zones", icon: MapPin, color: "text-purple-600" },
@@ -516,9 +471,7 @@ export function InteractiveMap({
                   key={key}
                   onClick={() => toggleLayer(key)}
                   className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    layerToggles[key]
-                      ? "bg-white/50 text-slate-800"
-                      : "text-slate-400 hover:text-slate-600"
+                    layerToggles[key] ? "bg-white/50 text-slate-800" : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   {layerToggles[key] ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
@@ -529,7 +482,7 @@ export function InteractiveMap({
             </div>
           )}
           <button
-            onClick={() => setShowLayerPanel(prev => !prev)}
+            onClick={() => setShowLayerPanel((prev) => !prev)}
             className={`glass-elevated w-8 h-8 flex items-center justify-center rounded-xl border border-white/40 hover:bg-white/70 transition-all shadow-sm ${showLayerPanel ? "bg-white/60" : ""}`}
             title="Toggle layers"
           >
@@ -538,34 +491,27 @@ export function InteractiveMap({
         </div>
       </div>
 
-      {/* ── Map Legend (bottom-left) ───────────────────────── */}
-      <div className="absolute bottom-3 left-3 z-1000 glass-elevated rounded-xl p-2.5 shadow-lg border border-white/40">
+      {/* Bottom-left: Legend */}
+      <div className="absolute bottom-8 left-3 z-10 glass-elevated rounded-xl p-2.5 shadow-lg border border-white/40 pointer-events-none">
         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Legend</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          {[
+            { color: "#ef4444", label: "Critical" },
+            { color: "#f97316", label: "High" },
+            { color: "#f59e0b", label: "Medium" },
+            { color: "#22c55e", label: "Low" },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: color, background: `${color}44` }} />
+              <span className="text-[10px] text-slate-600">{label}</span>
+            </div>
+          ))}
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full border-2 border-red-500 bg-red-500/30" />
-            <span className="text-[10px] text-slate-600">Critical</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full border-2 border-orange-500 bg-orange-500/30" />
-            <span className="text-[10px] text-slate-600">High</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full border-2 border-amber-500 bg-amber-500/30" />
-            <span className="text-[10px] text-slate-600">Medium</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full border-2 border-emerald-500 bg-emerald-500/30" />
-            <span className="text-[10px] text-slate-600">Low</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-white bg-blue-500" />
             <span className="text-[10px] text-slate-600">Tourist</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-blue-600 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-white bg-blue-600" />
             <span className="text-[10px] text-slate-600">Police</span>
           </div>
         </div>
