@@ -12,11 +12,12 @@ import type { RiskZone, Tourist, Alert, PoliceDepartment } from "../types";
 // ── Fix default marker icon ─────────────────────────────
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-L.Marker.prototype.options.icon = L.icon({
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon,
   shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
 });
 
 // ── Custom Icons ─────────────────────────────────────────
