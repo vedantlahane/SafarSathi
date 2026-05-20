@@ -253,7 +253,7 @@ export function InteractiveMap({
               type="fill-extrusion"
               paint={{
                 "fill-extrusion-color": ["get", "fillColor"],
-                "fill-extrusion-opacity": ["get", "opacity"],
+                "fill-extrusion-opacity": 0.4,
                 "fill-extrusion-height": ["get", "height"],
                 "fill-extrusion-base": 0,
               }}
