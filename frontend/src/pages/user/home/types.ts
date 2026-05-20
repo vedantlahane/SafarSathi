@@ -13,6 +13,7 @@ export interface SafetyFactor {
   label: string;
   score: number;
   trend: "up" | "down" | "stable";
+  detail?: string;
 }
 
 export interface NotificationView {

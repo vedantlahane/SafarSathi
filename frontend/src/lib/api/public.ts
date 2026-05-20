@@ -107,12 +107,23 @@ function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
                 detail: typeof f.detail === "string" ? f.detail : undefined,
             }));
     } else if (rawRiskFactors) {
-        factors = rawRiskFactors.map(rf => ({
-            label: typeof rf === "string" ? rf : "Risk Factor",
-            score: (dangerScore * 100) || 50,
-            trend: "stable",
-            detail: typeof rf === "string" ? rf : undefined,
-        }));
+        factors = rawRiskFactors.map(rf => {
+            if (rf !== null && typeof rf === "object") {
+                const rfo = rf as Record<string, unknown>;
+                return {
+                    label: typeof rfo.label === "string" ? rfo.label : typeof rfo.id === "string" ? rfo.id : "Risk Factor",
+                    score: typeof rfo.score === "number" ? rfo.score : (dangerScore * 100) || 50,
+                    trend: isValidTrend(rfo.trend) ? rfo.trend : "stable",
+                    detail: typeof rfo.detail === "string" ? rfo.detail : undefined,
+                };
+            }
+            return {
+                label: typeof rf === "string" ? rf : "Risk Factor",
+                score: (dangerScore * 100) || 50,
+                trend: "stable",
+                detail: typeof rf === "string" ? rf : undefined,
+            };
+        });
     }
 
     const overallScore =
