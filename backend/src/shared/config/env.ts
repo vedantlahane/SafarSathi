@@ -18,6 +18,8 @@ const EnvSceama = z.object({
     ML_API_URL: z.string().url(),
     ML_API_TIMEOUT_MS: z.coerce.number().int().positive().default(2500),
     IMD_API_KEY: z.string().default('5b94d5e39dc7f1cdfbc1e079a53566814c47727a4baea7f7e0e6a93eb1fd8ae5'),
+    IMD_EMAIL: z.string().email().optional().default('your_registered_email@example.com'),
+    IMD_PASSWORD: z.string().optional().default('your_password'),
 })
 
 const parsed = EnvSceama.safeParse(process.env);

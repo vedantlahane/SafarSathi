@@ -31,7 +31,7 @@ const LEVEL_ORDER: Record<RiskZoneLevel, number> = {
   LOW: 1,
 };
 
-export async function gatherContext(lat: number, lng: number, query?: SafetyCheckQuery): Promise<any> {
+export async function gatherContext(lat: number, lng: number, query?: SafetyCheckQuery): Promise<SafetyContext & { district?: string | undefined }> {
   const [zonesNearby, nearestPolice, hospitalDist, activeAlerts] = await Promise.all([
     riskZoneRepo.nearby({ lat, lng, radiusKm: ZONE_RADIUS_KM }).catch(() => []),
     policeRepo.findNearestActive(lat, lng).catch(() => undefined),
@@ -56,10 +56,6 @@ export async function gatherContext(lat: number, lng: number, query?: SafetyChec
 
   const district: string | undefined = nearestPolice?.district || undefined;
 
-  if (query) {
-    const { safetyService } = await import('./safety.service.js');
-    return safetyService.synthesize(query, { ...ctx, district });
-  }
-
+  // The circular dependency on safetyService.synthesize has been removed to allow true separation of DB context fetching.
   return { ...ctx, district };
 }
