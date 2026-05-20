@@ -1,18 +1,18 @@
 // src/pages/user/map/hooks/use-map-data.ts
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import L from "leaflet";
 import { toast } from "sonner";
+import { haversineMeters } from "@/lib/geo";
 import {
   fetchPublicRiskZones,
   fetchPoliceDepartments,
   fetchHospitals,
+  fetchTouristPOIs,
   postLocation,
 } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
-import assamData from "./../../../../../../dataSets/punjabRistrictedAreas.json";
-import policeData from "./../../../../../../dataSets/punjabPoliceStations.json";
 import { MAP_DEFAULTS, LOCATION_POST_INTERVAL_MS } from "../constants";
+import { useQuery } from "@tanstack/react-query";
 import {
   formatETA,
   getCategoryLabel,
@@ -50,9 +50,7 @@ export function useMapData() {
   }, []);
 
   useEffect(() => {
-    const handleInteraction = () => {
-      setUserInteracted(true);
-    };
+    const handleInteraction = () => setUserInteracted(true);
     window.addEventListener("pointerdown", handleInteraction, { once: true });
     window.addEventListener("keydown", handleInteraction, { once: true });
     return () => {
@@ -63,19 +61,85 @@ export function useMapData() {
 
   // ── Core position state ──
   const [position] = useState<[number, number]>(MAP_DEFAULTS.center);
-  const [userPosition, setUserPosition] = useState<[number, number] | null>(
-    null
-  );
+  const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [heading, setHeading] = useState<number | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
   const [flyTo, setFlyTo] = useState<[number, number] | null>(null);
 
-  // ── Data state ──
-  const [backendZones, setBackendZones] = useState<RiskZone[]>([]);
-  const [backendStations, setBackendStations] = useState<PoliceStation[]>([]);
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  // ── Data fetching (React Query) – live backend only ──
+  const { data: rawZones, isError: zonesError } = useQuery({
+    queryKey: ["riskZones"],
+    queryFn: fetchPublicRiskZones,
+    retry: 2,
+    staleTime: 60_000,
+  });
+
+  const { data: rawStations, isError: stationsError } = useQuery({
+    queryKey: ["policeStations"],
+    queryFn: fetchPoliceDepartments,
+    retry: 2,
+    staleTime: 60_000,
+  });
+
+  const { data: rawHospitals, isError: hospitalsError } = useQuery({
+    queryKey: ["hospitals"],
+    queryFn: fetchHospitals,
+    retry: 2,
+    staleTime: 60_000,
+  });
+
+  const { data: rawPOIs } = useQuery({
+    queryKey: ["touristPOIs"],
+    queryFn: () => fetchTouristPOIs(),
+    retry: 2,
+    staleTime: 5 * 60_000, // 5 min — POIs change rarely
+  });
+
+  // On error: inform user but DO NOT fall back to stale JSON
+  useEffect(() => {
+    if (zonesError || stationsError || hospitalsError) {
+      toast.error("Could not fetch live map data", {
+        description: "Check your connection. Retrying automatically.",
+        id: "map-data-error",
+      });
+    }
+  }, [zonesError, stationsError, hospitalsError]);
+
+  // ── Normalize backend data ──
+  const backendZones = useMemo<RiskZone[]>(() => {
+    if (!rawZones) return [];
+    return rawZones.map((z, i) => ({ ...z, id: z.id ?? `bz-${i}` } as RiskZone));
+  }, [rawZones]);
+
+  const backendStations = useMemo(() => {
+    if (!rawStations) return [];
+    return rawStations.map((d, i) => ({
+      id: d.id ?? `bs-${i}`,
+      position: [d.latitude, d.longitude] as [number, number],
+      name: d.name,
+      contact: d.contactNumber,
+      available: d.isActive ?? true,
+    }));
+  }, [rawStations]);
+
+  const backendHospitals = useMemo(() => {
+    if (!rawHospitals) return [];
+    return rawHospitals.map((h) => ({
+      id: h.hospitalId ?? h.id,
+      position: [h.latitude, h.longitude] as [number, number],
+      name: h.name,
+      contact: h.contact,
+      type: h.type,
+      emergency: h.emergency,
+      tier: h.tier ?? undefined,
+      specialties: h.specialties,
+      bedCapacity: h.bedCapacity,
+      availableBeds: h.availableBeds,
+      ambulanceAvailable: h.ambulanceAvailable,
+    }));
+  }, [rawHospitals]);
 
   // ── Filter & layer state ──
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
@@ -89,9 +153,7 @@ export function useMapData() {
   // ── Derived state ──
   const [userInZone, setUserInZone] = useState(false);
   const [currentZoneName, setCurrentZoneName] = useState<string | null>(null);
-  const [nearestStation, setNearestStation] = useState<PoliceStation | null>(
-    null
-  );
+  const [nearestStation, setNearestStation] = useState<PoliceStation | null>(null);
   const [nearestHospital, setNearestHospital] = useState<Hospital | null>(null);
 
   // ── Environment state ──
@@ -106,98 +168,52 @@ export function useMapData() {
   const watchIdRef = useRef<number | null>(null);
   const lastPostRef = useRef(0);
 
-  // ── Fallback datasets ──
-  const allPoliceStations = useMemo<PoliceStation[]>(() => {
-    const stations: PoliceStation[] = [];
-    Object.entries(policeData.assamPoliceStations).forEach(
-      ([district, list]) => {
-        (
-          list as Array<{
-            id?: string | number;
-            position: number[];
-            name: string;
-            contact: string;
-            available?: boolean;
-            responseTime?: string;
-          }>
-        ).forEach((s, idx) => {
-          stations.push({
-            ...s,
-            id: s.id ?? `${district}-${idx}`,
-            position: s.position as [number, number],
-            available: s.available ?? true,
-          });
-        });
-      }
-    );
-    return stations;
-  }, []);
-
-  const fallbackZones = useMemo<RiskZone[]>(
-    () =>
-      (
-        assamData.restrictedZones as Array<{
-          id?: number | string;
-          name: string;
-          description?: string;
-          position: number[];
-          radius: number;
-          riskLevel?: string;
-        }>
-      ).map((z, idx) => ({
-        id: z.id ?? `fallback-zone-${idx}`,
-        name: z.name,
-        description: z.description ?? null,
-        centerLat: z.position[0],
-        centerLng: z.position[1],
-        radiusMeters: z.radius,
-        riskLevel: z.riskLevel?.toUpperCase() ?? "MEDIUM",
-      })),
-    []
-  );
-
-  // ── Filtered zones ──
-  const zones = useMemo(() => {
-    const src = backendZones.length ? backendZones : fallbackZones;
-    return src
+  // ── Filtered zones – live backend data only ──
+  const zones = useMemo<RiskZone[]>(() => {
+    return backendZones
       .map((z, i) => ({ ...z, id: z.id ?? `zone-${i}` }))
       .filter((z) => {
         if (!showLayers.zones) return false;
         if (riskFilter === "all") return true;
         return z.riskLevel?.toLowerCase() === riskFilter;
       });
-  }, [backendZones, fallbackZones, showLayers.zones, riskFilter]);
+  }, [backendZones, showLayers.zones, riskFilter]);
 
-  // ── Filtered stations with distance/ETA ──
-  const stations = useMemo(() => {
+  // ── Filtered stations with distance/ETA – live backend data only ──
+  const stations = useMemo<PoliceStation[]>(() => {
     if (!showLayers.police) return [];
-    const src = backendStations.length ? backendStations : allPoliceStations;
-    return src.map((s, i) => {
+    return backendStations.map((s, i) => {
       const enriched: PoliceStation = { ...s, id: s.id ?? `station-${i}` };
       if (userPosition) {
-        const dist = L.latLng(userPosition).distanceTo(L.latLng(s.position));
+        const dist = haversineMeters(
+          { lat: userPosition[0], lon: userPosition[1] },
+          { lat: s.position[0], lon: s.position[1] }
+        );
         enriched.distance = dist;
         enriched.eta = formatETA(dist, "walk");
       }
       return enriched;
     });
-  }, [backendStations, allPoliceStations, showLayers.police, userPosition]);
+  }, [backendStations, showLayers.police, userPosition]);
 
-  // ── Filtered hospitals with distance/ETA ──
-  const visibleHospitals = useMemo(() => {
+  // ── Filtered hospitals with distance/ETA – live backend data only ──
+  const visibleHospitals = useMemo<Hospital[]>(() => {
     if (!showLayers.hospitals) return [];
-    return hospitals.map((h) => {
+    return backendHospitals.map((h) => {
       const enriched: Hospital = { ...h };
       if (userPosition) {
-        const dist = L.latLng(userPosition).distanceTo(L.latLng(h.position));
+        const dist = haversineMeters(
+          { lat: userPosition[0], lon: userPosition[1] },
+          { lat: h.position[0], lon: h.position[1] }
+        );
         enriched.distance = dist;
         enriched.eta = formatETA(dist, "drive");
       }
       return enriched;
     });
-  }, [hospitals, showLayers.hospitals, userPosition]);
+  }, [backendHospitals, showLayers.hospitals, userPosition]);
 
-  // ── Geofence alert: detect zone enter/leave with severity-aware notifications ──
+  // ── Geofence alert: detect zone enter/leave ──
   useEffect(() => {
     if (!userPosition) {
       setUserInZone(false);
@@ -211,10 +227,7 @@ export function useMapData() {
     let highestSeverityLevel = -1;
 
     const severityOrder: Record<string, number> = {
-      low: 0,
-      medium: 1,
-      high: 2,
-      critical: 3,
+      low: 0, medium: 1, high: 2, critical: 3,
     };
 
     zones.forEach((z) => {
@@ -229,7 +242,6 @@ export function useMapData() {
       }
     });
 
-    // Detect newly entered zones — show severity-appropriate notification
     currentZoneIds.forEach((id) => {
       if (!prevZonesRef.current.has(id)) {
         const zone = zones.find((z) => z.id === id);
@@ -243,12 +255,12 @@ export function useMapData() {
 
           if (isCritical) {
             toast.error(`🔴 CRITICAL ZONE: ${zone.name}`, {
-              description: `${categoryLabel} — Leave this area immediately if possible. Stay alert and contact authorities if needed.`,
+              description: `${categoryLabel} — Leave this area immediately if possible.`,
               duration: 10000,
             });
           } else if (level === "high") {
             toast.warning(`⚠️ High Risk Zone: ${zone.name}`, {
-              description: `${categoryLabel} — Exercise extreme caution. Keep emergency contacts ready.`,
+              description: `${categoryLabel} — Exercise extreme caution.`,
               duration: 7000,
             });
           } else {
@@ -261,7 +273,6 @@ export function useMapData() {
       }
     });
 
-    // Detect zones left
     prevZonesRef.current.forEach((id) => {
       if (!currentZoneIds.has(id)) {
         hapticFeedback("light");
@@ -276,98 +287,35 @@ export function useMapData() {
 
   // ── Nearest police station ──
   useEffect(() => {
-    if (!userPosition || !stations.length) {
-      setNearestStation(null);
-      return;
-    }
+    if (!userPosition || !stations.length) { setNearestStation(null); return; }
     let nearest = stations[0];
     let min = Infinity;
     stations.forEach((s) => {
-      const d = L.latLng(userPosition).distanceTo(L.latLng(s.position));
-      if (d < min) {
-        min = d;
-        nearest = s;
-      }
+      const d = haversineMeters(
+        { lat: userPosition[0], lon: userPosition[1] },
+        { lat: s.position[0], lon: s.position[1] }
+      );
+      if (d < min) { min = d; nearest = s; }
     });
-    setNearestStation({
-      ...nearest,
-      distance: min,
-      eta: formatETA(min, "walk"),
-    });
+    setNearestStation({ ...nearest, distance: min, eta: formatETA(min, "walk") });
   }, [userPosition, stations]);
 
   // ── Nearest hospital ──
   useEffect(() => {
-    if (!userPosition || !visibleHospitals.length) {
-      setNearestHospital(null);
-      return;
-    }
+    if (!userPosition || !visibleHospitals.length) { setNearestHospital(null); return; }
     let nearest = visibleHospitals[0];
     let min = Infinity;
     visibleHospitals.forEach((h) => {
-      const d = L.latLng(userPosition).distanceTo(L.latLng(h.position));
-      if (d < min) {
-        min = d;
-        nearest = h;
-      }
+      const d = haversineMeters(
+        { lat: userPosition[0], lon: userPosition[1] },
+        { lat: h.position[0], lon: h.position[1] }
+      );
+      if (d < min) { min = d; nearest = h; }
     });
-    setNearestHospital({
-      ...nearest,
-      distance: min,
-      eta: formatETA(min, "drive"),
-    });
+    setNearestHospital({ ...nearest, distance: min, eta: formatETA(min, "drive") });
   }, [userPosition, visibleHospitals]);
 
-  // ── Load backend data ──
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const [rz, pd, hosp] = await Promise.all([
-          fetchPublicRiskZones(),
-          fetchPoliceDepartments(),
-          fetchHospitals(),
-        ]);
-        if (!active) return;
-        setBackendZones(
-          rz.map((z, i) => ({ ...z, id: z.id ?? `bz-${i}` }))
-        );
-        setBackendStations(
-          pd.map((d, i) => ({
-            id: d.id ?? `bs-${i}`,
-            position: [d.latitude, d.longitude] as [number, number],
-            name: d.name,
-            contact: d.contactNumber,
-            available: d.isActive ?? true,
-          }))
-        );
-        setHospitals(
-          hosp.map((h) => ({
-            id: h.hospitalId ?? h.id,
-            position: [h.latitude, h.longitude] as [number, number],
-            name: h.name,
-            contact: h.contact,
-            type: h.type,
-            emergency: h.emergency,
-            tier: h.tier ?? undefined,
-            specialties: h.specialties,
-            bedCapacity: h.bedCapacity,
-            availableBeds: h.availableBeds,
-            ambulanceAvailable: h.ambulanceAvailable,
-          }))
-        );
-      } catch {
-        toast.error("Using offline map data", {
-          description: "Could not fetch latest zones and stations",
-        });
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // ── Continuous GPS tracking via watchPosition ──
+  // ── Continuous GPS tracking ──
   useEffect(() => {
     if (!userInteracted) return;
     if (permissionState !== "granted") return;
@@ -375,25 +323,17 @@ export function useMapData() {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        const p: [number, number] = [
-          pos.coords.latitude,
-          pos.coords.longitude,
-        ];
+        const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setUserPosition(p);
         setAccuracy(pos.coords.accuracy);
         if (pos.coords.heading !== null) setHeading(pos.coords.heading);
         if (pos.coords.speed !== null) setSpeed(pos.coords.speed);
 
-        // Throttled location post to backend
         const now = Date.now();
-        if (
-          session?.touristId &&
-          now - lastPostRef.current > LOCATION_POST_INTERVAL_MS
-        ) {
+        if (session?.touristId && now - lastPostRef.current > LOCATION_POST_INTERVAL_MS) {
           lastPostRef.current = now;
           postLocation(session.touristId, {
-            lat: p[0],
-            lng: p[1],
+            lat: p[0], lng: p[1],
             accuracy: pos.coords.accuracy ?? undefined,
             speed: pos.coords.speed ?? undefined,
             heading: pos.coords.heading ?? undefined,
@@ -413,15 +353,10 @@ export function useMapData() {
 
   // ── Online/offline detection ──
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      toast.success("Back online");
-    };
+    const handleOnline = () => { setIsOnline(true); toast.success("Back online"); };
     const handleOffline = () => {
       setIsOnline(false);
-      toast.warning("You're offline", {
-        description: "Map data may be outdated",
-      });
+      toast.warning("You're offline", { description: "Map data may be outdated" });
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -436,10 +371,7 @@ export function useMapData() {
     const observer = new MutationObserver(() => {
       setIsDarkMode(document.documentElement.classList.contains("dark"));
     });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
 
@@ -451,10 +383,7 @@ export function useMapData() {
     setUserInteracted(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const p: [number, number] = [
-          pos.coords.latitude,
-          pos.coords.longitude,
-        ];
+        const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setUserPosition(p);
         setAccuracy(pos.coords.accuracy);
         setFlyTo(p);
@@ -487,6 +416,7 @@ export function useMapData() {
     zones,
     stations,
     hospitals: visibleHospitals,
+    pois: rawPOIs ?? [],
     nearestStation,
     nearestHospital,
     riskFilter,

@@ -8,8 +8,8 @@ export const MAP_DEFAULTS = {
 } as const;
 
 export const TILE_URLS = {
-  light: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  light: "mapbox://styles/mapbox/light-v11",
+  dark: "mapbox://styles/mapbox/dark-v11",
 } as const;
 
 export const TILE_ATTRIBUTIONS = {

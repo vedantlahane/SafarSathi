@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import L from "leaflet";
+import { haversineMeters } from "@/lib/geo";
 import { WALKING_SPEED_MS } from "../constants";
 import type { Destination, RouteInfo, SafeRoute } from "../types";
 
@@ -8,7 +8,10 @@ const ARRIVAL_THRESHOLD_M = 30;
 
 function getClosestDistance(route: SafeRoute, position: [number, number]): number {
   return route.coordinates.reduce((min, point) => {
-    const dist = L.latLng(position).distanceTo(L.latLng(point));
+    const dist = haversineMeters(
+      { lat: position[0], lon: position[1] },
+      { lat: point[0], lon: point[1] }
+    );
     return Math.min(min, dist);
   }, Number.POSITIVE_INFINITY);
 }
@@ -25,8 +28,9 @@ export function useNavigation(
 
   const distanceRemaining = useMemo(() => {
     if (!userPosition || !destination) return null;
-    return L.latLng(userPosition).distanceTo(
-      L.latLng(destination.lat, destination.lng)
+    return haversineMeters(
+      { lat: userPosition[0], lon: userPosition[1] },
+      { lat: destination.lat, lon: destination.lng }
     );
   }, [userPosition, destination]);
 
@@ -51,8 +55,9 @@ export function useNavigation(
       setHasArrived(false);
       return;
     }
-    const distance = L.latLng(userPosition).distanceTo(
-      L.latLng(destination.lat, destination.lng)
+    const distance = haversineMeters(
+      { lat: userPosition[0], lon: userPosition[1] },
+      { lat: destination.lat, lon: destination.lng }
     );
     if (distance <= ARRIVAL_THRESHOLD_M) {
       setHasArrived(true);

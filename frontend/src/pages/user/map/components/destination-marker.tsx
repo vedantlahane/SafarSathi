@@ -1,6 +1,6 @@
 // src/pages/user/map/components/destination-marker.tsx
-import { memo } from "react";
-import { Marker, Popup } from "react-leaflet";
+import { memo, useState } from "react";
+import { Marker, Popup } from "react-map-gl/mapbox";
 import { Target, Car, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { hapticFeedback } from "@/lib/store";
@@ -16,6 +16,8 @@ function DestinationMarkerInner({
   destination,
   onClear,
 }: DestinationMarkerProps) {
+  const [showPopup, setShowPopup] = useState(false);
+
   const openInMaps = () => {
     hapticFeedback("light");
     window.open(
@@ -25,13 +27,31 @@ function DestinationMarkerInner({
   };
 
   return (
-    <Marker
-      position={[destination.lat, destination.lng]}
-      icon={DestinationIcon}
-    >
-      <Popup>
-        <div className="p-3 min-w-[180px]">
-          <div className="flex items-center gap-2 mb-2">
+    <>
+      <Marker
+        latitude={destination.lat}
+        longitude={destination.lng}
+        anchor="bottom"
+        onClick={(e: any) => {
+          e.originalEvent.stopPropagation();
+          setShowPopup(!showPopup);
+        }}
+      >
+        <DestinationIcon />
+      </Marker>
+
+      {showPopup && (
+        <Popup
+          latitude={destination.lat}
+          longitude={destination.lng}
+          closeButton={true}
+          closeOnClick={false}
+          onClose={() => setShowPopup(false)}
+          anchor="top"
+          offset={14}
+        >
+          <div className="p-3 min-w-[180px]">
+            <div className="flex items-center gap-2 mb-2 mt-1">
             <Target className="h-5 w-5 text-emerald-600" />
             <span className="font-semibold text-sm">Destination</span>
           </div>
@@ -60,7 +80,8 @@ function DestinationMarkerInner({
           </div>
         </div>
       </Popup>
-    </Marker>
+    )}
+    </>
   );
 }
 

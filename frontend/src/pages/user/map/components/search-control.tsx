@@ -1,6 +1,6 @@
 // src/pages/user/map/components/search-control.tsx
 import { useState, useRef, useEffect, useCallback, memo } from "react";
-import { useMap } from "react-leaflet";
+import { useMap } from "react-map-gl/mapbox";
 import { Search, Loader2, X, MapPin, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,7 @@ interface SearchControlProps {
 }
 
 function SearchControlInner({ onSelectDestination }: SearchControlProps) {
-  const map = useMap();
+  const { current: map } = useMap();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -88,7 +88,7 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
   const selectResult = useCallback(
     (r: SearchResult) => {
       hapticFeedback("light");
-      map.flyTo([r.lat, r.lng], 15, { duration: 1.5 });
+      map?.flyTo({ center: [r.lng, r.lat], zoom: 15, duration: 1500 });
       onSelectDestination(r.name, r.lat, r.lng);
       setShowResults(false);
       setQuery("");

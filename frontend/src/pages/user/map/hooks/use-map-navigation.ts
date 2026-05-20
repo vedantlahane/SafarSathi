@@ -1,6 +1,6 @@
 // src/pages/user/map/hooks/use-map-navigation.ts
 import { useState, useCallback, useMemo } from "react";
-import L from "leaflet";
+import { haversineMeters } from "@/lib/geo";
 import { hapticFeedback } from "@/lib/store";
 import {
   SAFE_ROUTE_WEIGHTS,
@@ -86,7 +86,6 @@ function scoreRoute(
   let policeNearby = 0;
 
   coordinates.forEach((point) => {
-    const latLng = L.latLng(point);
 
     zones.forEach((zone) => {
       if (isPointInZone(point[0], point[1], zone)) {
@@ -99,7 +98,10 @@ function scoreRoute(
     });
 
     stations.forEach((station) => {
-      const dist = latLng.distanceTo(L.latLng(station.position));
+      const dist = haversineMeters(
+        { lat: point[0], lon: point[1] },
+        { lat: station.position[0], lon: station.position[1] }
+      );
       if (dist <= POLICE_PROXIMITY_RADIUS_M) policeNearby++;
     });
   });
@@ -123,7 +125,10 @@ function scoreRoute(
 function computeRouteDistance(coords: [number, number][]): number {
   let total = 0;
   for (let i = 1; i < coords.length; i++) {
-    total += L.latLng(coords[i - 1]).distanceTo(L.latLng(coords[i]));
+    total += haversineMeters(
+      { lat: coords[i - 1][0], lon: coords[i - 1][1] },
+      { lat: coords[i][0], lon: coords[i][1] }
+    );
   }
   return total;
 }

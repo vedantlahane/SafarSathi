@@ -331,3 +331,35 @@ export const blockchainLogs = pgTable(
 );
 export type BlockchainLog = typeof blockchainLogs.$inferSelect;
 export type NewBlockchainLog = typeof blockchainLogs.$inferInsert;
+
+// ─── TOURIST POIs (OpenStreetMap) ─────────────────────────────────────────────
+export const touristPOIs = pgTable(
+  'tourist_pois',
+  {
+    id:           bigserial({ mode: 'number' }).primaryKey(),
+    osmId:        bigint({ mode: 'number' }).unique(),
+    name:         text().notNull(),
+    type:         text().notNull(),   // gurudwara|temple|mosque|church|attraction|monument|museum|fort|hotel|tourist_info|fire_station|pharmacy
+    latitude:     doublePrecision().notNull(),
+    longitude:    doublePrecision().notNull(),
+    geom:         geography().notNull(),
+    city:         text().notNull(),
+    district:     text().notNull().default('Punjab'),
+    state:        text().notNull().default('Punjab'),
+    phone:        text(),
+    website:      text(),
+    openingHours: text(),
+    description:  text(),
+    isActive:     boolean().notNull().default(true),
+    createdAt:    timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt:    timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('poi_geom_idx').using('gist', t.geom),
+    index('poi_type_idx').on(t.type),
+    index('poi_osm_id_idx').on(t.osmId),
+    index('poi_active_idx').on(t.isActive),
+  ],
+);
+export type TouristPOI = typeof touristPOIs.$inferSelect;
+export type NewTouristPOI = typeof touristPOIs.$inferInsert;

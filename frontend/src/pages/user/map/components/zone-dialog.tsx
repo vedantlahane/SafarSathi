@@ -1,6 +1,6 @@
 // src/pages/user/map/components/zone-dialog.tsx
 import { memo, useMemo } from "react";
-import L from "leaflet";
+import { haversineMeters } from "@/lib/geo";
 import {
   AlertTriangle,
   MapPin,
@@ -55,8 +55,9 @@ function ZoneDialogInner({
 
   const distanceFromUser = useMemo(() => {
     if (!zone || !userPosition) return null;
-    return L.latLng(userPosition).distanceTo(
-      L.latLng(zone.centerLat, zone.centerLng)
+    return haversineMeters(
+      { lat: userPosition[0], lon: userPosition[1] },
+      { lat: zone.centerLat, lon: zone.centerLng }
     );
   }, [zone, userPosition]);
 

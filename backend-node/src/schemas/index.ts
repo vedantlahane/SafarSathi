@@ -9,3 +9,4 @@ export * from "./TouristLocationLog.schema.js";
 export * from "./Incident.schema.js";
 export * from "./TravelAdvisory.schema.js";
 export * from "./AuditLog.schema.js";
+export * from "./TouristPOI.schema.js";

@@ -1,6 +1,6 @@
 // src/pages/user/map/components/map-controls.tsx
 import { memo } from "react";
-import { useMap } from "react-leaflet";
+import { useMap } from "react-map-gl/mapbox";
 import { ZoomIn, ZoomOut, LocateFixed, Loader2, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ function MapControlsInner({
   bearing,
   onResetBearing,
 }: MapControlsProps) {
-  const map = useMap();
+  const { current: map } = useMap();
 
   return (
     <div className="absolute top-1/2 -translate-y-1/2 right-4 z-[1000] flex flex-col gap-2">
@@ -40,7 +40,7 @@ function MapControlsInner({
       <Button
         variant="secondary"
         size="icon"
-        onClick={() => map.zoomIn()}
+        onClick={() => map?.zoomIn()}
         aria-label="Zoom in"
         className="h-11 w-11 rounded-xl shadow-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-0"
       >
@@ -49,7 +49,7 @@ function MapControlsInner({
       <Button
         variant="secondary"
         size="icon"
-        onClick={() => map.zoomOut()}
+        onClick={() => map?.zoomOut()}
         aria-label="Zoom out"
         className="h-11 w-11 rounded-xl shadow-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-0"
       >

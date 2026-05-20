@@ -150,12 +150,17 @@ export async function fetchRealTimeSafety(lat: number, lon: number) {
             `/api/v1/safety/check?${params.toString()}`
         );
 
-        if (response && typeof response === "object" && "success" in response) {
-            const wrapped = response as ApiResponse<unknown>;
-            if (!wrapped.success || wrapped.data == null) {
-                return REALTIME_SAFETY_FALLBACK;
+        if (response && typeof response === "object") {
+            const wrapped = response as Record<string, unknown>;
+            if ("ok" in wrapped && wrapped.ok) {
+                if (wrapped.data != null) return normalizeSafetyPayload(wrapped.data);
             }
-            return normalizeSafetyPayload(wrapped.data);
+            if ("success" in wrapped) {
+                if (!wrapped.success || wrapped.data == null) {
+                    return REALTIME_SAFETY_FALLBACK;
+                }
+                return normalizeSafetyPayload(wrapped.data);
+            }
         }
 
         return normalizeSafetyPayload(response);
@@ -168,4 +173,33 @@ export async function fetchNearbyHospitals(lat: number, lng: number, radiusKm = 
     return request<HospitalResponse[]>(
         `/api/hospitals/nearby?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`
     );
+}
+
+// Tourist POI types from OSM
+export type TouristPOIType =
+    | "gurudwara" | "temple" | "mosque" | "church"
+    | "attraction" | "monument" | "museum" | "fort"
+    | "hotel" | "tourist_info" | "fire_station" | "pharmacy";
+
+export interface TouristPOI {
+    _id: string;
+    osmId: number;
+    name: string;
+    type: TouristPOIType;
+    latitude: number;
+    longitude: number;
+    city: string;
+    district: string;
+    state: string;
+    phone?: string;
+    website?: string;
+    openingHours?: string;
+    description?: string;
+    isActive: boolean;
+}
+
+export async function fetchTouristPOIs(types?: TouristPOIType[]): Promise<TouristPOI[]> {
+    const params = types?.length ? `?type=${types.join(",")}` : "";
+    const res = await request<{ ok: boolean; data: TouristPOI[] }>(`/api/tourist-pois${params}`);
+    return (res as any)?.data ?? (Array.isArray(res) ? res : []);
 }

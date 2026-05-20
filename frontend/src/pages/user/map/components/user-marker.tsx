@@ -1,8 +1,8 @@
 // src/pages/user/map/components/user-marker.tsx
-import { memo, useMemo } from "react";
-import { Marker, Popup, Circle } from "react-leaflet";
+import { memo, useState } from "react";
+import { Marker, Popup } from "react-map-gl/mapbox";
 import { Navigation } from "lucide-react";
-import { createUserIcon } from "./map-icons";
+import { UserIcon } from "./map-icons";
 
 interface UserMarkerProps {
   position: [number, number];
@@ -17,27 +17,34 @@ function UserMarkerInner({
   heading,
   speed,
 }: UserMarkerProps) {
-  const icon = useMemo(() => createUserIcon(heading), [heading]);
+  const [showPopup, setShowPopup] = useState(false);
 
   return (
     <>
-      {accuracy !== null && accuracy > 15 && (
-        <Circle
-          center={position}
-          radius={accuracy}
-          pathOptions={{
-            color: "#3b82f6",
-            fillColor: "#3b82f6",
-            fillOpacity: 0.06,
-            weight: 1,
-            dashArray: "4 4",
-          }}
-        />
-      )}
-      <Marker position={position} icon={icon}>
-        <Popup>
+      <Marker
+        latitude={position[0]}
+        longitude={position[1]}
+        anchor="center"
+        onClick={(e: any) => {
+          e.originalEvent.stopPropagation();
+          setShowPopup(!showPopup);
+        }}
+      >
+        <UserIcon heading={heading} />
+      </Marker>
+
+      {showPopup && (
+        <Popup
+          latitude={position[0]}
+          longitude={position[1]}
+          closeButton={true}
+          closeOnClick={false}
+          onClose={() => setShowPopup(false)}
+          anchor="top"
+          offset={18}
+        >
           <div className="p-3 text-center min-w-[160px]">
-            <div className="flex items-center gap-2 justify-center mb-2">
+            <div className="flex items-center gap-2 justify-center mb-2 mt-2">
               <Navigation className="h-5 w-5 text-blue-600" />
               <span className="font-semibold text-sm">Your Location</span>
             </div>
@@ -56,7 +63,7 @@ function UserMarkerInner({
             )}
           </div>
         </Popup>
-      </Marker>
+      )}
     </>
   );
 }

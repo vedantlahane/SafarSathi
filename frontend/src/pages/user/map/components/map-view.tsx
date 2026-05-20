@@ -1,7 +1,7 @@
 // src/pages/user/map/components/map-view.tsx
-import { Suspense, useEffect } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { Suspense } from "react";
+import Map from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 import { MAP_DEFAULTS } from "../constants";
 import type {
@@ -24,12 +24,12 @@ import { UserMarker } from "./user-marker";
 import { DestinationMarker } from "./destination-marker";
 import { RouteLines } from "./route-lines";
 import { MapLoading } from "./map-loading";
+import { TouristPOIMarkers } from "./tourist-poi-markers";
+import type { TouristPOI } from "@/lib/api/public";
 
 interface MapViewProps {
     /** Computed tile URL (light/dark). */
     tileUrl: string;
-    /** Computed tile attribution. */
-    tileAttr: string;
     /** Map data from useMapData. */
     data: {
         position: [number, number];
@@ -37,6 +37,7 @@ interface MapViewProps {
         zones: RiskZone[];
         stations: PoliceStation[];
         hospitals: Hospital[];
+        pois: TouristPOI[];
         userPosition: [number, number] | null;
         accuracy: number | null;
         heading: number | null;
@@ -59,41 +60,38 @@ interface MapViewProps {
     onZoneClick: (zone: RiskZone) => void;
     onLayersOpen: () => void;
 }
-
-function MapResizeHandler() {
-    const map = useMap();
-    useEffect(() => {
-        const observer = new ResizeObserver(() => {
-            map.invalidateSize();
-        });
-        observer.observe(map.getContainer());
-        return () => observer.disconnect();
-    }, [map]);
-    return null;
-}
-
 export function MapView({
     tileUrl,
-    tileAttr,
     data,
     nav,
     onZoneClick,
     onLayersOpen,
-}: MapViewProps) {
+}: Omit<MapViewProps, "tileAttr">) {
     return (
         <Suspense fallback={<MapLoading />}>
-            <MapContainer
-                center={data.position}
-                zoom={MAP_DEFAULTS.zoom}
+            <Map
+                initialViewState={{
+                    longitude: data.position[1],
+                    latitude: data.position[0],
+                    zoom: MAP_DEFAULTS.zoom,
+                }}
                 minZoom={MAP_DEFAULTS.minZoom}
                 maxZoom={MAP_DEFAULTS.maxZoom}
-                scrollWheelZoom
-                zoomControl={false}
-                style={{ height: "100%", width: "100%" }}
-                className="z-0"
+                mapStyle={tileUrl}
+                mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+                style={{ width: "100%", height: "100%" }}
+                attributionControl={true}
+                interactiveLayerIds={["zones-fill"]}
+                onClick={(e: any) => {
+                    const feature = e.features?.[0];
+                    if (feature && feature.properties?.id) {
+                        const zone = data.zones.find((z) => z.id === feature.properties!.id);
+                        if (zone) {
+                            onZoneClick(zone);
+                        }
+                    }
+                }}
             >
-                <MapResizeHandler />
-                <TileLayer attribution={tileAttr} url={tileUrl} />
                 <FlyToLocation position={data.flyTo} zoom={16} />
                 <SearchControl
                     onSelectDestination={nav.handleSelectDestination}
@@ -113,9 +111,10 @@ export function MapView({
                     onResetBearing={data.resetBearing}
                 />
 
-                <ZoneOverlay zones={data.zones} onZoneClick={onZoneClick} userPosition={data.userPosition} />
+                <ZoneOverlay zones={data.zones} onZoneClick={onZoneClick} />
                 <StationMarkers stations={data.stations} />
                 <HospitalMarkers hospitals={data.hospitals} />
+                <TouristPOIMarkers pois={data.pois} />
                 <RouteLines
                     routes={nav.routeInfo.routes}
                     visible={data.showLayers.routes}
@@ -136,7 +135,7 @@ export function MapView({
                         onClear={nav.clearDestination}
                     />
                 )}
-            </MapContainer>
+            </Map>
         </Suspense>
     );
 }
