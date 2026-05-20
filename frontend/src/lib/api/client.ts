@@ -1,26 +1,10 @@
 import axios from "axios";
 import { getSession, getAdminSession } from "../session";
 
-function isLocalHostname(hostname: string): boolean {
-    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
-}
-
-function isPrivateHostname(hostname: string): boolean {
-    return hostname.endsWith(".local") ||
-        /^10\./.test(hostname) ||
-        /^192\.168\./.test(hostname) ||
-        /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
-}
-
 function resolveBaseUrl(): string {
     const envUrl = import.meta.env.VITE_BACKEND_NODE_URL as string | undefined;
     if (envUrl?.trim()) return envUrl.trim();
-    if (typeof window === "undefined") return "http://localhost:8081";
-    const { protocol, hostname, origin } = window.location;
-    if (isLocalHostname(hostname) || isPrivateHostname(hostname)) {
-        return `${protocol}//${hostname}:8081`;
-    }
-    return origin;
+    return ""; // Use relative path in browser to let Vite proxy handle it, or same origin in prod
 }
 
 const API_BASE_URL = resolveBaseUrl();

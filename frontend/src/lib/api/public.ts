@@ -176,14 +176,9 @@ export async function fetchRealTimeSafety(lat: number, lon: number) {
 
         if (response && typeof response === "object") {
             const wrapped = response as Record<string, unknown>;
-            if ("ok" in wrapped && wrapped.ok) {
-                if (wrapped.data != null) return normalizeSafetyPayload(wrapped.data);
-            }
-            if ("success" in wrapped) {
-                if (!wrapped.success || wrapped.data == null) {
-                    return REALTIME_SAFETY_FALLBACK;
-                }
-                return normalizeSafetyPayload(wrapped.data);
+            if ("success" in wrapped || "danger_score" in wrapped) {
+                // If it's already unwrapped by client.ts
+                return normalizeSafetyPayload(wrapped);
             }
         }
 
