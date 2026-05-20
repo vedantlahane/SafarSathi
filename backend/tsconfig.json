@@ -4,6 +4,10 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2024"],
+    
+    // 🟢 ADD THIS LINE HERE
+    "typeRoots": ["./node_modules/@types"],
+    
     "types": ["node"],
     "outDir": "dist",
     "rootDir": ".",
@@ -18,7 +22,7 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": false,
-    "sourceMap": true,
+    "sourceMap": true
   },
   "include": ["src/**/*.ts", "drizzle.config.ts"],
   "exclude": ["node_modules", "dist"]
