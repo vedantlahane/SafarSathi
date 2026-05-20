@@ -15,7 +15,8 @@ export async function adminLogin(payload: {
     password: string;
 }) {
     return request<{
-        success: boolean;
+        ok?: boolean;
+        success?: boolean;
         token: string;
         admin: {
             id: string;

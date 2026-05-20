@@ -121,7 +121,8 @@ export function AdminPanel({
     try {
       const res = await adminLogin({ email, password });
 
-      if (!res.success) {
+      const ok = res.ok ?? res.success;
+      if (!ok) {
         throw new Error("Invalid credentials");
       }
 
