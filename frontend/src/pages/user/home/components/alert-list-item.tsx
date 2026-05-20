@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { ALERT_PRIORITY_COLORS, type AlertView } from "../types";
 
 interface AlertListItemProps {
@@ -29,7 +30,14 @@ function AlertListItemInner({ alert, onOpenDetail }: AlertListItemProps) {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold truncate">{alert.type}</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-sm font-semibold truncate">{alert.type}</p>
+              {alert.status && !["OPEN", "PENDING"].includes(alert.status) && (
+                <Badge variant={alert.status === "RESOLVED" ? "default" : "secondary"} className="h-4 text-[9px] px-1">
+                  {alert.status}
+                </Badge>
+              )}
+            </div>
             <time className="flex items-center gap-1 text-muted-foreground shrink-0">
               <Clock className="h-3 w-3" aria-hidden="true" />
               <span className="text-[10px]">{alert.time}</span>

@@ -1,6 +1,6 @@
 // src/pages/user/map/components/map-view.tsx
 import { Suspense } from "react";
-import Map from "react-map-gl/mapbox";
+import Map, { Source, Layer } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import { MAP_DEFAULTS } from "../constants";
@@ -103,6 +103,80 @@ export function MapView({
                 }}
             >
                 <FlyToLocation position={data.flyTo} zoom={16} />
+
+                {/* ── 3D Terrain & Sky ── */}
+                <Source
+                    id="mapbox-dem"
+                    type="raster-dem"
+                    url="mapbox://mapbox.mapbox-terrain-dem-v1"
+                    tileSize={512}
+                    maxzoom={14}
+                />
+                <Layer
+                    id="sky"
+                    type="sky"
+                    paint={{
+                        "sky-type": "atmosphere",
+                        "sky-atmosphere-sun": [0.0, 0.0],
+                        "sky-atmosphere-sun-intensity": 15
+                    }}
+                />
+                <Map.Terrain source="mapbox-dem" exaggeration={1.5} />
+
+                {/* ── 3D Buildings ── */}
+                <Layer
+                    id="3d-buildings"
+                    source="composite"
+                    source-layer="building"
+                    filter={["==", "extrude", "true"]}
+                    type="fill-extrusion"
+                    minzoom={15}
+                    paint={{
+                        "fill-extrusion-color": "#aaa",
+                        "fill-extrusion-height": [
+                            "interpolate",
+                            ["linear"],
+                            ["zoom"],
+                            15,
+                            0,
+                            15.05,
+                            ["get", "height"]
+                        ],
+                        "fill-extrusion-base": [
+                            "interpolate",
+                            ["linear"],
+                            ["zoom"],
+                            15,
+                            0,
+                            15.05,
+                            ["get", "min_height"]
+                        ],
+                        "fill-extrusion-opacity": 0.6
+                    }}
+                />
+
+                {/* ── Traffic Layer ── */}
+                <Source id="traffic" type="vector" url="mapbox://mapbox.mapbox-traffic-v1">
+                    <Layer
+                        id="traffic-line"
+                        type="line"
+                        source-layer="traffic"
+                        paint={{
+                            "line-width": 2,
+                            "line-color": [
+                                "match",
+                                ["get", "congestion"],
+                                "low", "#10b981",
+                                "moderate", "#f59e0b",
+                                "heavy", "#ef4444",
+                                "severe", "#7f1d1d",
+                                "transparent"
+                            ],
+                            "line-opacity": 0.75
+                        }}
+                    />
+                </Source>
+
                 <SearchControl
                     onSelectDestination={nav.handleSelectDestination}
                 />

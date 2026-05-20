@@ -8,6 +8,8 @@ import { hapticFeedback } from "@/lib/store";
 import { SEARCH_DEBOUNCE_MS } from "../constants";
 import type { SearchResult } from "../types";
 
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
+
 interface SearchControlProps {
   onSelectDestination: (name: string, lat: number, lng: number) => void;
 }
@@ -36,32 +38,20 @@ function SearchControlInner({ onSelectDestination }: SearchControlProps) {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          q + ", Punjab, India"
-        )}&limit=6&addressdetails=1&viewbox=73.8,29.5,76.9,32.5&bounded=0`,
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          q
+        )}.json?country=in&limit=6&proximity=75.7,31.2&access_token=${MAPBOX_TOKEN}`,
         { signal: abortRef.current.signal }
       );
       const data = await res.json();
-      const mapped: SearchResult[] = data.map(
-        (
-          d: {
-            place_id: number;
-            display_name: string;
-            lat: string;
-            lon: string;
-            type?: string;
-            address?: Record<string, string>;
-          },
-          idx: number
-        ) => ({
-          id: `search-${d.place_id}-${idx}`,
-          name: d.display_name.split(",").slice(0, 3).join(", "),
-          lat: parseFloat(d.lat),
-          lng: parseFloat(d.lon),
-          type: d.type,
-          address: d.address
-            ? [d.address.city, d.address.state].filter(Boolean).join(", ")
-            : undefined,
+      const mapped: SearchResult[] = data.features.map(
+        (f: any, idx: number) => ({
+          id: `search-${f.id}-${idx}`,
+          name: f.text,
+          lat: f.center[1],
+          lng: f.center[0],
+          type: f.place_type?.[0],
+          address: f.place_name.split(", ").slice(1).join(", "),
         })
       );
       setResults(mapped);

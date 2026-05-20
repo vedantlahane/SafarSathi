@@ -6,6 +6,7 @@ export interface AlertView {
   type: string;
   message: string;
   time: string;
+  status: string;
   priority: "critical" | "high" | "medium" | "low";
 }
 

@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { RiskZone, Tourist, Alert, PoliceDepartment } from "../types";
 import { createCirclePolygon } from "@/lib/geo";
+import { useIsochrones } from "../hooks/use-isochrone";
 
 // ── Map defaults (Punjab-centred, same as user map) ────────
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
@@ -147,7 +148,10 @@ export function InteractiveMap({
     police: initialShowPolice,
     tourists: initialShowTourists,
     alerts: initialShowAlerts,
+    policeReach: false,
   });
+
+  const isochroneGeoJSON = useIsochrones(policeUnits as any, layerToggles.policeReach);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const [cursor, setCursor] = useState<string>("grab");
 
@@ -241,9 +245,84 @@ export function InteractiveMap({
         onClick={isAddingZone ? handleMapClick : handleLayerClick}
         onMouseEnter={() => setCursor("pointer")}
         onMouseLeave={() => setCursor("grab")}
+        pitchWithRotate={true}
+        dragRotate={true}
       >
         {/* Navigation controls (zoom +/-) */}
         <NavigationControl position="top-right" showCompass={false} />
+
+        {/* ── 3D Terrain & Sky ── */}
+        <Source
+          id="mapbox-dem"
+          type="raster-dem"
+          url="mapbox://mapbox.mapbox-terrain-dem-v1"
+          tileSize={512}
+          maxzoom={14}
+        />
+        <Layer
+          id="sky"
+          type="sky"
+          paint={{
+            "sky-type": "atmosphere",
+            "sky-atmosphere-sun": [0.0, 0.0],
+            "sky-atmosphere-sun-intensity": 15
+          }}
+        />
+        <Map.Terrain source="mapbox-dem" exaggeration={1.5} />
+
+        {/* ── 3D Buildings ── */}
+        <Layer
+          id="3d-buildings"
+          source="composite"
+          source-layer="building"
+          filter={["==", "extrude", "true"]}
+          type="fill-extrusion"
+          minzoom={15}
+          paint={{
+            "fill-extrusion-color": "#aaa",
+            "fill-extrusion-height": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              15,
+              0,
+              15.05,
+              ["get", "height"]
+            ],
+            "fill-extrusion-base": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              15,
+              0,
+              15.05,
+              ["get", "min_height"]
+            ],
+            "fill-extrusion-opacity": 0.6
+          }}
+        />
+
+        {/* ── Traffic Layer ── */}
+        <Source id="traffic" type="vector" url="mapbox://mapbox.mapbox-traffic-v1">
+          <Layer
+            id="traffic-line"
+            type="line"
+            source-layer="traffic"
+            paint={{
+              "line-width": 2,
+              "line-color": [
+                "match",
+                ["get", "congestion"],
+                "low", "#10b981",
+                "moderate", "#f59e0b",
+                "heavy", "#ef4444",
+                "severe", "#7f1d1d",
+                "transparent"
+              ],
+              "line-opacity": 0.75
+            }}
+          />
+        </Source>
 
         {/* ── Zone Fill-Extrusion Layers ──────────────────── */}
         {layerToggles.zones && (
@@ -265,6 +344,30 @@ export function InteractiveMap({
                 "line-color": ["get", "strokeColor"],
                 "line-width": ["get", "strokeWidth"],
                 "line-dasharray": ["case", ["!", ["get", "isActive"]], ["literal", [6, 4]], ["literal", [1, 0]]],
+              }}
+            />
+          </Source>
+        )}
+
+        {/* ── Police Isochrone (Drive Time) Layers ────────── */}
+        {layerToggles.policeReach && isochroneGeoJSON && (
+          <Source id="isochrones-source" type="geojson" data={isochroneGeoJSON}>
+            <Layer
+              id="isochrones-fill"
+              type="fill"
+              paint={{
+                "fill-color": "#3b82f6",
+                "fill-opacity": 0.15,
+              }}
+            />
+            <Layer
+              id="isochrones-outline"
+              type="line"
+              paint={{
+                "line-color": "#2563eb",
+                "line-width": 2,
+                "line-dasharray": [4, 2],
+                "line-opacity": 0.7,
               }}
             />
           </Source>
@@ -464,6 +567,7 @@ export function InteractiveMap({
               {([
                 { key: "zones" as const, label: "Risk Zones", icon: MapPin, color: "text-purple-600" },
                 { key: "police" as const, label: "Police", icon: Shield, color: "text-blue-600" },
+                { key: "policeReach" as const, label: "Police Reach (10m)", icon: Target, color: "text-blue-400" },
                 { key: "tourists" as const, label: "Tourists", icon: User, color: "text-cyan-600" },
                 { key: "alerts" as const, label: "Alerts", icon: AlertTriangle, color: "text-red-600" },
               ]).map(({ key, label, icon: Icon, color }) => (

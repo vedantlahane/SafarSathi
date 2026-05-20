@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -11,6 +11,7 @@ import {
   type WSBroadcastPayload,
   type WSAdvisoryPayload,
   type WSScoreUpdatePayload,
+  postLocation,
 } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback, formatRelativeTime } from "@/lib/store";
@@ -98,6 +99,21 @@ export function useDashboard() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
+  // ── Background Location Sync ──
+  const lastPostRef = useRef<number>(0);
+  useEffect(() => {
+    if (gpsLocation && hasSession && session?.touristId) {
+      const now = Date.now();
+      if (now - lastPostRef.current > 30_000) {
+        lastPostRef.current = now;
+        postLocation(session.touristId, {
+          lat: gpsLocation.lat,
+          lng: gpsLocation.lon,
+        }).catch(() => {});
+      }
+    }
+  }, [gpsLocation, hasSession, session?.touristId]);
+
   // ── Realtime Safety Query ──
   const { 
     data: aiSafetyData, 
@@ -130,6 +146,7 @@ export function useDashboard() {
           type: a.alertType,
           message: a.message ?? "Alert received",
           time: formatRelativeTime(a.timestamp),
+          status: a.status,
           priority: a.priority as AlertView["priority"],
         })),
         openAlerts: rawDashboard.openAlerts ?? 0,
@@ -167,22 +184,34 @@ export function useDashboard() {
     const socket = connectWebSocket(room, {
       onAlert: (payload: WSAlertPayload) => {
         hapticFeedback("medium");
-        setData((prev) => ({
-          ...prev,
-          alerts: [
-            {
-              id: payload.alertId ?? Date.now(),
-              type: payload.alertType ?? "ALERT",
-              message: payload.message ?? "New alert received",
-              time: formatRelativeTime(
-                payload.createdTime ?? new Date().toISOString()
-              ),
-              priority: (payload.priority as AlertView["priority"]) ?? "high",
-            },
-            ...prev.alerts,
-          ].slice(0, 20),
-          openAlerts: prev.openAlerts + 1,
-        }));
+        setData((prev) => {
+          const newAlert: AlertView = {
+            id: payload.alertId ?? Date.now(),
+            type: payload.alertType ?? "ALERT",
+            message: payload.message ?? "New alert received",
+            time: formatRelativeTime(
+              payload.createdTime ?? new Date().toISOString()
+            ),
+            status: payload.status ?? "OPEN",
+            priority: (payload.priority as AlertView["priority"]) ?? "high",
+          };
+
+          const existingIndex = prev.alerts.findIndex(a => a.id === newAlert.id);
+          let newAlerts;
+          
+          if (existingIndex >= 0) {
+            newAlerts = [...prev.alerts];
+            newAlerts[existingIndex] = { ...newAlerts[existingIndex], ...newAlert };
+          } else {
+            newAlerts = [newAlert, ...prev.alerts].slice(0, 20);
+          }
+
+          return {
+            ...prev,
+            alerts: newAlerts,
+            openAlerts: newAlerts.filter(a => !["RESOLVED", "CANCELLED", "DISMISSED"].includes(a.status)).length,
+          };
+        });
 
         toast.warning(payload.alertType ?? "New Alert", {
           description: payload.message ?? "Check your alerts",

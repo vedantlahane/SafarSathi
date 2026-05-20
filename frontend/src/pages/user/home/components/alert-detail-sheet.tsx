@@ -76,6 +76,10 @@ export function AlertDetailSheet({
                 <p className="text-sm font-semibold">Severity</p>
                 <Badge className="capitalize">{severity}</Badge>
               </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-sm font-semibold">Status</p>
+                <Badge variant={alert.status === "RESOLVED" ? "default" : "secondary"}>{alert.status || "OPEN"}</Badge>
+              </div>
               <p className="mt-2 text-xs text-muted-foreground">{SEVERITY_TEXT[severity]}</p>
             </GlassCard>
 

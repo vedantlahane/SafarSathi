@@ -16,62 +16,7 @@ import {
   type RouteInfo,
 } from "../types";
 
-function interpolateRoute(
-  start: [number, number],
-  end: [number, number],
-  steps: number
-): [number, number][] {
-  const points: [number, number][] = [];
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    points.push([
-      start[0] + (end[0] - start[0]) * t,
-      start[1] + (end[1] - start[1]) * t,
-    ]);
-  }
-  return points;
-}
-
-function generateAlternativeRoutes(
-  start: [number, number],
-  end: [number, number]
-): [number, number][][] {
-  const midLat = (start[0] + end[0]) / 2;
-  const midLng = (start[1] + end[1]) / 2;
-  const dLat = Math.abs(end[0] - start[0]);
-  const dLng = Math.abs(end[1] - start[1]);
-  const offset = Math.max(dLat, dLng) * 0.15;
-
-  const directRoute = interpolateRoute(start, end, ROUTE_INTERPOLATION_STEPS);
-
-  const northRoute = [
-    ...interpolateRoute(
-      start,
-      [midLat + offset, midLng - offset * 0.5],
-      Math.floor(ROUTE_INTERPOLATION_STEPS / 2)
-    ),
-    ...interpolateRoute(
-      [midLat + offset, midLng - offset * 0.5],
-      end,
-      Math.floor(ROUTE_INTERPOLATION_STEPS / 2)
-    ),
-  ];
-
-  const southRoute = [
-    ...interpolateRoute(
-      start,
-      [midLat - offset, midLng + offset * 0.5],
-      Math.floor(ROUTE_INTERPOLATION_STEPS / 2)
-    ),
-    ...interpolateRoute(
-      [midLat - offset, midLng + offset * 0.5],
-      end,
-      Math.floor(ROUTE_INTERPOLATION_STEPS / 2)
-    ),
-  ];
-
-  return [directRoute, northRoute, southRoute];
-}
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
 function scoreRoute(
   coordinates: [number, number][],
@@ -122,16 +67,7 @@ function scoreRoute(
   return { score, intersections, policeNearby };
 }
 
-function computeRouteDistance(coords: [number, number][]): number {
-  let total = 0;
-  for (let i = 1; i < coords.length; i++) {
-    total += haversineMeters(
-      { lat: coords[i - 1][0], lon: coords[i - 1][1] },
-      { lat: coords[i][0], lon: coords[i][1] }
-    );
-  }
-  return total;
-}
+
 
 export function useMapNavigation(
   userPosition: [number, number] | null,
@@ -147,52 +83,60 @@ export function useMapNavigation(
       if (!userPosition) return;
       setRouteLoading(true);
 
-      // Simulate async for future Google Directions API integration
-      requestAnimationFrame(() => {
-        const alternativeCoords = generateAlternativeRoutes(userPosition, [
-          dest.lat,
-          dest.lng,
-        ]);
+      const fetchRoutes = async () => {
+        try {
+          const res = await fetch(
+            `https://api.mapbox.com/directions/v5/mapbox/driving/${userPosition[1]},${userPosition[0]};${dest.lng},${dest.lat}?alternatives=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
+          );
+          const data = await res.json();
+          if (!data.routes) throw new Error("No routes found");
 
-        const scoredRoutes: SafeRoute[] = alternativeCoords.map(
-          (coords, idx) => {
-            const { score, intersections, policeNearby } = scoreRoute(
-              coords,
-              zones,
-              stations
-            );
-            const distanceMeters = computeRouteDistance(coords);
-            const walkSpeedMs = 1.39;
-            const durationSeconds = Math.round(distanceMeters / walkSpeedMs);
+          const scoredRoutes: SafeRoute[] = data.routes.map(
+            (r: any, idx: number) => {
+              // Mapbox returns coordinates as [lng, lat], we need [lat, lng] for scoreRoute
+              const coords: [number, number][] = r.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+              
+              const { score, intersections, policeNearby } = scoreRoute(
+                coords,
+                zones,
+                stations
+              );
 
-            return {
-              id: `route-${idx}`,
-              coordinates: coords,
-              safetyScore: score,
-              distanceMeters,
-              durationSeconds,
-              intersections,
-              policeNearby,
-              isSafest: false,
-              isFastest: false,
-            };
-          }
-        );
+              return {
+                id: `route-${idx}`,
+                coordinates: coords,
+                safetyScore: score,
+                distanceMeters: r.distance,
+                durationSeconds: r.duration,
+                intersections,
+                policeNearby,
+                isSafest: false,
+                isFastest: false,
+              };
+            }
+          );
 
-        // Mark safest and fastest
-        const sortedBySafety = [...scoredRoutes].sort(
-          (a, b) => b.safetyScore - a.safetyScore
-        );
-        const sortedByDistance = [...scoredRoutes].sort(
-          (a, b) => a.distanceMeters - b.distanceMeters
-        );
+          // Mark safest and fastest
+          const sortedBySafety = [...scoredRoutes].sort(
+            (a, b) => b.safetyScore - a.safetyScore
+          );
+          const sortedByDistance = [...scoredRoutes].sort(
+            (a, b) => a.distanceMeters - b.distanceMeters
+          );
 
-        if (sortedBySafety[0]) sortedBySafety[0].isSafest = true;
-        if (sortedByDistance[0]) sortedByDistance[0].isFastest = true;
+          if (sortedBySafety[0]) sortedBySafety[0].isSafest = true;
+          if (sortedByDistance[0]) sortedByDistance[0].isFastest = true;
 
-        setRoutes(scoredRoutes);
-        setRouteLoading(false);
-      });
+          setRoutes(scoredRoutes);
+        } catch (error) {
+          console.error("Failed to fetch Mapbox routes:", error);
+          setRoutes([]);
+        } finally {
+          setRouteLoading(false);
+        }
+      };
+      
+      fetchRoutes();
     },
     [userPosition, zones, stations]
   );
