@@ -10,3 +10,10 @@ export const SafetyCheckQuerySchema = z.object({
   batteryPct: z.coerce.number().min(0).max(100).optional(),
 });
 export type SafetyCheckQuery = z.infer<typeof SafetyCheckQuerySchema>;
+
+export const SafetyEvaluateBodySchema = z.object({
+  lat: z.coerce.number().min(-90).max(90),
+  lon: z.coerce.number().min(-180).max(180),
+  local_hour: z.coerce.number().int().min(0).max(23),
+});
+export type SafetyEvaluateBody = z.infer<typeof SafetyEvaluateBodySchema>;

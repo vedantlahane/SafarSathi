@@ -90,8 +90,12 @@ function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
 
     // Phase 1 enrichments (optional — absent when served by legacy Python model)
     const rawFactors = Array.isArray(node.factors) ? node.factors : undefined;
-    const factors: RealTimeSafetyFactor[] | undefined = rawFactors
-        ? rawFactors
+    const rawRiskFactors = Array.isArray(node.risk_factors) ? node.risk_factors : undefined;
+    
+    let factors: RealTimeSafetyFactor[] | undefined = undefined;
+
+    if (rawFactors) {
+        factors = rawFactors
             .filter(
                 (f): f is Record<string, unknown> =>
                     f !== null && typeof f === "object"
@@ -101,8 +105,15 @@ function normalizeSafetyPayload(payload: unknown): RealTimeSafety {
                 score: typeof f.score === "number" ? f.score : 50,
                 trend: isValidTrend(f.trend) ? f.trend : "stable",
                 detail: typeof f.detail === "string" ? f.detail : undefined,
-            }))
-        : undefined;
+            }));
+    } else if (rawRiskFactors) {
+        factors = rawRiskFactors.map(rf => ({
+            label: typeof rf === "string" ? rf : "Risk Factor",
+            score: (dangerScore * 100) || 50,
+            trend: "stable",
+            detail: typeof rf === "string" ? rf : undefined,
+        }));
+    }
 
     const overallScore =
         typeof node.overallScore === "number" ? node.overallScore : undefined;
@@ -153,16 +164,14 @@ export async function fetchCurrentAdvisories() {
 }
 
 export async function fetchRealTimeSafety(lat: number, lon: number) {
-    const hour = new Date().getHours();
-    const params = new URLSearchParams({
-        lat: String(lat),
-        lon: String(lon),
-        hour: String(hour),
-    });
-
+    const local_hour = new Date().getHours();
     try {
         const response = await request<ApiResponse<unknown> | unknown>(
-            `/api/v1/safety/check?${params.toString()}`
+            "/api/v1/safety/evaluate",
+            {
+                method: "POST",
+                body: JSON.stringify({ lat, lon, local_hour })
+            }
         );
 
         if (response && typeof response === "object") {

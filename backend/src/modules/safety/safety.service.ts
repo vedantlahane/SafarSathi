@@ -2,39 +2,179 @@ import { redis } from '../../shared/cache/redis.js';
 import { mlClient } from '../../shared/ml/client.js';
 import { env } from '../../shared/config/env.js';
 import { logger } from '../../shared/logger/index.js';
-import { gatherContext } from './safety.context.js';
+import { externalApiService } from './external-api.service.js';
 import type { SafetyContext } from './safety.context.js';
-import type { SafetyCheckQuery } from './safety.schema.js';
+import type { SafetyCheckQuery, SafetyEvaluateBody } from './safety.schema.js';
 
 const snapToCell = (lat: number, lon: number): string => `${lat.toFixed(2)}:${lon.toFixed(2)}`;
 
-export const safetyService = {
-  async check(input: SafetyCheckQuery) {
-    const now = new Date();
-    const currentHour = input.hour ?? now.getHours();
-    const networkType = input.networkType || '4g';
-    const weatherSeverity = input.weatherSeverity ?? 0;
-    const airQualityIndex = input.aqi ?? 50;
+const IMD_WARNING_MAP: Record<string, string> = {
+  '1': 'No Warning',
+  '2': 'Heavy Rain',
+  '3': 'Heavy Snow',
+  '4': 'Thunderstorm & Lightning',
+  '5': 'Hailstorm',
+  '6': 'Dust Storm',
+  '9': 'Heat Wave',
+  '15': 'Fog',
+  '16': 'Very Heavy Rain',
+};
 
-    const cacheKey = [
-      'safety',
-      snapToCell(input.lat, input.lon),
-      currentHour,
-      networkType,
-      Math.round(weatherSeverity / 10),
-      Math.round(airQualityIndex / 50),
-    ].join(':');
+type AggregatorStatus = 'safe' | 'caution' | 'danger';
+type AggregatorLabel = 'SAFE' | 'WARNING' | 'DANGER' | 'CRITICAL_DANGER';
 
-    const cached = await redis.get(cacheKey).catch(() => null);
-    if (cached) {
-      try {
-        return { ...JSON.parse(cached), cached: true };
-      } catch {
-        /* fall through */
-      }
+function resolveAggregatorStatus(dangerIndex: number): { status: AggregatorStatus; label: AggregatorLabel; recommendation: string } {
+  if (dangerIndex >= 9) {
+    return {
+      status: 'danger',
+      label: 'CRITICAL_DANGER',
+      recommendation: 'Critical danger detected. Re-route immediately and follow official advisories.',
+    };
+  }
+
+  if (dangerIndex >= 6) {
+    return {
+      status: 'danger',
+      label: 'DANGER',
+      recommendation: 'Danger level detected. Avoid non-essential travel and seek a safer route.',
+    };
+  }
+
+  if (dangerIndex >= 3) {
+    return {
+      status: 'caution',
+      label: 'WARNING',
+      recommendation: 'Risk is rising. Stay alert and plan a safer route.',
+    };
+  }
+
+  return {
+    status: 'safe',
+    label: 'SAFE',
+    recommendation: 'Conditions look stable. Continue with normal precautions.',
+  };
+}
+
+function extractPmValue(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+async function buildMasterAggregator(input: SafetyEvaluateBody) {
+  const cacheKey = ['safety-evaluate', snapToCell(input.lat, input.lon), input.local_hour].join(':');
+  const cached = await redis.get(cacheKey).catch(() => null);
+  if (cached) {
+    try {
+      return { ...JSON.parse(cached), cached: true };
+    } catch {
+      // fall through to live aggregation
     }
+  }
 
-    return gatherContext(input.lat, input.lon, input);
+  const mlData = await externalApiService.fetchMlBaseline(input.lat, input.lon, input.local_hour);
+
+  if (mlData.status === 'OUT_OF_BOUNDS') {
+    return {
+      success: true,
+      danger_index: 0,
+      danger_score: 0,
+      safety_score: 100,
+      overallScore: 100,
+      status: 'safe' as const,
+      status_label: 'SAFE' as const,
+      riskLabel: 'Low Risk',
+      recommendation: 'Outside Punjab.',
+      spatial_context: mlData.spatial_context ?? null,
+      risk_factors: ['Outside Punjab'],
+      source: 'master_aggregator',
+      cached: false,
+    };
+  }
+
+  const district = String(mlData.spatial_context && typeof mlData.spatial_context === 'object' ? (mlData.spatial_context as Record<string, unknown>).district ?? 'Unknown' : 'Unknown');
+
+  const [aqiData, imdData] = await Promise.all([
+    externalApiService.fetchLiveAqi(input.lat, input.lon),
+    externalApiService.fetchLiveImdWarning(district),
+  ]);
+
+  let dangerIndex = 0;
+  const riskFactors: string[] = [];
+
+  let mlHazardScore = 0;
+  const mlBaseline = mlData.ml_baseline as Record<string, unknown> | null | undefined;
+  if (mlBaseline?.status === 'PERSISTENT_HAZARD') {
+    mlHazardScore = 4;
+    riskFactors.push('Historical Environmental Decay');
+  } else if (mlBaseline?.status === 'EMERGING_HAZARD') {
+    mlHazardScore = 2;
+    riskFactors.push('Emerging Environmental Pressure');
+  }
+
+  let aqiScore = 0;
+  const currentAqi = aqiData as Record<string, unknown>;
+  const pm25 = extractPmValue(currentAqi.pm2_5);
+  const pm10 = extractPmValue(currentAqi.pm10);
+
+  if (pm25 > 100 || pm10 > 200) {
+    aqiScore = 6;
+    riskFactors.push(`Toxic Air Quality (PM2.5: ${pm25})`);
+  } else if (pm25 > 60) {
+    aqiScore = 3;
+    riskFactors.push('Poor Air Quality');
+  }
+
+  dangerIndex += Math.max(mlHazardScore, aqiScore);
+
+  const infrastructure = mlData.infrastructure as Record<string, unknown> | null | undefined;
+  if (infrastructure?.socio_temporal_penalty_active === true) {
+    dangerIndex += 3;
+    riskFactors.push('Unlit Zone at Night');
+  }
+
+  if (imdData && ['3', '4'].includes(String(imdData.Day1_Color))) {
+    dangerIndex += 5;
+    const hazardCode = String(imdData?.Day_1 ?? '').split(',').at(0)?.trim() ?? '';
+    riskFactors.push(`IMD SEVERE ALERT: ${IMD_WARNING_MAP[hazardCode] || 'Weather Hazard'}`);
+  }
+
+  dangerIndex = Math.min(dangerIndex, 10);
+
+  const resolved = resolveAggregatorStatus(dangerIndex);
+  const dangerScore = Number((dangerIndex / 10).toFixed(2));
+  const safetyScore = Math.max(0, Math.round(100 - dangerIndex * 10));
+
+  const result = {
+    success: true,
+    danger_index: dangerIndex,
+    danger_score: dangerScore,
+    safety_score: safetyScore,
+    overallScore: safetyScore,
+    status: resolved.status,
+    status_label: resolved.label,
+    riskLabel: resolved.label === 'SAFE' ? 'Low Risk' : resolved.label === 'WARNING' ? 'Caution' : 'High Danger',
+    recommendation: resolved.recommendation,
+    spatial_context: mlData.spatial_context ?? null,
+    risk_factors: riskFactors,
+    ml_baseline: mlBaseline ?? null,
+    infrastructure: mlData.infrastructure ?? null,
+    live_aqi: aqiData,
+    live_imd: imdData,
+    source: 'master_aggregator',
+    cached: false,
+  };
+
+  await redis.setex(cacheKey, 60, JSON.stringify(result)).catch(() => undefined);
+  return result;
+}
+
+export const safetyService = {
+  async evaluate(input: SafetyEvaluateBody) {
+    return buildMasterAggregator(input);
+  },
+
+  async check(input: SafetyCheckQuery) {
+    const localHour = input.hour ?? new Date().getHours();
+    return buildMasterAggregator({ lat: input.lat, lon: input.lon, local_hour: localHour });
   },
 
   async synthesize(input: SafetyCheckQuery, ctx: SafetyContext & { district?: string | undefined }) {
