@@ -24,6 +24,7 @@ export interface Tourist {
   allergies?: string[];
   medicalConditions?: string[];
   safetyScore?: number;
+  adminManualPenalty?: number;
   idHash?: string;
   idExpiry?: string;
 }

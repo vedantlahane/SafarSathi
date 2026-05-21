@@ -101,6 +101,13 @@ export async function fetchAdminTourists() {
     return Array.isArray(res) ? res : (res?.items || []);
 }
 
+export async function updateTouristAdmin(touristId: string, payload: Partial<{ adminManualPenalty: number }>) {
+    return request(`/api/admin/tourists/${touristId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
 /* ─── Risk Zones ───────────────────────────────────────── */
 
 export async function fetchAdminRiskZones() {

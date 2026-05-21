@@ -54,3 +54,12 @@ touristAdminRouter.get(
   validate(TouristIdParamSchema, 'params'),
   touristController.getById,
 );
+
+touristAdminRouter.patch(
+  '/:touristId',
+  requireAuth,
+  requireRole('admin'),
+  validate(TouristIdParamSchema, 'params'),
+  validate(UpdateProfileSchema),
+  touristController.updateMe,
+);
