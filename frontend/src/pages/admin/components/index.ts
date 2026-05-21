@@ -7,3 +7,5 @@ export { InteractiveMap } from "./InteractiveMap";
 export { ActivityItem } from "./ActivityItem";
 export { LoginScreen } from "./LoginScreen";
 export { ActionBar } from "./ActionBar";
+export { AdminTour } from "./AdminTour";
+

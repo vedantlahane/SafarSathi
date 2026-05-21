@@ -12,11 +12,12 @@ function safetyStatus(score: number, hasActiveSos: boolean): 'sos' | 'warning' |
   return 'safe';
 }
 
-function alertPriority(a: Alert): string {
+function alertPriority(a: Alert): 'critical' | 'high' | 'medium' | 'low' {
   const t = a.alertType.toUpperCase();
   if (t === 'SOS') return 'critical';
-  if (t === 'RISK_ZONE' || t === 'DEVIATION' || t === 'INACTIVITY') return 'high';
-  return 'info';
+  if (t === 'RISK_ZONE' || t === 'DEVIATION') return 'high';
+  if (t === 'INACTIVITY') return 'medium';
+  return 'low';
 }
 
 function isActive(status: string) {

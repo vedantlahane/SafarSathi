@@ -70,6 +70,7 @@ export function SOSProvider({ children }: SOSProviderProps) {
     const [position, setPositionState] = useState<SOSPosition>(getStoredPosition);
     const [preAlertSent, setPreAlertSent] = useState(false);
     const [activeAlertId, setActiveAlertId] = useState<number | null>(null);
+    const [sosLocation, setSosLocation] = useState<{ lat: number; lng: number } | null>(null);
 
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -97,6 +98,7 @@ export function SOSProvider({ children }: SOSProviderProps) {
         setCountdown(3);
         setPreAlertSent(false);
         setActiveAlertId(null);
+        setSosLocation(null);
         hapticFeedback("light");
     }, [activeAlertId]);
 
@@ -112,6 +114,9 @@ export function SOSProvider({ children }: SOSProviderProps) {
 
         try {
             const loc = await getLocation();
+            if (loc.lat && loc.lng) {
+                setSosLocation({ lat: loc.lat, lng: loc.lng });
+            }
             const response = await postSOS(touristId, {
                 lat: loc.lat ?? undefined,
                 lng: loc.lng ?? undefined,
@@ -150,6 +155,7 @@ export function SOSProvider({ children }: SOSProviderProps) {
         setPhase("idle");
         setCountdown(3);
         setPreAlertSent(false);
+        setSosLocation(null);
         /* keep activeAlertId so user can still reference it */
     }, []);
 
@@ -185,6 +191,7 @@ export function SOSProvider({ children }: SOSProviderProps) {
             position,
             preAlertSent,
             activeAlertId,
+            sosLocation,
             startCountdown,
             cancelSOS,
             dismissSuccess,
@@ -199,6 +206,7 @@ export function SOSProvider({ children }: SOSProviderProps) {
             position,
             preAlertSent,
             activeAlertId,
+            sosLocation,
             startCountdown,
             cancelSOS,
             dismissSuccess,

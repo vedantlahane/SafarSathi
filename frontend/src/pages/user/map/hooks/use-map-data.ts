@@ -17,13 +17,14 @@ import { useQuery } from "@tanstack/react-query";
 import {
   formatETA,
   getCategoryLabel,
-  isPointInZone,
   type RiskZone,
   type PoliceStation,
   type Hospital,
   type RiskFilter,
   type LayerVisibility,
 } from "../types";
+import { useMatrixRouting } from "./use-matrix-routing";
+import { GeofenceEngine } from "@/lib/geofence";
 
 export function useMapData() {
   const session = useSession();
@@ -73,21 +74,24 @@ export function useMapData() {
     queryKey: ["riskZones"],
     queryFn: fetchPublicRiskZones,
     retry: 2,
-    staleTime: 60_000,
+    staleTime: 60_000,   // fresh for 1 min (zones change infrequently)
+    gcTime:  10 * 60_000,
   });
 
   const { data: rawStations, isError: stationsError } = useQuery({
     queryKey: ["policeStations"],
     queryFn: fetchPoliceDepartments,
     retry: 2,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000, // fresh for 5 min
+    gcTime:  10 * 60_000,
   });
 
   const { data: rawHospitals, isError: hospitalsError } = useQuery({
     queryKey: ["hospitals"],
     queryFn: fetchHospitals,
     retry: 2,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000, // fresh for 5 min
+    gcTime:  10 * 60_000,
   });
 
   const { data: rawPOIs } = useQuery({
@@ -95,6 +99,7 @@ export function useMapData() {
     queryFn: () => fetchTouristPOIs(),
     retry: 2,
     staleTime: 5 * 60_000, // 5 min — POIs change rarely
+    gcTime:  15 * 60_000,  // keep for 15 min
   });
 
   // On error: inform user but DO NOT fall back to stale JSON
@@ -154,8 +159,6 @@ export function useMapData() {
   // ── Derived state ──
   const [userInZone, setUserInZone] = useState(false);
   const [currentZoneName, setCurrentZoneName] = useState<string | null>(null);
-  const [nearestStation, setNearestStation] = useState<PoliceStation | null>(null);
-  const [nearestHospital, setNearestHospital] = useState<Hospital | null>(null);
 
   // ── Environment state ──
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -163,7 +166,6 @@ export function useMapData() {
     document.documentElement.classList.contains("dark")
   );
   // ── Refs ──
-  const prevZonesRef = useRef<Set<string | number>>(new Set());
   const watchIdRef = useRef<number | null>(null);
   const lastPostRef = useRef(0);
 
@@ -212,7 +214,13 @@ export function useMapData() {
     });
   }, [backendHospitals, showLayers.hospitals, userPosition]);
 
-  // ── Geofence alert: detect zone enter/leave ──
+  // ── Geofence alert: detect zone enter/leave (with RBush & Hysteresis) ──
+  const geofenceEngine = useMemo(() => new GeofenceEngine(backendZones), [backendZones]);
+  const activeZonesRef = useRef<Set<string | number>>(new Set());
+  const enterTimestampsRef = useRef<Map<string | number, number>>(new Map());
+  const exitTimestampsRef = useRef<Map<string | number, number>>(new Map());
+  const HYSTERESIS_MS = 4000; // 4 seconds continuous presence required to confirm entry/exit
+
   useEffect(() => {
     if (!userPosition) {
       setUserInZone(false);
@@ -220,99 +228,110 @@ export function useMapData() {
       return;
     }
 
-    const currentZoneIds = new Set<string | number>();
-    let inAnyZone = false;
-    let highestSeverityZoneName: string | null = null;
+    const now = Date.now();
+    // 1. Fast O(log N) lookup against ALL zones, regardless of layer visibility
+    const intersectingZones = geofenceEngine.findIntersectingZones(userPosition[0], userPosition[1]);
+    const intersectingIds = new Set(intersectingZones.map((z) => z.id));
+
+    const newlyActive = new Set<string | number>();
+    const newlyInactive = new Set<string | number>();
+
+    // 2. Process zone entries (debounce jitter)
+    for (const zone of intersectingZones) {
+      exitTimestampsRef.current.delete(zone.id); // Cancel any pending exit
+
+      if (!activeZonesRef.current.has(zone.id)) {
+        if (!enterTimestampsRef.current.has(zone.id)) {
+          // Start debounce timer
+          enterTimestampsRef.current.set(zone.id, now);
+        } else if (now - enterTimestampsRef.current.get(zone.id)! >= HYSTERESIS_MS) {
+          // Successfully debounced!
+          activeZonesRef.current.add(zone.id);
+          enterTimestampsRef.current.delete(zone.id);
+          newlyActive.add(zone.id);
+        }
+      }
+    }
+
+    // 3. Process zone exits (debounce jitter)
+    for (const id of activeZonesRef.current) {
+      if (!intersectingIds.has(id)) {
+        enterTimestampsRef.current.delete(id); // Cancel any pending entry
+
+        if (!exitTimestampsRef.current.has(id)) {
+          // Start exit debounce timer
+          exitTimestampsRef.current.set(id, now);
+        } else if (now - exitTimestampsRef.current.get(id)! >= HYSTERESIS_MS) {
+          // Successfully debounced exit!
+          activeZonesRef.current.delete(id);
+          exitTimestampsRef.current.delete(id);
+          newlyInactive.add(id);
+        }
+      }
+    }
+
+    // 4. Update UI state based on CONFIRMED active zones
     let highestSeverityLevel = -1;
+    let highestSeverityZoneName: string | null = null;
+    const severityOrder: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
 
-    const severityOrder: Record<string, number> = {
-      low: 0, medium: 1, high: 2, critical: 3,
-    };
-
-    zones.forEach((z) => {
-      if (isPointInZone(userPosition[0], userPosition[1], z)) {
-        currentZoneIds.add(z.id);
-        inAnyZone = true;
-        const s = severityOrder[z.riskLevel?.toLowerCase() ?? "medium"] ?? 1;
+    for (const id of activeZonesRef.current) {
+      const zone = backendZones.find((z) => z.id === id);
+      if (zone) {
+        const s = severityOrder[zone.riskLevel?.toLowerCase() ?? "medium"] ?? 1;
         if (s > highestSeverityLevel) {
           highestSeverityLevel = s;
-          highestSeverityZoneName = z.name;
+          highestSeverityZoneName = zone.name;
+        }
+      }
+    }
+
+    // 5. Trigger Side Effects (Toasts & Haptics) for debounced events
+    newlyActive.forEach((id) => {
+      const zone = backendZones.find((z) => z.id === id);
+      if (zone) {
+        const level = zone.riskLevel?.toLowerCase();
+        const categoryLabel = getCategoryLabel(zone.category);
+        const isCritical = level === "critical";
+        const isHighOrCritical = isCritical || level === "high";
+
+        hapticFeedback(isHighOrCritical ? "heavy" : "medium");
+
+        if (isCritical) {
+          toast.error(`🔴 CRITICAL ZONE: ${zone.name}`, {
+            description: `${categoryLabel} — Leave this area immediately if possible.`,
+            duration: 10000,
+          });
+        } else if (level === "high") {
+          toast.warning(`⚠️ High Risk Zone: ${zone.name}`, {
+            description: `${categoryLabel} — Exercise extreme caution.`,
+            duration: 7000,
+          });
+        } else {
+          toast.warning(`Entered risk zone: ${zone.name}`, {
+            description: `${zone.riskLevel ?? "Medium"} risk · ${categoryLabel} — Stay alert`,
+            duration: 5000,
+          });
         }
       }
     });
 
-    currentZoneIds.forEach((id) => {
-      if (!prevZonesRef.current.has(id)) {
-        const zone = zones.find((z) => z.id === id);
-        if (zone) {
-          const level = zone.riskLevel?.toLowerCase();
-          const categoryLabel = getCategoryLabel(zone.category);
-          const isCritical = level === "critical";
-          const isHighOrCritical = isCritical || level === "high";
-
-          hapticFeedback(isHighOrCritical ? "heavy" : "medium");
-
-          if (isCritical) {
-            toast.error(`🔴 CRITICAL ZONE: ${zone.name}`, {
-              description: `${categoryLabel} — Leave this area immediately if possible.`,
-              duration: 10000,
-            });
-          } else if (level === "high") {
-            toast.warning(`⚠️ High Risk Zone: ${zone.name}`, {
-              description: `${categoryLabel} — Exercise extreme caution.`,
-              duration: 7000,
-            });
-          } else {
-            toast.warning(`Entered risk zone: ${zone.name}`, {
-              description: `${zone.riskLevel ?? "Medium"} risk · ${categoryLabel} — Stay alert`,
-              duration: 5000,
-            });
-          }
-        }
-      }
+    newlyInactive.forEach(() => {
+      hapticFeedback("light");
+      toast.success("You've left the risk zone", { duration: 3000 });
     });
 
-    prevZonesRef.current.forEach((id) => {
-      if (!currentZoneIds.has(id)) {
-        hapticFeedback("light");
-        toast.success("You've left the risk zone", { duration: 3000 });
-      }
-    });
-
-    prevZonesRef.current = currentZoneIds;
-    setUserInZone(inAnyZone);
+    setUserInZone(activeZonesRef.current.size > 0);
     setCurrentZoneName(highestSeverityZoneName);
-  }, [userPosition, zones]);
+  }, [userPosition, geofenceEngine, backendZones]);
 
-  // ── Nearest police station ──
-  useEffect(() => {
-    if (!userPosition || !stations.length) { setNearestStation(null); return; }
-    let nearest = stations[0];
-    let min = Infinity;
-    stations.forEach((s) => {
-      const d = haversineMeters(
-        { lat: userPosition[0], lon: userPosition[1] },
-        { lat: s.position[0], lon: s.position[1] }
-      );
-      if (d < min) { min = d; nearest = s; }
-    });
-    setNearestStation({ ...nearest, distance: min, eta: formatETA(min, "walk") });
-  }, [userPosition, stations]);
+  // ── Nearest police station & hospital (Matrix API) ──
+  const { nearestStation, nearestHospital } = useMatrixRouting(
+    userPosition,
+    stations,
+    visibleHospitals
+  );
 
-  // ── Nearest hospital ──
-  useEffect(() => {
-    if (!userPosition || !visibleHospitals.length) { setNearestHospital(null); return; }
-    let nearest = visibleHospitals[0];
-    let min = Infinity;
-    visibleHospitals.forEach((h) => {
-      const d = haversineMeters(
-        { lat: userPosition[0], lon: userPosition[1] },
-        { lat: h.position[0], lon: h.position[1] }
-      );
-      if (d < min) { min = d; nearest = h; }
-    });
-    setNearestHospital({ ...nearest, distance: min, eta: formatETA(min, "drive") });
-  }, [userPosition, visibleHospitals]);
 
   // ── Continuous GPS tracking ──
   useEffect(() => {

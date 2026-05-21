@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { haversineMeters } from "@/lib/geo";
-import { WALKING_SPEED_MS } from "../constants";
 import type { Destination, RouteInfo, SafeRoute } from "../types";
 
 const DEVIATION_THRESHOLD_M = 60;
@@ -21,25 +20,40 @@ export function useNavigation(
   destination: Destination | null,
   routeInfo: RouteInfo
 ) {
+  const [navigationActive, setNavigationActive] = useState(false);
   const [isDeviation, setIsDeviation] = useState(false);
   const [hasArrived, setHasArrived] = useState(false);
 
   const safest = routeInfo.safest ?? null;
 
+  // Reset navigation state when destination is cleared
+  useEffect(() => {
+    if (!destination) {
+      setNavigationActive(false);
+    }
+  }, [destination]);
+
+  const startNavigation = useCallback(() => {
+    if (userPosition && destination && safest) {
+      setNavigationActive(true);
+    }
+  }, [userPosition, destination, safest]);
+
+  const stopNavigation = useCallback(() => {
+    setNavigationActive(false);
+  }, []);
+
   const distanceRemaining = useMemo(() => {
-    if (!userPosition || !destination) return null;
-    return haversineMeters(
-      { lat: userPosition[0], lon: userPosition[1] },
-      { lat: destination.lat, lon: destination.lng }
-    );
-  }, [userPosition, destination]);
+    if (!userPosition || !destination || !safest) return null;
+    return safest.distanceMeters;
+  }, [userPosition, destination, safest]);
 
   const etaMinutes = useMemo(() => {
-    if (distanceRemaining === null) return null;
-    return Math.max(1, Math.round(distanceRemaining / WALKING_SPEED_MS / 60));
-  }, [distanceRemaining]);
+    if (!safest) return null;
+    return Math.round(safest.durationSeconds / 60);
+  }, [safest]);
 
-  const active = Boolean(userPosition && destination && safest && !routeInfo.loading);
+  const active = navigationActive && Boolean(userPosition && destination && safest && !routeInfo.loading);
 
   useEffect(() => {
     if (!active || !userPosition || !safest) {
@@ -81,5 +95,7 @@ export function useNavigation(
     hasArrived,
     dismissArrival,
     acknowledgeDeviation,
+    startNavigation,
+    stopNavigation,
   };
 }

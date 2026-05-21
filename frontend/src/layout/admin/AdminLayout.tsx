@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   LayoutDashboard,
   Bell,
@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Shield,
   X,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { AdminPanel } from "@/pages/admin";
+import { AdminTour } from "@/pages/admin/components";
 import { clearAdminSession, useAdminSession } from "@/lib/session";
 
 const NAV_ITEMS = [
@@ -33,11 +35,38 @@ const NAV_ITEMS = [
   { id: "police", label: "Police Units", icon: Building2 },
 ];
 
+const TOUR_STEP_TABS = [
+  "dashboard", // Step 1: Welcome
+  "dashboard", // Step 2: Stats & Overview
+  "alerts",    // Step 3: Emergency Alerts
+  "tourists",  // Step 4: Tourist Directory
+  "zones",     // Step 5: Geofencing
+  "police",    // Step 6: First Responders
+  "dashboard", // Step 7: Global Broadcast
+  "dashboard", // Step 8: Conclusion
+];
+
 export default function AdminLayout() {
   const session = useAdminSession();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [alertBadgeCount, setAlertBadgeCount] = useState(0);
+
+  // Tour States
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+
+  // Auto-trigger tour for new administrators
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem("yatrax:admin-tour-completed");
+    if (!tourCompleted && session?.adminId) {
+      const timer = setTimeout(() => {
+        setShowTour(true);
+        setTourStep(0);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [session?.adminId]);
 
   const handleLogout = () => {
     clearAdminSession();
@@ -74,31 +103,35 @@ export default function AdminLayout() {
             {/* Navigation Tabs */}
             {session?.adminId && (
               <nav className="hidden md:flex items-center gap-0.5">
-                {NAV_ITEMS.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all duration-200",
-                      activeTab === item.id
-                        ? "bg-slate-900 text-white shadow-md shadow-slate-900/15"
-                        : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
-                    )}
-                  >
-                    <item.icon className="h-3.5 w-3.5" />
-                    <span>{item.label}</span>
-                    {item.id === "alerts" && alertBadgeCount > 0 && (
-                      <Badge className={cn(
-                        "ml-1 h-5 min-w-5 px-1.5 text-[10px] font-bold",
-                        activeTab === "alerts"
-                          ? "bg-white/20 text-white border-white/30"
-                          : "bg-red-100 text-red-600 border-red-200/60"
-                      )}>
-                        {alertBadgeCount}
-                      </Badge>
-                    )}
-                  </button>
-                ))}
+                {NAV_ITEMS.map((item) => {
+                  const isTourHighlight = showTour && TOUR_STEP_TABS[tourStep] === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all duration-200 relative",
+                        activeTab === item.id
+                          ? "bg-slate-900 text-white shadow-md shadow-slate-900/15"
+                          : "text-slate-500 hover:text-slate-800 hover:bg-white/50",
+                        isTourHighlight && "ring-2 ring-emerald-500 ring-offset-2 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse scale-105 z-10"
+                      )}
+                    >
+                      <item.icon className="h-3.5 w-3.5" />
+                      <span>{item.label}</span>
+                      {item.id === "alerts" && alertBadgeCount > 0 && (
+                        <Badge className={cn(
+                          "ml-1 h-5 min-w-5 px-1.5 text-[10px] font-bold",
+                          activeTab === "alerts"
+                            ? "bg-white/20 text-white border-white/30"
+                            : "bg-red-100 text-red-600 border-red-200/60"
+                        )}>
+                          {alertBadgeCount}
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
               </nav>
             )}
           </div>
@@ -124,6 +157,20 @@ export default function AdminLayout() {
                   </button>
                 )}
               </div>
+
+              {/* Help Tour Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowTour(true);
+                  setTourStep(0);
+                }}
+                className="hidden sm:flex h-8 gap-1.5 px-3 rounded-xl hover:bg-white/40 text-slate-600 hover:text-slate-900 text-xs font-semibold"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                <span>Help Tour</span>
+              </Button>
 
               {/* Live Status */}
               <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50/50 backdrop-blur border border-emerald-200/30">
@@ -170,21 +217,25 @@ export default function AdminLayout() {
         {session?.adminId && (
           <div className="md:hidden border-t border-white/20 px-3 py-1.5 overflow-x-auto">
             <nav className="flex items-center gap-0.5">
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-all duration-200",
-                    activeTab === item.id
-                      ? "bg-slate-900 text-white shadow-md"
-                      : "text-slate-500 hover:bg-white/40"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
+              {NAV_ITEMS.map((item) => {
+                const isTourHighlight = showTour && TOUR_STEP_TABS[tourStep] === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-all duration-200",
+                      activeTab === item.id
+                        ? "bg-slate-900 text-white shadow-md"
+                        : "text-slate-500 hover:bg-white/40",
+                      isTourHighlight && "ring-2 ring-emerald-500 ring-offset-2 shadow-[0_0_10px_rgba(16,185,129,0.4)] animate-pulse"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
             </nav>
           </div>
         )}
@@ -199,6 +250,16 @@ export default function AdminLayout() {
           onAlertCountUpdate={handleAlertCountUpdate}
         />
       </main>
+
+      {/* Admin Tour Guide Overlay */}
+      <AdminTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentStep={tourStep}
+        setCurrentStep={setTourStep}
+      />
     </div>
   );
 }

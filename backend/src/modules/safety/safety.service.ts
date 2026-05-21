@@ -65,7 +65,9 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
   const lon = input.lon;
   const localHour = ('local_hour' in input) ? input.local_hour : (input.hour ?? new Date().getHours());
 
-  const cacheKey = ['safety-evaluate', snapToCell(lat, lon), localHour].join(':');
+  // Key on 2-decimal grid (~1.1km cells) WITHOUT the hour — the 300s TTL handles time freshness.
+  // Including the hour caused cache misses at hour boundaries (e.g. 10:59 vs 11:00).
+  const cacheKey = `safety:${snapToCell(lat, lon)}`;
   const cached = await redis.get(cacheKey).catch(() => null);
   if (cached) {
     try {
@@ -127,17 +129,34 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
       cached: false,
     };
 
-    await redis.setex(cacheKey, 60, JSON.stringify(result)).catch(() => undefined);
+    // Cache fallback result for 5 minutes too
+    await redis.setex(cacheKey, 300, JSON.stringify(result)).catch(() => undefined);
     return result;
   }
 
   // 3. Main Synthesis Logic (Master Aggregator - ML Flow)
   const district = String(mlData.spatial_context && typeof mlData.spatial_context === 'object' ? (mlData.spatial_context as Record<string, unknown>).district ?? 'Unknown' : 'Unknown');
 
-  // Parallel remote fetches
+  // Parallel remote fetches — each cached independently in Redis:
+  // AQI: 1 hour (3600s) — changes hourly on Open-Meteo
+  // IMD: 6 hours (21600s) — district warnings update at most twice a day
+  const aqiCacheKey  = `aqi:${snapToCell(lat, lon)}`;
+  const imdCacheKey  = `imd:${district.toLowerCase().trim()}`;
+
   const [aqiData, imdData] = await Promise.all([
-    externalApiService.fetchLiveAqi(lat, lon),
-    externalApiService.fetchLiveImdWarning(district),
+    redis.get(aqiCacheKey).catch(() => null).then(async (hit) => {
+      if (hit) { try { return JSON.parse(hit) as Record<string, unknown>; } catch { /**/ } }
+      const fresh = await externalApiService.fetchLiveAqi(lat, lon);
+      await redis.setex(aqiCacheKey, 3600, JSON.stringify(fresh)).catch(() => undefined);
+      return fresh;
+    }),
+    redis.get(imdCacheKey).catch(() => null).then(async (hit) => {
+      if (hit) { try { const v = JSON.parse(hit); return v === '__null__' ? null : v; } catch { /**/ } }
+      const fresh = await externalApiService.fetchLiveImdWarning(district);
+      // Cache null sentinel too — don't hammer IMD on every miss
+      await redis.setex(imdCacheKey, 21600, fresh ? JSON.stringify(fresh) : '__null__').catch(() => undefined);
+      return fresh;
+    }),
   ]);
 
   let dangerIndex = 0;
@@ -294,7 +313,8 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
     cached: false,
   };
 
-  await redis.setex(cacheKey, 60, JSON.stringify(result)).catch(() => undefined);
+  // Cache final result for 5 minutes — matches the frontend REFRESH_INTERVAL
+  await redis.setex(cacheKey, 300, JSON.stringify(result)).catch(() => undefined);
   return result;
 }
 

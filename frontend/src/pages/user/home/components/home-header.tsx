@@ -51,7 +51,7 @@ function HomeHeaderInner({
         </Avatar>
         <div>
           <p className="text-xs text-muted-foreground leading-none">
-            Welcome back,
+            {session?.name ? "Welcome back," : "Hello,"}
           </p>
           <h1 className="text-base font-bold leading-tight mt-0.5">
             {session?.name ?? "Guest"}

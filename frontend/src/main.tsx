@@ -24,6 +24,12 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
+      // Data is considered fresh for 5 minutes — navigating between pages
+      // (Home ↔ Map ↔ ID) will NOT re-fetch while data is fresh.
+      staleTime: 5 * 60_000,
+      // Keep unused query data in memory for 10 minutes so coming back
+      // to a page shows the cached result instantly.
+      gcTime: 10 * 60_000,
     },
   },
 })

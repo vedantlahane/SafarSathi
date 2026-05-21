@@ -11,6 +11,7 @@ interface NavigationHeaderProps {
   safetyScore: number | null;
   arrived: boolean;
   onDismissArrival: () => void;
+  onExit?: () => void;
 }
 
 export function NavigationHeader({
@@ -20,6 +21,7 @@ export function NavigationHeader({
   safetyScore,
   arrived,
   onDismissArrival,
+  onExit,
 }: NavigationHeaderProps) {
   if (!visible) return null;
 
@@ -64,6 +66,16 @@ export function NavigationHeader({
                 >
                   {safetyScore}
                 </Badge>
+              )}
+              {onExit && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2.5 rounded-lg border-red-200 dark:border-red-800/50 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 font-medium text-xs transition-colors pointer-events-auto"
+                  onClick={onExit}
+                >
+                  End
+                </Button>
               )}
             </div>
           )}

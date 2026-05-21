@@ -10,6 +10,10 @@ import {
   Building,
   Landmark,
   Bus,
+  Sun,
+  Moon,
+  Sunset,
+  Sunrise
 } from "lucide-react";
 import {
   Sheet,
@@ -19,6 +23,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/store";
@@ -55,7 +60,6 @@ function LayersSheetInner({
   stationCount,
   hospitalCount,
   poiCount,
-  isDarkMode: _isDarkMode, // keeping in props for ABI compat if it's used elsewhere, but unused here
   mapboxConfig,
   setMapboxConfig,
 }: LayersSheetProps) {
@@ -63,22 +67,22 @@ function LayersSheetInner({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-[2.5rem] h-auto max-h-[80vh] pb-8 bg-white/80 dark:bg-black/60 backdrop-blur-3xl backdrop-saturate-200 border-white/20 dark:border-white/10 shadow-2xl"
+        className="rounded-t-[2.5rem] h-auto max-h-[85vh] pb-8 bg-white/90 dark:bg-black/80 backdrop-blur-3xl backdrop-saturate-200 border-white/20 dark:border-white/10 shadow-2xl"
       >
         <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
-        <SheetHeader className="mt-4">
+        <SheetHeader className="mt-4 px-2">
           <SheetTitle className="flex items-center gap-2.5 text-xl">
             <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 text-primary">
               <Layers className="h-5 w-5" />
             </div>
-            Map Layers & Filters
+            Map Preferences
           </SheetTitle>
           <SheetDescription className="text-sm font-medium">
-            Customize what you see on the map
+            Fine-tune layers, routing, and map aesthetics
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 mt-6 pb-4 overflow-y-auto max-h-[calc(80vh-120px)] px-1 custom-scrollbar">
+        <div className="space-y-6 mt-6 pb-4 overflow-y-auto max-h-[calc(85vh-120px)] px-2 custom-scrollbar">
           {/* Zone Warning */}
           {userInZone && (
             <div className="flex items-start gap-4 p-4 rounded-3xl bg-red-500/10 border border-red-500/20 shadow-inner">
@@ -98,10 +102,10 @@ function LayersSheetInner({
             </div>
           )}
 
-          {/* Risk Level Filter */}
-          <div className="bg-white/50 dark:bg-white/5 rounded-3xl p-4 border border-slate-200/50 dark:border-white/5">
-            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide">
-              RISK LEVEL FILTER
+          {/* Risk Level Filter (Chips) */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider">
+              RISK FILTER
             </p>
             <div className="flex flex-wrap gap-2">
               {(["all", "critical", "high", "medium", "low"] as const).map((level) => (
@@ -110,230 +114,202 @@ function LayersSheetInner({
                   variant={riskFilter === level ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "rounded-2xl capitalize h-auto py-2 px-4 font-semibold transition-all border-0 shadow-sm whitespace-nowrap",
+                    "rounded-full capitalize h-8 px-4 font-semibold transition-all border-0 shadow-sm whitespace-nowrap",
                     riskFilter !== level && "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700",
-                    riskFilter === level && level === "critical" && "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/30 shadow-lg",
-                    riskFilter === level && level === "high" && "bg-red-500 hover:bg-red-600 text-white shadow-red-500/30 shadow-lg",
-                    riskFilter === level && level === "medium" && "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30 shadow-lg",
-                    riskFilter === level && level === "low" && "bg-yellow-500 hover:bg-yellow-600 text-white shadow-yellow-500/30 shadow-lg",
-                    riskFilter === level && level === "all" && "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-slate-500/30 shadow-lg"
+                    riskFilter === level && level === "critical" && "bg-purple-600 text-white shadow-purple-500/30",
+                    riskFilter === level && level === "high" && "bg-red-500 text-white shadow-red-500/30",
+                    riskFilter === level && level === "medium" && "bg-amber-500 text-white shadow-amber-500/30",
+                    riskFilter === level && level === "low" && "bg-yellow-500 text-white shadow-yellow-500/30",
+                    riskFilter === level && level === "all" && "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-slate-500/30"
                   )}
                   onClick={() => {
                     hapticFeedback("light");
                     setRiskFilter(level);
                   }}
                 >
-                  {level === "all" ? `All Zones (${zoneCount})` : `${level} Risk`}
+                  {level === "all" ? `All Zones` : `${level}`}
                 </Button>
               ))}
             </div>
           </div>
 
-          {/* Layer Toggles */}
-          <div className="bg-white/50 dark:bg-white/5 rounded-3xl p-4 border border-slate-200/50 dark:border-white/5">
-            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide">
-              SHOW ON MAP
+          <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
+
+          {/* Interactive Layers (Switches) */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider">
+              DISPLAY LAYERS
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant={showLayers.zones ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
-                  showLayers.zones ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setShowLayers((l) => ({ ...l, zones: !l.zones }));
-                }}
-              >
-                <AlertTriangle className="h-5 w-5" />
-                Zones ({zoneCount})
-              </Button>
-              <Button
-                variant={showLayers.police ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
-                  showLayers.police ? "bg-blue-500 hover:bg-blue-600 text-white shadow-blue-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setShowLayers((l) => ({ ...l, police: !l.police }));
-                }}
-              >
-                <Shield className="h-5 w-5" />
-                Police ({stationCount})
-              </Button>
-              <Button
-                variant={showLayers.hospitals ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
-                  showLayers.hospitals ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setShowLayers((l) => ({ ...l, hospitals: !l.hospitals }));
-                }}
-              >
-                <Cross className="h-5 w-5" />
-                Hospitals ({hospitalCount})
-              </Button>
-              <Button
-                variant={showLayers.pois ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
-                  showLayers.pois ? "bg-indigo-500 hover:bg-indigo-600 text-white shadow-indigo-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setShowLayers((l) => ({ ...l, pois: !l.pois }));
-                }}
-              >
-                <Compass className="h-5 w-5" />
-                Spots ({poiCount})
-              </Button>
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200/50 dark:border-white/5 divide-y divide-slate-200/50 dark:divide-white/5">
+              
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Safety Zones</p>
+                    <p className="text-[10px] text-slate-500">Show {zoneCount} analyzed areas</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={showLayers.zones} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setShowLayers((l) => ({ ...l, zones: v })); }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <Shield className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Police Stations</p>
+                    <p className="text-[10px] text-slate-500">{stationCount} nearby stations</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={showLayers.police} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setShowLayers((l) => ({ ...l, police: v })); }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                    <Cross className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Hospitals</p>
+                    <p className="text-[10px] text-slate-500">{hospitalCount} medical centers</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={showLayers.hospitals} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setShowLayers((l) => ({ ...l, hospitals: v })); }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                    <Compass className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Tourist Spots</p>
+                    <p className="text-[10px] text-slate-500">{poiCount} verified locations</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={showLayers.pois} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setShowLayers((l) => ({ ...l, pois: v })); }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <MapIcon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Safe Routing</p>
+                    <p className="text-[10px] text-slate-500">Overlay analyzed paths</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={showLayers.routes} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setShowLayers((l) => ({ ...l, routes: v })); }} 
+                />
+              </div>
+
             </div>
           </div>
 
-          {/* Route Visibility */}
-          <div className="bg-white/50 dark:bg-white/5 rounded-3xl p-4 border border-slate-200/50 dark:border-white/5">
-            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide">
-              ROUTE DISPLAY
+          <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
+
+          {/* Map Aesthetics (Switches) */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider">
+              MAP ENGINE
             </p>
-            <Button
-              variant={showLayers.routes ? "default" : "outline"}
-              className={cn(
-                "w-full h-auto py-4 rounded-2xl gap-2 font-bold text-sm transition-all shadow-sm border-0 whitespace-normal",
-                showLayers.routes ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-              )}
-              onClick={() => {
-                hapticFeedback("light");
-                setShowLayers((l) => ({ ...l, routes: !l.routes }));
-              }}
-            >
-              <MapIcon className="h-5 w-5" />
-              Show Safe Routes
-            </Button>
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200/50 dark:border-white/5 divide-y divide-slate-200/50 dark:divide-white/5">
+              
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
+                    <Building className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">3D Buildings</p>
+                </div>
+                <Switch 
+                  checked={mapboxConfig.show3dBuildings} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setMapboxConfig((c) => ({ ...c, show3dBuildings: v })); }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
+                    <Landmark className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Mapbox POI Labels</p>
+                </div>
+                <Switch 
+                  checked={mapboxConfig.showPointOfInterestLabels} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setMapboxConfig((c) => ({ ...c, showPointOfInterestLabels: v })); }} 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300">
+                    <Bus className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Transit Labels</p>
+                </div>
+                <Switch 
+                  checked={mapboxConfig.showTransitLabels} 
+                  onCheckedChange={(v) => { hapticFeedback("light"); setMapboxConfig((c) => ({ ...c, showTransitLabels: v })); }} 
+                />
+              </div>
+
+            </div>
           </div>
 
-          <Separator className="bg-slate-200 dark:bg-slate-800/50" />
+          <Separator className="bg-slate-200/50 dark:bg-slate-800/50" />
 
-          {/* Mapbox Native Config */}
-          <div>
-            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide px-1">
-              MAP CONFIGURATION
-            </p>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <Button
-                variant={mapboxConfig.show3dBuildings ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
-                  mapboxConfig.show3dBuildings ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setMapboxConfig((c) => ({ ...c, show3dBuildings: !c.show3dBuildings }));
-                }}
-              >
-                <Building className="h-5 w-5" />
-                3D Buildings
-              </Button>
-              <Button
-                variant={mapboxConfig.showPointOfInterestLabels ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
-                  mapboxConfig.showPointOfInterestLabels ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setMapboxConfig((c) => ({ ...c, showPointOfInterestLabels: !c.showPointOfInterestLabels }));
-                }}
-              >
-                <Landmark className="h-5 w-5" />
-                POIs
-              </Button>
-              <Button
-                variant={mapboxConfig.showTransitLabels ? "default" : "outline"}
-                className={cn(
-                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
-                  mapboxConfig.showTransitLabels ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                )}
-                onClick={() => {
-                  hapticFeedback("light");
-                  setMapboxConfig((c) => ({ ...c, showTransitLabels: !c.showTransitLabels }));
-                }}
-              >
-                <Bus className="h-5 w-5" />
-                Transit Labels
-              </Button>
-            </div>
-            
-            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide px-1">
+          {/* Lighting Presets */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider">
               LIGHTING PRESET
             </p>
-            <div className="flex gap-2 p-2 bg-slate-100/50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 overflow-x-auto custom-scrollbar">
-              {(["dawn", "day", "dusk", "night"] as const).map((preset) => (
-                <Button
-                  key={preset}
-                  variant={mapboxConfig.lightPreset === preset ? "default" : "ghost"}
-                  className={cn(
-                    "rounded-xl capitalize flex-1 shadow-none font-bold text-xs h-auto py-2.5",
-                    mapboxConfig.lightPreset === preset 
-                      ? "bg-white dark:bg-slate-700 text-primary shadow-sm" 
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
-                  )}
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: "dawn", icon: Sunrise, label: "Dawn" },
+                { id: "day", icon: Sun, label: "Day" },
+                { id: "dusk", icon: Sunset, label: "Dusk" },
+                { id: "night", icon: Moon, label: "Night" }
+              ].map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
                   onClick={() => {
                     hapticFeedback("light");
-                    setMapboxConfig((c) => ({ ...c, lightPreset: preset }));
+                    setMapboxConfig((c) => ({ ...c, lightPreset: id as any }));
                   }}
+                  className={cn(
+                    "flex flex-col items-center justify-center py-3 rounded-2xl gap-1 transition-all border",
+                    mapboxConfig.lightPreset === id 
+                      ? "bg-primary/10 border-primary/20 text-primary shadow-sm" 
+                      : "bg-slate-50 dark:bg-slate-900/50 border-transparent text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  )}
                 >
-                  {preset}
-                </Button>
+                  <Icon className="h-5 w-5" />
+                  <span className="text-[10px] font-bold">{label}</span>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Legend */}
-          <div>
-            <p className="text-sm font-bold mb-3 text-slate-800 dark:text-slate-200 tracking-wide px-1">LEGEND</p>
-            <div className="grid grid-cols-2 gap-3 pb-2">
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <div className="h-4 w-4 rounded-full bg-purple-600 opacity-80 ring-2 ring-purple-400/50 ring-offset-1 ring-offset-transparent shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Critical Risk</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <div className="h-4 w-4 rounded-full bg-red-500 opacity-80 shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">High Risk</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <div className="h-4 w-4 rounded-full bg-amber-500 opacity-80 shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Medium Risk</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <div className="h-4 w-4 rounded-full bg-yellow-500 opacity-80 shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Low Risk</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <Shield className="h-4 w-4 text-blue-600 drop-shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Police ({stationCount})</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <Cross className="h-4 w-4 text-rose-600 drop-shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Hospital ({hospitalCount})</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <Compass className="h-4 w-4 text-indigo-600 drop-shadow-sm" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Spot ({poiCount})</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50">
-                <div className="h-1.5 w-6 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/20" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Safest Route</span>
-              </div>
-              <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-100/50 dark:bg-slate-800/50 col-span-2">
-                <div className="h-4 w-4 rounded-full bg-blue-600 border-2 border-white shadow shadow-blue-500/30" />
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">You</span>
-              </div>
-            </div>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

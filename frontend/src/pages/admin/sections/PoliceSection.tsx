@@ -117,9 +117,9 @@ export function PoliceSection({
       />
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-6" style={{ height: 'calc(100vh - 310px)', minHeight: 500 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-6">
         {/* Map */}
-        <Card className="lg:col-span-2 overflow-hidden min-h-[500px] glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
+        <Card className="lg:col-span-2 h-[450px] lg:h-[600px] overflow-hidden glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
           <CardHeader className="py-3 px-5 border-b border-white/20 glass-bar">
             <CardTitle className="text-[13px] uppercase tracking-wider flex items-center gap-2 font-bold text-slate-500">
               <div className="relative">
@@ -143,7 +143,7 @@ export function PoliceSection({
         </Card>
 
         {/* Station List */}
-        <Card className="flex flex-col glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
+        <Card className="flex flex-col h-[450px] lg:h-[600px] glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
           <CardHeader className="py-3 px-5 border-b border-white/20 glass-bar">
             <CardTitle className="text-[13px] uppercase tracking-wider flex items-center justify-between font-bold text-slate-500">
               <span>Stations ({filteredPolice.length})</span>

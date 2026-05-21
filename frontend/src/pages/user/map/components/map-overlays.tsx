@@ -1,5 +1,5 @@
 // src/pages/user/map/components/map-overlays.tsx
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { OfflineMapBanner } from "./offline-map-banner";
 import { RouteInfoPanel } from "./route-info-panel";
 import {
@@ -27,6 +27,8 @@ interface MapOverlaysProps {
         hasArrived: boolean;
         dismissArrival: () => void;
         acknowledgeDeviation: () => void;
+        startNavigation: () => void;
+        stopNavigation: () => void;
     };
     onRecalculateRoutes: () => void;
 }
@@ -42,6 +44,21 @@ function MapOverlaysInner({
     navigation,
     onRecalculateRoutes,
 }: MapOverlaysProps) {
+    const [dismissedStationId, setDismissedStationId] = useState<string | number | null>(null);
+    const [dismissedHospitalId, setDismissedHospitalId] = useState<string | number | null>(null);
+
+    // Reset dismissed state when the closest station/hospital changes
+    useEffect(() => {
+        setDismissedStationId(null);
+    }, [nearestStation?.id]);
+
+    useEffect(() => {
+        setDismissedHospitalId(null);
+    }, [nearestHospital?.id]);
+
+    const isStationVisible = nearestStation && nearestStation.id !== dismissedStationId;
+    const isHospitalVisible = nearestHospital && nearestHospital.id !== dismissedHospitalId;
+
     return (
         <>
             <OfflineMapBanner isOnline={isOnline} />
@@ -58,6 +75,7 @@ function MapOverlaysInner({
                 safetyScore={navigation.safetyScore}
                 arrived={navigation.hasArrived}
                 onDismissArrival={navigation.dismissArrival}
+                onExit={navigation.stopNavigation}
             />
 
             <RouteDeviationAlert
@@ -66,18 +84,35 @@ function MapOverlaysInner({
                 onDismiss={navigation.acknowledgeDeviation}
             />
 
-            {destination ? (
-                <DestinationBar
-                    destination={destination}
-                    routeInfo={routeInfo}
-                    onClear={onClearDestination}
-                />
-            ) : (
-                nearestStation && <NearestStationBar station={nearestStation} />
-            )}
+            {!navigation.active && (
+                <>
+                    {destination ? (
+                        <DestinationBar
+                            destination={destination}
+                            routeInfo={routeInfo}
+                            onClear={onClearDestination}
+                            onStartNavigation={navigation.startNavigation}
+                        />
+                    ) : (
+                        <>
+                            {isStationVisible && (
+                                <NearestStationBar
+                                    station={nearestStation}
+                                    onDismiss={() => setDismissedStationId(nearestStation.id)}
+                                    className="bottom-[100px]"
+                                />
+                            )}
 
-            {!destination && nearestHospital && (
-                <NearestHospitalBar hospital={nearestHospital} />
+                            {isHospitalVisible && (
+                                <NearestHospitalBar
+                                    hospital={nearestHospital}
+                                    onDismiss={() => setDismissedHospitalId(nearestHospital.id)}
+                                    className={isStationVisible ? "bottom-[176px]" : "bottom-[100px]"}
+                                />
+                            )}
+                        </>
+                    )}
+                </>
             )}
         </>
     );

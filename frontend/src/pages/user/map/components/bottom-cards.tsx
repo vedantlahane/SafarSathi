@@ -33,12 +33,14 @@ interface DestinationBarProps {
   destination: Destination;
   routeInfo: RouteInfo;
   onClear: () => void;
+  onStartNavigation: () => void;
 }
 
 function DestinationBarInner({
   destination,
   routeInfo,
   onClear,
+  onStartNavigation,
 }: DestinationBarProps) {
   const safest = routeInfo.safest;
   return (
@@ -48,7 +50,7 @@ function DestinationBarInner({
         animate={{ y: 0, opacity: 1, scale: 1 }}
         exit={{ y: 100, opacity: 0, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
-        className="absolute bottom-36 left-4 right-4 z-[1000] pointer-events-none"
+        className="absolute bottom-[100px] left-4 right-4 z-[1000] pointer-events-none"
       >
         <div className="rounded-3xl overflow-hidden pointer-events-auto bg-white/80 dark:bg-black/60 backdrop-blur-3xl backdrop-saturate-200 border border-white/20 dark:border-white/10 shadow-2xl">
           <div className="p-4 space-y-3 relative overflow-hidden">
@@ -63,17 +65,27 @@ function DestinationBarInner({
                 <p className="text-base font-bold truncate text-slate-900 dark:text-slate-100">{destination.name}</p>
                 <p className="text-xs text-slate-500 font-medium">Destination</p>
               </div>
-              <Button
-                size="sm"
-                className="h-10 px-4 rounded-xl gap-2 bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25 shadow-lg transition-all active:scale-95"
-                onClick={() =>
-                  openInMaps(destination.lat, destination.lng, destination.name)
-                }
-                aria-label="Open in Google Maps"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Navigate
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-10 w-10 p-0 rounded-xl bg-white/50 dark:bg-black/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all active:scale-95"
+                  onClick={() =>
+                    openInMaps(destination.lat, destination.lng, destination.name)
+                  }
+                  aria-label="Open in Google Maps"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-10 px-4 rounded-xl gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-emerald-500/25 shadow-lg transition-all active:scale-95"
+                  onClick={onStartNavigation}
+                  aria-label="Start active navigation"
+                >
+                  Start
+                </Button>
+              </div>
               <button
                 className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors active:scale-90 text-slate-600 dark:text-slate-300"
                 onClick={onClear}
@@ -137,15 +149,17 @@ export const DestinationBar = memo(DestinationBarInner);
 // ── Nearest Station Bar ──
 interface NearestStationBarProps {
   station: PoliceStation;
+  className?: string;
+  onDismiss?: () => void;
 }
 
-function NearestStationBarInner({ station }: NearestStationBarProps) {
+function NearestStationBarInner({ station, className, onDismiss }: NearestStationBarProps) {
   return (
     <motion.div
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 400, damping: 30, delay: 0.1 }}
-      className="absolute bottom-36 left-4 right-[65px] z-[998] pointer-events-none"
+      className={`absolute left-4 right-[68px] z-[998] pointer-events-none ${className || "bottom-[100px]"}`}
     >
       <div className="rounded-2xl overflow-hidden pointer-events-auto bg-white/80 dark:bg-black/60 backdrop-blur-2xl backdrop-saturate-200 border border-white/20 dark:border-white/10 shadow-xl">
         <div className="p-3.5 flex items-center gap-3 relative overflow-hidden">
@@ -173,19 +187,30 @@ function NearestStationBarInner({ station }: NearestStationBarProps) {
               )}
             </div>
           </div>
-          {station.contact ? (
-            <a href={`tel:${station.contact}`} className="relative z-10">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-10 px-3 rounded-xl gap-2 bg-white/50 dark:bg-black/50 border-blue-200 dark:border-blue-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                aria-label={`Call ${station.name}`}
+          <div className="flex items-center gap-2 relative z-10 shrink-0">
+            {station.contact ? (
+              <a href={`tel:${station.contact}`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-10 px-3 rounded-xl gap-2 bg-white/50 dark:bg-black/50 border-blue-200 dark:border-blue-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                  aria-label={`Call ${station.name}`}
+                >
+                  <Phone className="h-4 w-4" />
+                  Call
+                </Button>
+              </a>
+            ) : null}
+            {onDismiss && (
+              <button
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-400 transition-colors pointer-events-auto active:scale-90"
+                onClick={onDismiss}
+                aria-label="Dismiss police panel"
               >
-                <Phone className="h-4 w-4" />
-                Call
-              </Button>
-            </a>
-          ) : null}
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
@@ -196,15 +221,17 @@ export const NearestStationBar = memo(NearestStationBarInner);
 // ── Nearest Hospital Bar ──
 interface NearestHospitalBarProps {
   hospital: Hospital;
+  className?: string;
+  onDismiss?: () => void;
 }
 
-function NearestHospitalBarInner({ hospital }: NearestHospitalBarProps) {
+function NearestHospitalBarInner({ hospital, className, onDismiss }: NearestHospitalBarProps) {
   return (
     <motion.div
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 400, damping: 30, delay: 0.2 }}
-      className="absolute bottom-56 left-4 right-[65px] z-[997] pointer-events-none"
+      className={`absolute left-4 right-[68px] z-[997] pointer-events-none ${className || "bottom-[176px]"}`}
     >
       <div className="rounded-2xl overflow-hidden pointer-events-auto bg-white/80 dark:bg-black/60 backdrop-blur-2xl backdrop-saturate-200 border border-white/20 dark:border-white/10 shadow-xl">
         <div className="p-3.5 flex items-center gap-3 relative overflow-hidden">
@@ -237,19 +264,30 @@ function NearestHospitalBarInner({ hospital }: NearestHospitalBarProps) {
               )}
             </div>
           </div>
-          {hospital.contact ? (
-            <a href={`tel:${hospital.contact}`} className="relative z-10">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-10 px-3 rounded-xl gap-2 bg-white/50 dark:bg-black/50 border-rose-200 dark:border-rose-800/50 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-700 dark:text-rose-400"
-                aria-label={`Call ${hospital.name}`}
+          <div className="flex items-center gap-2 relative z-10 shrink-0">
+            {hospital.contact ? (
+              <a href={`tel:${hospital.contact}`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-10 px-3 rounded-xl gap-2 bg-white/50 dark:bg-black/50 border-rose-200 dark:border-rose-800/50 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-700 dark:text-rose-400"
+                  aria-label={`Call ${hospital.name}`}
+                >
+                  <Phone className="h-4 w-4" />
+                  Call
+                </Button>
+              </a>
+            ) : null}
+            {onDismiss && (
+              <button
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-slate-400 transition-colors pointer-events-auto active:scale-90"
+                onClick={onDismiss}
+                aria-label="Dismiss hospital panel"
               >
-                <Phone className="h-4 w-4" />
-                Call
-              </Button>
-            </a>
-          ) : null}
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

@@ -112,6 +112,8 @@ const Map = () => {
             hasArrived: navigation.hasArrived,
             dismissArrival: navigation.dismissArrival,
             acknowledgeDeviation: navigation.acknowledgeDeviation,
+            startNavigation: navigation.startNavigation,
+            stopNavigation: navigation.stopNavigation,
           }}
           onRecalculateRoutes={nav.recalculateRoutes}
         />

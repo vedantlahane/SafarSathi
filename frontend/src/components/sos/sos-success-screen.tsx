@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from "react";
-import { CheckCircle2, Phone, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Phone, ShieldCheck, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useSOS } from "./use-sos";
@@ -10,7 +10,7 @@ import { hapticFeedback } from "@/lib/store";
  * Shows animated checkmark, status, emergency call, and dismiss.
  */
 function SOSSuccessScreenInner() {
-    const { phase, dismissSuccess } = useSOS();
+    const { phase, dismissSuccess, sosLocation } = useSOS();
     const [confirmDismiss, setConfirmDismiss] = useState(false);
 
     const handleDismiss = useCallback(() => {
@@ -58,7 +58,7 @@ function SOSSuccessScreenInner() {
                         Help is on the way
                     </h1>
 
-                    {/* Status updates */}
+                    {/* Status updates & Location Map */}
                     <div className="flex flex-col items-center gap-2 text-white/90">
                         <div className="flex items-center gap-2 animate-pulse">
                             <ShieldCheck className="h-4 w-4" />
@@ -66,9 +66,27 @@ function SOSSuccessScreenInner() {
                                 Alerting nearby authorities...
                             </span>
                         </div>
-                        <span className="text-xs text-white/70">
-                            Your location has been shared
-                        </span>
+                        
+                        {sosLocation ? (
+                            <div className="mt-2 flex flex-col items-center gap-3 bg-black/20 p-4 rounded-2xl border border-white/10 w-full max-w-xs">
+                                <div className="flex items-center gap-2 text-white">
+                                    <MapPin className="h-4 w-4 text-red-400" />
+                                    <span className="text-sm font-semibold">Live Location Sent</span>
+                                </div>
+                                <div className="w-full overflow-hidden rounded-xl border border-white/20 shadow-inner">
+                                    <img 
+                                        src={`https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s-emergency+ef4444(${sosLocation.lng},${sosLocation.lat})/${sosLocation.lng},${sosLocation.lat},15,0/400x150@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
+                                        alt="SOS Location Map"
+                                        className="w-full h-[100px] object-cover pointer-events-none"
+                                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-xs text-white/70">
+                                Your location has been shared
+                            </span>
+                        )}
                     </div>
 
                     {/* Emergency call button */}

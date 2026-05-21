@@ -1,5 +1,6 @@
 // src/pages/user/map/hooks/use-map-navigation.ts
 import { useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { haversineMeters } from "@/lib/geo";
 import { hapticFeedback } from "@/lib/store";
 import {
@@ -74,92 +75,83 @@ export function useMapNavigation(
   stations: PoliceStation[]
 ) {
   const [destination, setDestination] = useState<Destination | null>(null);
-  const [routeLoading, setRouteLoading] = useState(false);
-  const [routes, setRoutes] = useState<SafeRoute[]>([]);
 
-  const calculateRoutes = useCallback(
-    (dest: Destination) => {
-      if (!userPosition) return;
-      setRouteLoading(true);
-
-      const fetchRoutes = async () => {
-        try {
-          const res = await fetch(
-            `https://api.mapbox.com/directions/v5/mapbox/driving/${userPosition[1]},${userPosition[0]};${dest.lng},${dest.lat}?alternatives=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
-          );
-          const data = await res.json();
-          if (!data.routes) throw new Error("No routes found");
-
-          const scoredRoutes: SafeRoute[] = data.routes.map(
-            (r: any, idx: number) => {
-              // Mapbox returns coordinates as [lng, lat], we need [lat, lng] for scoreRoute
-              const coords: [number, number][] = r.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
-              
-              const { score, intersections, policeNearby } = scoreRoute(
-                coords,
-                zones,
-                stations
-              );
-
-              return {
-                id: `route-${idx}`,
-                coordinates: coords,
-                safetyScore: score,
-                distanceMeters: r.distance,
-                durationSeconds: r.duration,
-                intersections,
-                policeNearby,
-                isSafest: false,
-                isFastest: false,
-              };
-            }
-          );
-
-          // Mark safest and fastest
-          const sortedBySafety = [...scoredRoutes].sort(
-            (a, b) => b.safetyScore - a.safetyScore
-          );
-          const sortedByDistance = [...scoredRoutes].sort(
-            (a, b) => a.distanceMeters - b.distanceMeters
-          );
-
-          if (sortedBySafety[0]) sortedBySafety[0].isSafest = true;
-          if (sortedByDistance[0]) sortedByDistance[0].isFastest = true;
-
-          setRoutes(scoredRoutes);
-        } catch (error) {
-          console.error("Failed to fetch Mapbox routes:", error);
-          setRoutes([]);
-        } finally {
-          setRouteLoading(false);
-        }
-      };
+  const { data: routes = [], isLoading: routeLoading } = useQuery({
+    queryKey: [
+      "mapbox-route",
+      userPosition?.[0], // lat
+      userPosition?.[1], // lng
+      destination?.lat,
+      destination?.lng,
+    ],
+    queryFn: async () => {
+      if (!userPosition || !destination) return [];
       
-      fetchRoutes();
+      const res = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${userPosition[1]},${userPosition[0]};${destination.lng},${destination.lat}?alternatives=true&geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`
+      );
+      const data = await res.json();
+      if (!data.routes) return [];
+
+      const scoredRoutes: SafeRoute[] = data.routes.map(
+        (r: any, idx: number) => {
+          const coords: [number, number][] = r.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+          
+          const { score, intersections, policeNearby } = scoreRoute(
+            coords,
+            zones,
+            stations
+          );
+
+          return {
+            id: `route-${idx}`,
+            coordinates: coords,
+            safetyScore: score,
+            distanceMeters: r.distance,
+            durationSeconds: r.duration,
+            intersections,
+            policeNearby,
+            isSafest: false,
+            isFastest: false,
+          };
+        }
+      );
+
+      // Mark safest and fastest
+      const sortedBySafety = [...scoredRoutes].sort(
+        (a, b) => b.safetyScore - a.safetyScore
+      );
+      const sortedByDistance = [...scoredRoutes].sort(
+        (a, b) => a.distanceMeters - b.distanceMeters
+      );
+
+      if (sortedBySafety[0]) sortedBySafety[0].isSafest = true;
+      if (sortedByDistance[0]) sortedByDistance[0].isFastest = true;
+
+      return scoredRoutes;
     },
-    [userPosition, zones, stations]
-  );
+    enabled: !!userPosition && !!destination,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 15 * 60 * 1000,
+  });
 
   const handleSelectDestination = useCallback(
     (name: string, lat: number, lng: number) => {
       hapticFeedback("light");
       const dest: Destination = { name, lat, lng };
       setDestination(dest);
-      calculateRoutes(dest);
     },
-    [calculateRoutes]
+    []
   );
 
   const clearDestination = useCallback(() => {
     setDestination(null);
-    setRoutes([]);
   }, []);
 
   const recalculateRoutes = useCallback(() => {
-    if (destination) {
-      calculateRoutes(destination);
-    }
-  }, [destination, calculateRoutes]);
+    // React Query handles recalculation automatically when userPosition or destination changes.
+    // We can keep this empty or use it to force a refetch if needed.
+  }, []);
 
   const routeInfo: RouteInfo = useMemo(
     () => ({

@@ -2,8 +2,10 @@
 
 export const MAP_DEFAULTS = {
   center: [31.2554, 75.7048] as [number, number], // LPU, Phagwara, Punjab
-  zoom: 13,
-  minZoom: 10, // Prevent zooming out too far
+  zoom: 14.5, // Zoomed in slightly more for better 3D building visibility
+  pitch: 65, // Tilt camera for 3D view
+  bearing: -17, // Slight rotation
+  minZoom: 5, // Allow zooming out much further
   maxZoom: 18,
   // Bounding box for Punjab (Southwest [Lng, Lat], Northeast [Lng, Lat])
   maxBounds: [

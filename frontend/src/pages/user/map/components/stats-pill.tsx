@@ -37,7 +37,7 @@ function StatsPillInner({
       onClick={onPress}
       aria-label="Open map layers and filters"
       className={cn(
-        "absolute top-[76px] left-1/2 -translate-x-1/2 z-[1000]",
+        "absolute top-[84px] left-1/2 -translate-x-1/2 z-[1000]",
         "flex items-center gap-4 px-5 py-3 rounded-full shadow-2xl",
         "bg-white/80 dark:bg-black/60 backdrop-blur-2xl backdrop-saturate-150",
         "border border-white/20 dark:border-white/10",

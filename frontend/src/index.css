@@ -709,4 +709,86 @@ body {
 }
 .map-popup-override .mapboxgl-popup-close-button {
   display: none !important;
-}
+}
+
+/* ─── Mapbox Control Offsets ─────────────────────────────────────────────────
+   The BottomNav is fixed at bottom-3 (12px) with a 72px pill = ~84px from bottom.
+   We push all native mapbox controls above the nav so nothing overlaps.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bottom-right controls: NavigationControl + GeolocateControl */
+.mapboxgl-ctrl-bottom-right {
+  bottom: 92px !important;   /* 84px nav + 8px breathing room */
+  right: 12px !important;
+}
+
+/* Bottom-left controls: ScaleControl */
+.mapboxgl-ctrl-bottom-left {
+  bottom: 92px !important;
+  left: 12px !important;
+}
+
+/* Top-right/left controls — push down below any in-map overlays */
+.mapboxgl-ctrl-top-right {
+  top: 80px !important;
+  right: 12px !important;
+}
+
+.mapboxgl-ctrl-top-left {
+  top: 80px !important;
+  left: 12px !important;
+}
+
+/* Make navigation and geolocate controls look native/clean */
+.mapboxgl-ctrl-group {
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08) !important;
+  border: 0.5px solid rgba(255,255,255,0.5) !important;
+  background: rgba(255,255,255,0.82) !important;
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+}
+
+.dark .mapboxgl-ctrl-group {
+  background: rgba(15,23,42,0.80) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.2) !important;
+}
+
+.mapboxgl-ctrl-group button {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.mapboxgl-ctrl-group button + button {
+  border-top: 0.5px solid rgba(0,0,0,0.06) !important;
+}
+
+.dark .mapboxgl-ctrl-group button + button {
+  border-top-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Geolocate control — standalone, same pill style */
+.mapboxgl-ctrl.mapboxgl-ctrl-geolocate {
+  border-radius: 14px !important;
+  background: rgba(255,255,255,0.82) !important;
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08) !important;
+  border: 0.5px solid rgba(255,255,255,0.5) !important;
+  overflow: hidden;
+}
+
+.dark .mapboxgl-ctrl.mapboxgl-ctrl-geolocate {
+  background: rgba(15,23,42,0.80) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Mapbox attribution — keep it subtle */
+.mapboxgl-ctrl-attrib {
+  background: rgba(255,255,255,0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 8px !important;
+  font-size: 10px !important;
+}

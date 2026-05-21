@@ -49,6 +49,17 @@ function deriveStatus(score: number): SafetyStatus {
   return "danger";
 }
 
+/** Normalize backend priority values → frontend AlertView priority */
+function normalizePriority(p: string | undefined): AlertView["priority"] {
+  if (!p) return "low";
+  const lp = p.toLowerCase();
+  if (lp === "critical" || lp === "sos") return "critical";
+  if (lp === "high") return "high";
+  if (lp === "medium" || lp === "moderate") return "medium";
+  // Backend 'info', 'low', or anything else → low
+  return "low";
+}
+
 /** Generate a contextual recommendation based on score */
 function deriveRecommendation(score: number): string {
   if (score >= 80) return "Conditions look great. Enjoy your journey!";
@@ -77,6 +88,7 @@ export function useDashboard() {
     queryKey: ["dashboard", session?.touristId],
     queryFn: () => fetchTouristDashboard(session!.touristId),
     enabled: hasSession,
+    staleTime: REFRESH_INTERVAL,
     refetchInterval: REFRESH_INTERVAL,
   });
 
@@ -115,19 +127,21 @@ export function useDashboard() {
   }, [gpsLocation, hasSession, session?.touristId]);
 
   // ── Realtime Safety Query ──
+  // Snap to 2 decimal places (~1.1km grid) to match the backend Redis cache key.
+  // This prevents a new query key (and API call) on every GPS micro-update.
+  const snapLat = gpsLocation ? Math.round(gpsLocation.lat * 100) / 100 : null;
+  const snapLon = gpsLocation ? Math.round(gpsLocation.lon * 100) / 100 : null;
+
   const { 
     data: aiSafetyData, 
     isLoading: loadingRealTime, 
     refetch: refetchRealTime 
   } = useQuery({
-    queryKey: [
-      "realtimeSafety", 
-      gpsLocation ? Math.round(gpsLocation.lat * 1000) / 1000 : null, 
-      gpsLocation ? Math.round(gpsLocation.lon * 1000) / 1000 : null
-    ],
+    queryKey: ["realtimeSafety", snapLat, snapLon],
     queryFn: () => fetchRealTimeSafety(gpsLocation!.lat, gpsLocation!.lon),
     enabled: !!gpsLocation,
-    refetchInterval: REFRESH_INTERVAL,
+    staleTime: REFRESH_INTERVAL,      // treat as fresh for 5 min
+    refetchInterval: REFRESH_INTERVAL, // background refresh every 5 min
     refetchOnWindowFocus: false,
   });
 
@@ -147,7 +161,7 @@ export function useDashboard() {
           message: a.message ?? "Alert received",
           time: formatRelativeTime(a.timestamp),
           status: a.status,
-          priority: a.priority as AlertView["priority"],
+          priority: normalizePriority(a.priority),
         })),
         openAlerts: rawDashboard.openAlerts ?? 0,
       }));
@@ -193,7 +207,7 @@ export function useDashboard() {
               payload.createdTime ?? new Date().toISOString()
             ),
             status: payload.status ?? "OPEN",
-            priority: (payload.priority as AlertView["priority"]) ?? "high",
+            priority: normalizePriority(payload.priority ?? "high"),
           };
 
           const existingIndex = prev.alerts.findIndex(a => a.id === newAlert.id);

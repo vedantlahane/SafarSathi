@@ -3,7 +3,7 @@ import { memo, useState } from "react";
 import { Marker, Popup } from "react-map-gl/mapbox";
 import { MapPin, Phone, Globe, Clock, Navigation, ExternalLink } from "lucide-react";
 import { hapticFeedback } from "@/lib/store";
-import { POIIcon, POI_LABELS } from "./poi-icons";
+import { POI_LABELS } from "./poi-icons";
 import type { TouristPOI } from "@/lib/api/public";
 
 interface TouristPOIMarkersProps {
@@ -37,14 +37,13 @@ function POIMarkerItem({ poi }: { poi: TouristPOI }) {
         latitude={poi.latitude}
         longitude={poi.longitude}
         anchor="bottom"
+        color={headerBg.match(/rgba\((\d+,\d+,\d+),[\d.]+\)/)?.[0]?.replace('rgba', 'rgb').replace(/,[\d.]+\)$/, ')') || "#8b5cf6"}
         onClick={(e: any) => {
           e.originalEvent.stopPropagation();
           hapticFeedback("light");
           setShowPopup(!showPopup);
         }}
-      >
-        <POIIcon type={poi.type} />
-      </Marker>
+      />
 
       {showPopup && (
         <Popup

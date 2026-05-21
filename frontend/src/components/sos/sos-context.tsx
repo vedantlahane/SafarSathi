@@ -23,6 +23,8 @@ export interface SOSContextValue {
     preAlertSent: boolean;
     /** Alert ID returned from the backend after SOS is fired */
     activeAlertId: number | null;
+    /** The location where the SOS was fired */
+    sosLocation: { lat: number; lng: number } | null;
     /** Start the countdown sequence */
     startCountdown: () => void;
     /** Cancel an in-progress SOS (sends cancel to backend if alert exists) */
@@ -45,6 +47,7 @@ export const SOSContext = createContext<SOSContextValue>({
     position: { side: "right", y: 50 },
     preAlertSent: false,
     activeAlertId: null,
+    sosLocation: null,
     startCountdown: () => { },
     cancelSOS: () => { },
     dismissSuccess: () => { },
