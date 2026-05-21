@@ -168,6 +168,7 @@ export function useMapData() {
   // ── Refs ──
   const watchIdRef = useRef<number | null>(null);
   const lastPostRef = useRef(0);
+  const hasCenteredRef = useRef(false);
 
   // ── Filtered zones – live backend data only ──
   const zones = useMemo<RiskZone[]>(() => {
@@ -347,6 +348,12 @@ export function useMapData() {
       (pos) => {
         const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setUserPosition(p);
+        
+        if (!hasCenteredRef.current) {
+          hasCenteredRef.current = true;
+          setFlyTo(p);
+        }
+        
         setAccuracy(pos.coords.accuracy);
         if (pos.coords.heading !== null) setHeading(pos.coords.heading);
         if (pos.coords.speed !== null) setSpeed(pos.coords.speed);
