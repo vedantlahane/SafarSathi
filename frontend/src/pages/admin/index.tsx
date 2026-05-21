@@ -465,6 +465,7 @@ export function AdminPanel({
         tourist={selectedTourist}
         onContact={handleContactTourist}
         onTrack={handleTrackTourist}
+        onRefresh={refresh}
       />
 
       <BroadcastDialog

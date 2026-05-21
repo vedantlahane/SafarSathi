@@ -235,7 +235,7 @@ export function DashboardSection({
               </div>
             </CardTitle>
           </CardHeader>
-          <div className="h-[600px] relative rounded-b-xl overflow-hidden">
+          <div className="h-[400px] lg:h-[600px] relative rounded-b-xl overflow-hidden">
             <InteractiveMap
               zones={zones}
               tourists={tourists}
@@ -269,7 +269,7 @@ export function DashboardSection({
               )}
             </CardTitle>
           </CardHeader>
-          <ScrollArea className="h-[600px]">
+          <ScrollArea className="h-[400px] lg:h-[600px]">
             <div className="p-2.5 space-y-1.5">
               {recentActivity.length > 0 ? (
                 recentActivity.map((activity, idx) => (

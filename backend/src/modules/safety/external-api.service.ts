@@ -4,7 +4,12 @@ import { logger } from '../../shared/logger/index.js';
 
 export interface MlBaselinePayload {
   status?: string;
-  ml_baseline?: Record<string, unknown> | null;
+  ml_baseline?: {
+    status: string;
+    predicted_score: number;
+    shap_base_value: number;
+    shap_values: Record<string, number>;
+  } | null;
   infrastructure?: Record<string, unknown> | null;
   spatial_context?: Record<string, unknown> | null;
   [key: string]: unknown;

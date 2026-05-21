@@ -32,6 +32,7 @@ export const UpdateProfileSchema = z
     ),
     allergies: z.array(z.string()).optional(),
     medicalConditions: z.array(z.string()).optional(),
+    adminManualPenalty: z.coerce.number().min(0).max(10).optional(),
   });
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 

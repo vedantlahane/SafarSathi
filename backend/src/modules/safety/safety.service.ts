@@ -6,6 +6,7 @@ import { gatherContext } from './safety.context.js';
 import { calculatePhase1Score, computeMinutesToSunset } from './safety.phase1.js';
 import type { Phase1Input } from './safety.phase1.js';
 import type { SafetyCheckQuery, SafetyEvaluateBody } from './safety.schema.js';
+import { touristRepo } from '../tourist/tourist.repo.js';
 
 const snapToCell = (lat: number, lon: number): string => `${lat.toFixed(2)}:${lon.toFixed(2)}`;
 
@@ -65,9 +66,32 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
   const lon = input.lon;
   const localHour = ('local_hour' in input) ? input.local_hour : (input.hour ?? new Date().getHours());
 
-  // Key on 2-decimal grid (~1.1km cells) WITHOUT the hour — the 300s TTL handles time freshness.
-  // Including the hour caused cache misses at hour boundaries (e.g. 10:59 vs 11:00).
-  const cacheKey = `safety:${snapToCell(lat, lon)}`;
+  let gender = ('gender' in input && input.gender) ? String(input.gender).toLowerCase() : 'unknown';
+  let age: number | undefined;
+  let medicalConditions: string[] = [];
+  let adminManualPenalty = 0;
+  
+  if ('touristId' in input && input.touristId) {
+    const tourist = await touristRepo.findById(input.touristId).catch(() => null);
+    if (tourist) {
+      if (tourist.gender) gender = tourist.gender.toLowerCase();
+      if (tourist.dateOfBirth) {
+         const dob = new Date(tourist.dateOfBirth);
+         if (!isNaN(dob.getTime())) {
+             age = new Date().getFullYear() - dob.getFullYear();
+         }
+      }
+      if (tourist.medicalConditions && Array.isArray(tourist.medicalConditions)) {
+          medicalConditions = tourist.medicalConditions;
+      }
+      if (tourist.adminManualPenalty) {
+          adminManualPenalty = tourist.adminManualPenalty;
+      }
+    }
+  }
+
+  // Key on 2-decimal grid (~1.1km cells) + time + demographics
+  const cacheKey = `safety:${snapToCell(lat, lon)}:h${localHour}:g${gender}`;
   const cached = await redis.get(cacheKey).catch(() => null);
   if (cached) {
     try {
@@ -143,7 +167,7 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
   const aqiCacheKey  = `aqi:${snapToCell(lat, lon)}`;
   const imdCacheKey  = `imd:${district.toLowerCase().trim()}`;
 
-  const [aqiData, imdData] = await Promise.all([
+  const [aqiData, imdData, localCtx] = await Promise.all([
     redis.get(aqiCacheKey).catch(() => null).then(async (hit) => {
       if (hit) { try { return JSON.parse(hit) as Record<string, unknown>; } catch { /**/ } }
       const fresh = await externalApiService.fetchLiveAqi(lat, lon);
@@ -157,36 +181,58 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
       await redis.setex(imdCacheKey, 21600, fresh ? JSON.stringify(fresh) : '__null__').catch(() => undefined);
       return fresh;
     }),
+    gatherContext(lat, lon).catch(() => null)
   ]);
 
   let dangerIndex = 0;
   const riskFactors: any[] = [];
 
   // ==========================================
-  // A. HISTORICAL ML BASELINE (Now Continuous!)
+  // A. HISTORICAL ML BASELINE (Now Continuous via Random Forest & SHAP)
   // ==========================================
   let mlHazardScore = 0;
-  const mlBaseline = mlData.ml_baseline as Record<string, unknown> | null | undefined;
-  const anomalyMagnitude = Number(mlBaseline?.anomaly_magnitude) || 1.0;
+  const mlBaseline = mlData.ml_baseline;
+  
+  if (mlBaseline && mlBaseline.predicted_score !== undefined) {
+    // The Random Forest model predicts a safety score (0-100).
+    // We convert it to a danger index contribution (0-10) where lower safety = higher danger.
+    mlHazardScore = (100 - mlBaseline.predicted_score) / 10;
+    mlHazardScore = Math.max(0, Math.min(10, mlHazardScore));
+    
+    // Add explainability factors via SHAP values
+    if (mlBaseline.shap_values) {
+      const featureNames: Record<string, string> = {
+        pm25_mean: "Air Pollution (PM2.5)",
+        vcf_mean: "Vegetation/Tree Cover",
+        viirs_annual_mean: "Nightlight Density",
+        elevation_mean: "Elevation Terrain",
+        tri_mean: "Terrain Ruggedness"
+      };
 
-  if (anomalyMagnitude >= 1.63) { // Top 1% Extreme Hazard
-    mlHazardScore = 6;
-    riskFactors.push({
-      id: 'ml_hazard',
-      label: 'Critical Environmental Hazard',
-      score: 60,
-      detail: `Catastrophic historical environmental decay detected (Magnitude: ${anomalyMagnitude.toFixed(2)}).`,
-      trend: 'declining'
-    });
-  } else if (anomalyMagnitude >= 1.20) { // Warning Threshold
-    mlHazardScore = 3;
-    riskFactors.push({
-      id: 'ml_hazard',
-      label: 'Elevated Environmental Risk',
-      score: 30,
-      detail: `Noticeable environmental degradation in this zone (Magnitude: ${anomalyMagnitude.toFixed(2)}).`,
-      trend: 'declining'
-    });
+      for (const [feature, shapValue] of Object.entries(mlBaseline.shap_values)) {
+        // Negative SHAP means it dragged the safety score down.
+        if (shapValue < -1.5) {
+          const readableName = featureNames[feature] || feature;
+          riskFactors.push({
+            id: `shap_${feature}`,
+            label: `Risk Factor: ${readableName}`,
+            score: Math.min(100, Math.round(Math.abs(shapValue) * 5)),
+            detail: `AI analysis indicates ${readableName} is significantly reducing safety in this area.`,
+            trend: 'stable'
+          });
+        } else if (shapValue > 2.0) {
+          // Positive SHAP means it boosted safety
+          const readableName = featureNames[feature] || feature;
+          riskFactors.push({
+            id: `shap_${feature}`,
+            label: `Safety Boost: ${readableName}`,
+            score: Math.min(100, Math.round(shapValue * 5)),
+            detail: `AI analysis indicates ${readableName} contributes positively to safety here.`,
+            trend: 'stable'
+          });
+        }
+      }
+    }
   }
 
   // ==========================================
@@ -199,38 +245,38 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
   const ozone = extractPmValue(currentAqi.ozone);
 
   if (pm25 > 100 || pm10 > 200 || ozone > 150) {
-    aqiScore = 6;
+    aqiScore = 1.0;
     riskFactors.push({
       id: 'live_aqi',
       label: 'Toxic Air Quality',
-      score: 60,
+      score: 10,
       detail: `Critical pollution levels (PM2.5: ${pm25}, PM10: ${pm10}, Ozone: ${ozone}).`,
       trend: 'declining'
     });
   } else if (pm25 > 60 || pm10 > 100 || ozone > 100) {
-    aqiScore = 3;
+    aqiScore = 0.2;
     riskFactors.push({
       id: 'live_aqi',
       label: 'Poor Air Quality',
-      score: 30,
+      score: 2,
       detail: `Elevated pollution levels (PM10: ${pm10}, Ozone: ${ozone}). Avoid prolonged outdoor activity.`,
       trend: 'stable'
     });
   }
 
-  // Max(E_hist, E_live) - Don't double count environment!
-  dangerIndex += Math.max(mlHazardScore, aqiScore);
+  // Base Danger strictly anchors to ML
+  dangerIndex = mlHazardScore + aqiScore;
 
   // ==========================================
   // C. INFRASTRUCTURE & SOCIO-TEMPORAL
   // ==========================================
   const infrastructure = mlData.infrastructure as Record<string, unknown> | null | undefined;
   if (infrastructure?.socio_temporal_penalty_active === true) {
-    dangerIndex += 3;
+    dangerIndex += 1.5;
     riskFactors.push({
       id: 'infrastructure',
       label: 'Unlit Zone at Night',
-      score: 30,
+      score: 15,
       detail: 'Satellite VIIRS data indicates poor street lighting during nighttime hours.',
       trend: 'stable'
     });
@@ -245,24 +291,143 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
     const hazardName = IMD_WARNING_MAP[hazardCode] || 'Weather Hazard';
 
     if (['3', '4'].includes(colorCode)) { // Orange/Red Alert
-      dangerIndex += 5;
+      dangerIndex += 1.0;
       riskFactors.push({
         id: 'live_weather',
         label: 'Severe Weather Alert',
-        score: 50,
+        score: 10,
         detail: `IMD SEVERE ALERT: ${hazardName} expected today.`,
         trend: 'declining'
       });
     } else if (colorCode === '2') { // Yellow Alert (Like your Kapurthala Heat Wave!)
-      dangerIndex += 2;
+      dangerIndex += 0.2;
       riskFactors.push({
         id: 'live_weather',
         label: 'Weather Warning (Yellow)',
-        score: 20,
+        score: 2,
         detail: `IMD ADVISORY: ${hazardName} expected today. Be prepared.`,
         trend: 'stable'
       });
     }
+  }
+
+  // ==========================================
+  // Y. DEVICE TELEMETRY ENGINE
+  // ==========================================
+  const battery = 'batteryPct' in input && typeof input.batteryPct === 'number' ? input.batteryPct : null;
+  const network = 'networkType' in input && typeof input.networkType === 'string' ? input.networkType : null;
+  
+  if (battery !== null && battery < 15) {
+     if (dangerIndex >= 3 || infrastructure?.socio_temporal_penalty_active === true) {
+         dangerIndex += 1.5;
+         riskFactors.push({
+             id: 'telemetry_battery',
+             label: 'Stranding Risk (Low Battery)',
+             score: 15,
+             detail: `Battery is critically low (${battery}%). Emergency SOS capability may be lost soon.`,
+             trend: 'declining'
+         });
+     }
+  }
+  
+  if (network === '2g' || network === 'none') {
+     dangerIndex += 1.0;
+     riskFactors.push({
+         id: 'telemetry_network',
+         label: 'Digital Isolation',
+         score: 10,
+         detail: 'Poor network connectivity detected. Emergency dispatch may be delayed.',
+         trend: 'stable'
+     });
+  }
+
+  // ==========================================
+  // Z. DEMOGRAPHIC & MEDICAL ENGINE
+  // ==========================================
+  const isNight = localHour < 6 || localHour >= 19;
+  const isUnlit = infrastructure?.is_unlit === true;
+  
+  if (isNight && (localHour >= 23 || localHour <= 4)) {
+      dangerIndex += 1.0;
+      riskFactors.push({
+         id: 'temporal_late_night',
+         label: 'Late Night Travel',
+         score: 10,
+         detail: 'Statistical risk is uniformly higher between 11 PM and 4 AM.',
+         trend: 'stable'
+      });
+  }
+  
+  if ((gender.includes('female') || gender.includes('other') || gender.includes('non-binary')) && isUnlit && isNight) {
+      // Offset: If police are within 10 minutes (600s), cut the vulnerability penalty in half.
+      const hasPolice = localCtx && localCtx.policeETASeconds < 600;
+      dangerIndex += hasPolice ? 1.0 : 2.0;
+      riskFactors.push({
+         id: 'demographic_vulnerability',
+         label: 'Nighttime Vulnerability',
+         score: hasPolice ? 10 : 20,
+         detail: hasPolice 
+            ? 'Additional caution advised for female/solo travelers, though police proximity mitigates extreme risk.'
+            : 'Additional caution advised for female/solo travelers in unlit zones after dark.',
+         trend: 'stable'
+      });
+  }
+  
+  if (medicalConditions.length > 0 && aqiScore > 0) {
+      const hasRespiratory = medicalConditions.some(c => c.toLowerCase().includes('asthma') || c.toLowerCase().includes('respiratory') || c.toLowerCase().includes('lung'));
+      if (hasRespiratory) {
+          // Offset: If a hospital is within 5 minutes (300s), cut the respiratory penalty.
+          const hasHospital = localCtx && localCtx.hospitalETASeconds < 300;
+          dangerIndex += hasHospital ? 1.5 : 3;
+          riskFactors.push({
+              id: 'medical_respiratory',
+              label: 'Respiratory Danger',
+              score: hasHospital ? 15 : 30,
+              detail: hasHospital
+                  ? 'Medical Alert: High AQI poses risk, but you are very close to a hospital.'
+                  : 'Medical Alert: High AQI poses severe risk due to your listed respiratory conditions.',
+              trend: 'declining'
+          });
+      }
+  }
+  
+  if (age !== undefined && (age > 60 || age < 18)) {
+     if (imdData && ['2','3','4'].includes(String(imdData.Day1_Color))) {
+         dangerIndex += 3;
+         riskFactors.push({
+             id: 'demographic_age_weather',
+             label: 'Age-based Weather Vulnerability',
+             score: 30,
+             detail: 'Extreme weather alert poses elevated risk for seniors and minors.',
+             trend: 'stable'
+         });
+     }
+  }
+
+  // ==========================================
+  // Z2. EMERGENCY INFRASTRUCTURE OFFSETS
+  // ==========================================
+  if (localCtx) {
+      if (localCtx.policeETASeconds < 600) {
+          dangerIndex -= 1.5;
+          riskFactors.push({
+             id: 'offset_police',
+             label: 'Safety Boost: Police Nearby',
+             score: -15,
+             detail: `A police station is ~${Math.ceil(localCtx.policeETASeconds / 60)} minutes away.`,
+             trend: 'stable'
+          });
+      }
+      if (localCtx.hospitalETASeconds < 600) {
+          dangerIndex -= 1.5;
+          riskFactors.push({
+             id: 'offset_hospital',
+             label: 'Safety Boost: Hospital Nearby',
+             score: -15,
+             detail: `A medical facility is ~${Math.ceil(localCtx.hospitalETASeconds / 60)} minutes away.`,
+             trend: 'stable'
+          });
+      }
   }
 
   // ==========================================
@@ -281,10 +446,44 @@ async function buildMasterAggregator(input: SafetyEvaluateBody | SafetyCheckQuer
   }
 
   // ==========================================
+  // X. ADMIN OVERRIDES
+  // ==========================================
+  if (adminManualPenalty > 0) {
+      dangerIndex += adminManualPenalty;
+      riskFactors.push({
+          id: 'admin_manual_penalty',
+          label: 'Admin Manual Override',
+          score: adminManualPenalty * 10,
+          detail: `Safety score administratively reduced by ${adminManualPenalty * 10} points due to severe local risk.`,
+          trend: 'declining'
+      });
+  }
+
+  // ==========================================
   // F. FINAL OUTPUT SYNTHESIS
   // ==========================================
-  dangerIndex = Math.min(dangerIndex, 10);
-  const resolved = resolveAggregatorStatus(dangerIndex);
+  dangerIndex = Math.max(0, dangerIndex); // Prevent negative indices
+  
+  // Asymptotic Danger Curve: prevent hard-crashing to 10 (Safety Score 0) unless physically inside a mapped Critical Risk Zone
+  const isCriticalRiskZone = localCtx && ['CRITICAL', 'HIGH'].includes(String(localCtx.riskZoneLevel));
+  if (!isCriticalRiskZone) {
+      // Soft curve only applies when danger is extremely high (> 7), preventing it from inflating low danger scores
+      if (dangerIndex > 7) {
+          dangerIndex = 7 + 3 * (1 - Math.exp(-(dangerIndex - 7) / 3));
+      }
+  } else {
+      dangerIndex = Math.min(dangerIndex, 10);
+  }
+
+  let resolved = resolveAggregatorStatus(dangerIndex);
+  
+  // Status Cap: Never show CRITICAL_DANGER (0-10 safety) unless in a physical Risk Zone
+  if (resolved.label === 'CRITICAL_DANGER' && !isCriticalRiskZone) {
+      resolved.status = 'danger';
+      resolved.label = 'DANGER';
+      resolved.recommendation = 'Danger level detected. Avoid non-essential travel and seek a safer route.';
+  }
+
   const dangerScore = Number((dangerIndex / 10).toFixed(2));
   const safetyScore = Math.max(0, Math.round(100 - dangerIndex * 10));
 

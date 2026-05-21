@@ -55,6 +55,7 @@ export const tourists = pgTable(
 
     safetyScore: integer().notNull().default(100),
     lastScoreUpdate: timestamp({ withTimezone: true }),
+    adminManualPenalty: doublePrecision().notNull().default(0),
 
     isActive: boolean().notNull().default(true),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

@@ -653,10 +653,10 @@ Admin Response Flow:
 ## 10. Safety Score Master Aggregator (`/api/v1/safety`)
 
 ```
-Input: { lat, lon, local_hour?, networkType?, weatherSeverity?, aqi?, batteryPct? }
+Input: { lat, lon, local_hour?, networkType?, weatherSeverity?, aqi?, batteryPct?, touristId?, gender?, medicalConditions?, age? }
          │
          ▼
-  Cache check: Redis key "safety:<lat.2dp>:<lon.2dp>" (TTL: 300s)
+  Cache check: Redis key "safety:<lat>:<lon>:<hour>:<gender>" (TTL: 300s)
   HIT → return cached result
   MISS → proceed
          │
@@ -668,30 +668,38 @@ Input: { lat, lon, local_hour?, networkType?, weatherSeverity?, aqi?, batteryPct
     └── FAIL (timeout/out-of-bounds/offline): fallback to Phase 1 Heuristic Engine
          │
          ▼
-  Step 2: AQI Data (Open-Meteo API)
-    Cached: Redis "aqi:<lat.2dp>:<lon.2dp>" (TTL: 3600s)
-    Fields: pm2_5, pm10, nitrogen_dioxide, ozone
+  Step 2: Concurrent Live DB/API Queries
+    - AQI Data (Open-Meteo API)
+    - IMD Weather Warnings (India Met Dept, OAuth JWT)
+    - PostgreSQL gatherContext() (Police ETA, Hospital ETA, Risk Zones)
          │
          ▼
-  Step 3: IMD Weather Warnings (India Met Dept, OAuth JWT)
-    Cached: Redis "imd:<districtname>" (TTL: 21600s)
-    IMD token: cached in memory, refreshed 5min before expiry
+  Step 3: Danger Index Synthesis (The Engines)
+    danger = ML_hazard_score
+    danger += AQI_modifier (Toxic +1.5)
+    danger += IMD_weather_modifier (Orange/Red +2.0)
+    danger += Telemetry_modifier (Battery <15% +1.5, No Network +1.0)
+    danger += Demographic_modifier (Lone female at night +2.0, Senior +3.0)
+    
+  Step 4: Emergency Offsets (Safety Boosts)
+    danger -= 1.5 IF Police ETA < 10 mins
+    danger -= 1.5 IF Hospital ETA < 10 mins (Also mitigates Asthma/AQI penalty)
          │
          ▼
-  Step 4: Danger Index Synthesis
-    danger = max(ML_hazard, AQI_score)   ← don't double-count environment
-    danger += infrastructure_penalty      ← nighttime VIIRS lighting
-    danger += IMD_weather_penalty         ← Orange/Red +5, Yellow +2
-    danger = clamp(danger, 0, 10)
+  Step 5: Panic Mitigation Math
+    If danger > 7.0 AND NOT in physical risk zone:
+       danger = 7 + 3 * (1 - exp(-(danger - 7) / 3))  ← Asymptotic soft curve
+    Else:
+       danger = clamp(danger, 0, 10)
          │
          ▼
-  Step 5: Safety Score
+  Step 6: Safety Score
     safety_score = 100 - danger_index × 10
 
   Status thresholds:
     ≥ 80 = "safe"
     ≥ 50 = "caution"
-    < 50 = "danger"
+    < 50 = "danger" (Never reaches CRITICAL_DANGER unless physically in Risk Zone)
          │
          ▼
   Cache result in Redis (300s)

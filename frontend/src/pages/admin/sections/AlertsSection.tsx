@@ -166,9 +166,8 @@ export function AlertsSection({
         )}
       </ActionBar>
 
-      {/* Alert Table */}
-      <div className="flex-1 p-6" style={{ minHeight: 0 }}>
-        <Card className="flex flex-col glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 280px)', minHeight: 320 }}>
+      <div className="flex-1 p-6 flex flex-col min-h-0">
+        <Card className="flex flex-col flex-1 glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden min-h-[320px]">
           {/* Table Header */}
           <div className="grid grid-cols-[40px_1fr_120px_140px_120px_100px_100px] gap-4 px-5 py-3.5 glass-bar border-b border-white/20 text-[13px] font-semibold text-slate-500 uppercase tracking-wider">
             <div className="flex items-center">

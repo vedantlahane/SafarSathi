@@ -81,7 +81,7 @@ const Map = () => {
               <AlertDescription className="text-red-700/90">
                 <p>High-Risk Zone detected via AI history. Stay vigilant.</p>
                 {highRiskScore !== null && (
-                  <p className="text-xs">AI danger score: {Math.round(highRiskScore * 100)}%</p>
+                  <p className="text-xs">AI safety score: {Math.max(0, 100 - Math.round(highRiskScore * 100))}/100</p>
                 )}
               </AlertDescription>
             </Alert>

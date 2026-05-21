@@ -38,6 +38,7 @@ export const touristService = {
       bloodType: input.bloodType,
       allergies: input.allergies,
       medicalConditions: input.medicalConditions,
+      adminManualPenalty: input.adminManualPenalty,
     }) as Partial<NewTourist>;
 
     if (Object.keys(patch).length === 0) return toPublic(t);

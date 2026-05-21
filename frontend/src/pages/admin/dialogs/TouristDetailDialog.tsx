@@ -19,6 +19,7 @@ interface TouristDetailDialogProps {
   onContact?: (tourist: Tourist) => void;
   onTrack?: (tourist: Tourist) => void;
   onBroadcast?: (tourist: Tourist) => void;
+  onRefresh?: () => void;
 }
 
 const RISK_PILL: Record<string, string> = {
@@ -77,9 +78,11 @@ function Tag({ children }: { children: React.ReactNode }) {
 }
 
 export function TouristDetailDialog({
-  open, onOpenChange, tourist, onContact, onTrack, onBroadcast,
+  open, onOpenChange, tourist, onContact, onTrack, onBroadcast, onRefresh
 }: TouristDetailDialogProps) {
-  const [tab, setTab] = useState<"profile" | "medical" | "location">("profile");
+  const [tab, setTab] = useState<"profile" | "medical" | "location" | "override">("profile");
+  const [penaltyInput, setPenaltyInput] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   if (!tourist) return null;
 
@@ -122,7 +125,7 @@ export function TouristDetailDialog({
           </div>
           {/* Tab bar */}
           <div className="flex gap-1 mt-3">
-            {(["profile","medical","location"] as const).map((t) => (
+            {(["profile","medical","location","override"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -289,6 +292,56 @@ export function TouristDetailDialog({
                 </p>
               </div>
             </>
+          )}
+
+          {/* ── Override Tab ── */}
+          {tab === "override" && (
+            <div className="space-y-4">
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h4 className="text-sm font-bold text-orange-800 mb-2 flex items-center gap-1.5">
+                  <Shield className="w-4 h-4" /> Admin Manual Override
+                </h4>
+                <p className="text-xs text-orange-700 mb-4">
+                  Set a manual penalty (0 to 10) to artificially reduce this tourist's safety score. 
+                  A penalty of 10 drops the score completely to 0. 
+                  Currently set to: <strong className="text-orange-900">{tourist.adminManualPenalty ?? 0}</strong>
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    placeholder="e.g. 5.5"
+                    className="flex-1 px-3 py-2 border border-orange-300 rounded-md text-sm outline-none focus:ring-2 focus:ring-orange-500"
+                    value={penaltyInput}
+                    onChange={(e) => setPenaltyInput(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700"
+                    disabled={isUpdating}
+                    onClick={async () => {
+                      if (!penaltyInput) return;
+                      setIsUpdating(true);
+                      try {
+                        const { updateTouristAdmin } = await import("@/lib/api/admin");
+                        await updateTouristAdmin(tourist.id, { adminManualPenalty: parseFloat(penaltyInput) });
+                        onRefresh?.();
+                        setPenaltyInput("");
+                        onOpenChange(false);
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setIsUpdating(false);
+                      }
+                    }}
+                  >
+                    {isUpdating ? "Saving..." : "Apply Penalty"}
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

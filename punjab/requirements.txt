@@ -5,3 +5,5 @@ geopandas==0.14.4
 shapely==2.0.4
 requests==2.31.0
 pyarrow==16.1.0
+scikit-learn==1.4.2
+shap==0.45.1

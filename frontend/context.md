@@ -681,3 +681,18 @@ Dev mode: service worker disabled + existing SW unregistered on start
 6. **Fire-and-forget SOS**: SOS success screen shown immediately regardless of API response; backend failure silently swallowed (reliability > accuracy in emergencies).
 
 7. **Mapbox for routing + matrix**: Directions v5 for route alternatives with GeoJSON polylines; Matrix v1 for nearest-station road-time ETA (not straight-line Haversine).
+
+---
+
+## 11. Unified Safety Metric (Anti-Panic Design)
+
+The frontend strictly enforces a **Unified Safety Metric**, meaning the user always sees a `Safety Score` where `100` is the best, and `0` is the worst.
+
+**Why?**
+The backend calculates a `Danger Index` (0.0 to 10.0), which translates to a `Danger Score` (0.0 to 1.0). Exposing raw "Danger Percentages" (e.g. "Danger 91%") causes severe user panic and cognitive dissonance if shown next to a "Safety 9" score.
+
+**Implementation Rules:**
+- **Never display the raw Danger Score percentage.**
+- If you receive `dangerScore` from the API (e.g., 0.91), calculate the unified Safety Score using `Math.max(0, 100 - Math.round(dangerScore * 100))`.
+- All textual labels must be framed around "Safety". E.g., `AI safety score: 9/100`, rather than `AI danger score: 91%`.
+- The `SafetyScoreHero` component handles this automatically and maps the unified score to the green/yellow/red color gradients.
