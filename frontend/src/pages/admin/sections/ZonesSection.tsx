@@ -101,7 +101,7 @@ export function ZonesSection({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full flex flex-col">
       {/* Header */}
       <div className="glass-bar px-6 py-5 border-b border-white/30">
         <div className="flex items-center justify-between mb-4">
@@ -159,7 +159,7 @@ export function ZonesSection({
       />
 
       {/* Main Content - Map + Zone List */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-6" style={{ height: 'calc(100vh - 340px)', minHeight: 500 }}>
         {/* Map */}
         <Card className="lg:col-span-2 overflow-hidden min-h-[500px] glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
           <CardHeader className="py-3 px-5 border-b border-white/20 glass-bar">

@@ -48,7 +48,7 @@ export default function AdminLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/20 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-violet-50/20 relative overflow-clip">
       {/* iOS Glass Background Blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-200/25 rounded-full blur-3xl animate-[mesh-drift-1_60s_ease-in-out_infinite]" />
@@ -191,7 +191,7 @@ export default function AdminLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] h-[calc(100vh-3.5rem)]">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <AdminPanel
           activeTab={activeTab}
           onTabChange={setActiveTab}

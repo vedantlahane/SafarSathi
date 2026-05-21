@@ -119,7 +119,7 @@ export function AlertsSection({
   const pendingCount = alerts.filter((a) => a.status === "PENDING").length;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full flex flex-col">
       {/* Header Stats */}
       <div className="px-6 py-5 glass-bar border-b border-white/30">
         <div className="flex items-center justify-between mb-2">
@@ -167,8 +167,8 @@ export function AlertsSection({
       </ActionBar>
 
       {/* Alert Table */}
-      <div className="flex-1 overflow-hidden p-6">
-        <Card className="h-full flex flex-col glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden">
+      <div className="flex-1 p-6" style={{ minHeight: 0 }}>
+        <Card className="flex flex-col glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden" style={{ height: 'calc(100vh - 280px)', minHeight: 320 }}>
           {/* Table Header */}
           <div className="grid grid-cols-[40px_1fr_120px_140px_120px_100px_100px] gap-4 px-5 py-3.5 glass-bar border-b border-white/20 text-[13px] font-semibold text-slate-500 uppercase tracking-wider">
             <div className="flex items-center">

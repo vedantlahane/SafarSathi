@@ -171,7 +171,7 @@ export function DashboardSection({
   };
 
   return (
-    <div className="h-full overflow-auto p-4 space-y-6">
+    <div className="p-4 space-y-6 pb-8">
       {/* Premium Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
