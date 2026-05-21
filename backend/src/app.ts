@@ -29,6 +29,7 @@ import touristPOIRouter from './modules/tourist-poi/tourist-poi.routes.js';
 
 export function buildApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   app.use(cors({
