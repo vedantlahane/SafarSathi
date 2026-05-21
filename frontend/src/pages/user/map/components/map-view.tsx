@@ -83,6 +83,7 @@ export function MapView({
                 map.setConfigProperty('basemap', 'showPointOfInterestLabels', mapboxConfig.showPointOfInterestLabels);
                 map.setConfigProperty('basemap', 'showTransitLabels', mapboxConfig.showTransitLabels);
                 map.setConfigProperty('basemap', 'theme', 'faded');
+                map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
             } catch (e) {
                 console.warn("Failed to set mapbox standard config:", e);
             }
@@ -112,7 +113,6 @@ export function MapView({
                 mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
                 style={{ width: "100%", height: "100%" }}
                 padding={{ top: 120, bottom: 220, left: 10, right: 10 }}
-                terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
                 attributionControl={true}
                 pitchWithRotate={true}
                 dragRotate={true}
@@ -155,9 +155,9 @@ export function MapView({
                 />
 
                 {/* ── Native Mapbox Controls ── */}
-                <NavigationControl position="top-right" showCompass={true} showZoom={true} />
+                <NavigationControl position="bottom-right" showCompass={true} showZoom={true} />
                 <GeolocateControl 
-                    position="top-right" 
+                    position="bottom-right" 
                     trackUserLocation={true} 
                     showAccuracyCircle={true} 
                     showUserLocation={false} 

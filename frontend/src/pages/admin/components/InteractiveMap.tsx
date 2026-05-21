@@ -228,6 +228,7 @@ export function InteractiveMap({
         map.setConfigProperty('basemap', 'showPointOfInterestLabels', mapboxConfig.showPointOfInterestLabels);
         map.setConfigProperty('basemap', 'showTransitLabels', mapboxConfig.showTransitLabels);
         map.setConfigProperty('basemap', 'theme', 'faded'); // 'default', 'faded', 'monochrome'
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       } catch (e) {
         // config might not be available immediately
       }
@@ -271,7 +272,6 @@ export function InteractiveMap({
         mapStyle="mapbox://styles/mapbox/standard"
         mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: "100%", height: "100%" }}
-        terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
         cursor={isAddingZone ? "crosshair" : cursor}
         interactiveLayerIds={onZoneClick ? ["zones-fill"] : []}
         onClick={isAddingZone ? handleMapClick : handleLayerClick}

@@ -191,7 +191,7 @@ export default function AdminLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="min-h-[calc(100vh-4rem)]">
+      <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] h-[calc(100vh-3.5rem)]">
         <AdminPanel
           activeTab={activeTab}
           onTabChange={setActiveTab}

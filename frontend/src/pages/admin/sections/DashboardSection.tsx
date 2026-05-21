@@ -18,9 +18,6 @@ import {
   Wifi,
   WifiOff,
   Database,
-  Hospital,
-  FileWarning,
-  BarChart3,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -174,7 +171,7 @@ export function DashboardSection({
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="h-full overflow-auto p-4 space-y-6">
       {/* Premium Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -554,27 +551,6 @@ export function DashboardSection({
                 >
                   <Users className="w-3 h-3 text-blue-500" />
                   <span className="text-[11px] font-medium text-slate-700">Tourists</span>
-                </button>
-                <button
-                  onClick={() => onNavigate("hospitals")}
-                  className="flex items-center gap-2 p-2 rounded-xl glass-thin border border-white/30 hover:bg-rose-50/30 transition-all"
-                >
-                  <Hospital className="w-3 h-3 text-rose-500" />
-                  <span className="text-[11px] font-medium text-slate-700">Hospitals</span>
-                </button>
-                <button
-                  onClick={() => onNavigate("advisories")}
-                  className="flex items-center gap-2 p-2 rounded-xl glass-thin border border-white/30 hover:bg-amber-50/30 transition-all"
-                >
-                  <FileWarning className="w-3 h-3 text-amber-500" />
-                  <span className="text-[11px] font-medium text-slate-700">Advisories</span>
-                </button>
-                <button
-                  onClick={() => onNavigate("auditlog")}
-                  className="flex items-center gap-2 p-2 rounded-xl glass-thin border border-white/30 hover:bg-slate-50/30 transition-all"
-                >
-                  <BarChart3 className="w-3 h-3 text-slate-500" />
-                  <span className="text-[11px] font-medium text-slate-700">Audit Log</span>
                 </button>
               </div>
             </div>

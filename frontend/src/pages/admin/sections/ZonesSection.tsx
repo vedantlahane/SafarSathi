@@ -171,7 +171,7 @@ export function ZonesSection({
               {isAddingZone ? "Click on map to place zone center" : "Zone Map"}
             </CardTitle>
           </CardHeader>
-          <div className="h-[calc(100%-44px)] min-h-115">
+          <div className="h-[calc(100%-44px)] min-h-0">
             <InteractiveMap
               zones={zones}
               tourists={tourists}
