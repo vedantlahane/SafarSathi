@@ -17,7 +17,7 @@ export const touristController = {
 
   async updateMe(req: Request, res: Response): Promise<void> {
     if (!req.user) throw new AppError('UNAUTHORIZED', 'Not authenticated');
-    const targetId = req.params.touristId || req.user.sub;
+    const targetId = (req.params.touristId as string) || req.user.sub;
     const updateData = req.body as UpdateProfileInput;
     if (req.user.role !== 'admin') {
         delete updateData.adminManualPenalty;
