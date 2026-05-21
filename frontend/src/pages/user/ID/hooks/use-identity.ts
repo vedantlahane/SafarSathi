@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { fetchTouristProfile, getApiBaseUrl } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
@@ -6,33 +7,19 @@ import type { TouristProfile } from "../types";
 
 export function useIdentity() {
     const session = useSession();
-    const [profile, setProfile] = useState<TouristProfile | null>(null);
-    const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
     const [isFlipped, setIsFlipped] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-    useEffect(() => {
-        const on = () => setIsOnline(true);
-        const off = () => setIsOnline(false);
-        window.addEventListener("online", on);
-        window.addEventListener("offline", off);
-        return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
-    }, []);
-
-    useEffect(() => {
-        if (!session?.touristId) { setProfile(null); return; }
-        let active = true;
-        (async () => {
-            try {
-                setLoading(true);
-                const data = await fetchTouristProfile(session.touristId);
-                if (active) setProfile(data as TouristProfile);
-            } catch { /* silent */ } finally { if (active) setLoading(false); }
-        })();
-        return () => { active = false; };
-    }, [session?.touristId]);
+    
+    const { 
+        data: profile = null, 
+        isLoading: loading 
+    } = useQuery({
+        queryKey: ["touristProfile", session?.touristId],
+        queryFn: () => fetchTouristProfile(session!.touristId),
+        enabled: !!session?.touristId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
     const handleFlip = useCallback(() => {
         setIsFlipped(prev => !prev);
@@ -55,7 +42,7 @@ export function useIdentity() {
         hapticFeedback("light");
         const shareData = {
             title: "YatraX Tourist ID",
-            text: `Tourist ID: ${profile.touristId || profile.id}\nName: ${profile.name}\nVerified by YatraX`,
+            text: `Tourist ID: ${(profile as any).touristId || profile.id}\nName: ${profile.name}\nVerified by YatraX`,
             url: verificationUrl || undefined,
         };
         try {
@@ -70,7 +57,7 @@ export function useIdentity() {
     }, [profile, verificationUrl]);
 
     return {
-        session, profile, loading, copied, isOnline,
+        session, profile: profile as TouristProfile | null, loading, copied,
         isFlipped, handleFlip, showDetails, setShowDetails,
         verificationUrl, handleCopy, handleShare,
     };

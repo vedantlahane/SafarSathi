@@ -1,4 +1,4 @@
-import { Shield, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 
 export function SplashScreen() {
@@ -12,15 +12,16 @@ export function SplashScreen() {
       <div className="relative mb-7">
         <motion.div
           animate={{ y: [0, -10, 0] }}
-          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-          className="h-24 w-24 rounded-3xl shadow-2xl"
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          className="h-24 w-24 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-white/10"
           style={{
             background:
               "linear-gradient(135deg, color-mix(in oklch, var(--theme-primary) 80%, black), var(--theme-primary))",
           }}
         >
-          <div className="flex h-full items-center justify-center">
-            <Shield className="h-12 w-12 text-white" />
+          <div className="flex h-full items-center justify-center relative p-2">
+            <img src="/yatrax-logo.png" alt="YatraX Logo" className="w-full h-full object-contain z-10" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 rounded-3xl" />
           </div>
         </motion.div>
         <motion.span 

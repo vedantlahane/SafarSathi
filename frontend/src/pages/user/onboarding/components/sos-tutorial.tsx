@@ -29,15 +29,16 @@ export function SOSTutorial({ onNext, onBack }: SOSTutorialProps) {
       <GlassCard level={1} className="mt-6 rounded-3xl p-6">
         <div className="relative mx-auto h-56 rounded-2xl border border-border/60 bg-muted/20">
           <button
-            className={`absolute top-1/2 -translate-y-1/2 h-14 w-14 rounded-full border border-border bg-white/70 shadow-lg backdrop-blur ${side === "right" ? "right-3" : "left-3"
-              } ${active ? "scale-110" : ""}`}
+            className={`absolute top-1/2 -translate-y-1/2 h-14 w-14 rounded-full border border-border bg-white/70 shadow-lg backdrop-blur transition-all duration-300 ${
+              side === "right" ? "right-3" : "left-3"
+            } ${active ? "scale-110 shadow-[0_0_20px_var(--theme-glow)]" : "animate-[sos-pulse_3s_ease-in-out_infinite]"}`}
             onMouseDown={() => setActive(true)}
             onMouseUp={() => setActive(false)}
             onTouchStart={() => setActive(true)}
             onTouchEnd={() => setActive(false)}
             aria-label="SOS tutorial ball"
           >
-            <Siren className="mx-auto h-6 w-6 text-primary" />
+            <Siren className={`mx-auto h-6 w-6 text-primary transition-transform duration-300 ${active ? "scale-110" : ""}`} />
           </button>
 
           {active && (

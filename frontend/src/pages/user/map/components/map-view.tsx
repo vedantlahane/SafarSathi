@@ -4,8 +4,6 @@ import Map, { Source, Layer, NavigationControl, GeolocateControl, ScaleControl }
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { MAP_DEFAULTS } from "../constants";
-import { Navigation } from "lucide-react";
-import { hapticFeedback } from "@/lib/store";
 import type {
     Destination,
     Hospital,
@@ -162,7 +160,7 @@ export function MapView({
                 />
 
                 {/* ── Native Mapbox Controls ── */}
-                <NavigationControl position="bottom-right" showCompass={false} showZoom={true} />
+                <NavigationControl position="bottom-right" showCompass={true} showZoom={true} />
                 <GeolocateControl 
                     position="bottom-right" 
                     trackUserLocation={true} 
@@ -171,38 +169,7 @@ export function MapView({
                 />
                 <ScaleControl position="bottom-left" />
 
-                {/* ── Custom 3D & North Controls ── */}
-                <div className="absolute right-[10px] bottom-[280px] flex flex-col gap-2 z-10">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            const map = mapRef.current?.getMap();
-                            if (map) {
-                                map.flyTo({ bearing: 0, duration: 800 }); // Only reset bearing
-                                hapticFeedback("light");
-                            }
-                        }}
-                        className="w-[29px] h-[29px] bg-white rounded-md shadow-[0_0_0_2px_rgba(0,0,0,0.1)] flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors"
-                        title="Reset North"
-                    >
-                        <Navigation className="h-4 w-4" />
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            const map = mapRef.current?.getMap();
-                            if (map) {
-                                const is3D = map.getPitch() > 30;
-                                map.flyTo({ pitch: is3D ? 0 : 65, duration: 800 });
-                                hapticFeedback("light");
-                            }
-                        }}
-                        className="w-[29px] h-[29px] bg-white rounded-md shadow-[0_0_0_2px_rgba(0,0,0,0.1)] flex items-center justify-center font-bold text-[11px] text-slate-700 hover:bg-slate-50 transition-colors"
-                        title="Toggle 3D"
-                    >
-                        3D
-                    </button>
-                </div>
+
 
                 {/* ── Traffic Layer ── */}
                 <Source id="traffic" type="vector" url="mapbox://mapbox.mapbox-traffic-v1">

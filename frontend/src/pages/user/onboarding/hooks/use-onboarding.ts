@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getItem, setItem } from "@/lib/utils/storage";
 
 const ONBOARDING_KEY = "yatrax:onboarding:v1";
-const SPLASH_MS = 1400;
+const SPLASH_MS = 2500;
 
 type PermissionState = "granted" | "denied" | "unknown";
 
