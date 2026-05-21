@@ -410,39 +410,24 @@ Browser                              Backend (ws://host/ws-connect)
 
 ## 8. Geofencing System (Client-Side)
 
-```
-GPS Update arrives
-       │
-       ▼
-GeofenceEngine.findIntersectingZones(lat, lng)
-       │
-       ├── Step 1: RBush R-Tree bounding box lookup (O(log N))
-       │           → gets candidate zones whose bbox contains the point
-       │
-       └── Step 2: Exact geometry check
-                   ├── Circle zone → Turf.js distance() ≤ radiusMeters
-                   └── Polygon zone → Turf.js booleanPointInPolygon()
-                          │
-                          ▼
-                   intersectingZones[]
-                          │
-                          ▼
-               4-second Hysteresis Debounce
-               ├── New zone detected? Start enter-timer
-               ├── Zone exited? Start exit-timer
-               └── Only fire after 4s continuous state
-                          │
-                          ▼
-                   ┌──────────────────┐
-                   │  CONFIRMED ENTRY │
-                   └──────────────────┘
-                          │
-                   ┌──────┴──────────────────────┐
-                   │  Critical → toast.error(10s)  │
-                   │  High     → toast.warning(7s)  │
-                   │  Medium   → toast.warning(5s)  │
-                   │  All      → hapticFeedback()    │
-                   └────────────────────────────────┘
+```mermaid
+graph TD
+    A[GPS Update Arrives] --> B[GeofenceEngine.findIntersectingZones]
+    B --> C[Step 1: RBush R-Tree bbox lookup]
+    C --> D[Step 2: Turf.js exact geometry check]
+    D --> E[intersectingZones array]
+    
+    E --> F{4-second Hysteresis Debounce}
+    F -- New Zone Detected --> G[Start enter-timer]
+    F -- Zone Exited --> H[Start exit-timer]
+    
+    G -- 4s passed --> I[CONFIRMED ENTRY]
+    
+    I --> J{Severity}
+    J -- Critical --> K[toast.error 10s]
+    J -- High --> L[toast.warning 7s]
+    J -- Medium --> M[toast.warning 5s]
+    J -- All --> N[hapticFeedback]
 ```
 
 **Route Safety Scoring** (in `useMapNavigation`):
@@ -461,43 +446,25 @@ Routes labeled: isSafest (highest score) | isFastest (lowest duration)
 
 ## 9. SOS System State Machine
 
-```
-  ┌──────────────────────────────────────────────────────────────┐
-  │                     SOSBall (Floating Widget)                │
-  │  - Snaps to left/right screen edge                          │
-  │  - Position persisted to localStorage                        │
-  │  - Size: normal < caution < danger (scales with risk state)  │
-  └──────────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> idle
 
-Phase Machine:
+    idle --> long_press : Long-press threshold reached
+    note right of long_press: SOSArrowGuides appear\npostPreAlert() fires silently
 
-  "idle"
-    │
-    │  (long-press threshold reached)
-    ▼
-  "long-press"    ←── SOSArrowGuides appear (pointing to screen center)
-    │               ←── postPreAlert() fires silently (backend pre-alert)
-    │
-    │  (swipe inward / upward / downward toward center)
-    ▼
-  "countdown"     ←── SOSConfirmOverlay shows 3-2-1 countdown
-    │               ←── Heavy haptic on each tick
-    │
-    │  (any tap to cancel)          │
-    ├──────────────────────────────>│ "idle" (cancelSOSAlert if already created)
-    │
-    │  (countdown reaches 0)
-    ▼
-  "firing"
-    │   1. getCurrentPosition() (GPS, 5s timeout)
-    │   2. postSOS(touristId, { lat, lng, message })
-    │   3. Stores alertId in context
-    ▼
-  "success"       ←── SOSSuccessScreen (alert ID, location, emergency contacts)
-    │
-    │  (user dismisses)
-    ▼
-  "idle"
+    long_press --> countdown : Swipe inward/upward
+    note right of countdown: 3-2-1 countdown\nHeavy haptic ticks
+
+    countdown --> idle : Tap to cancel
+    
+    countdown --> firing : Countdown reaches 0
+    note right of firing: 1. getCurrentPosition()\n2. postSOS(lat, lng)\n3. Store alertId
+    
+    firing --> success
+    note right of success: SOSSuccessScreen shown
+    
+    success --> idle : User dismisses
 ```
 
 ---

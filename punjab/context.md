@@ -22,25 +22,23 @@
 
 The Punjab ML server is an extremely fast, stateless microservice dedicated purely to geographical terrain and historical safety inference. 
 
-```
-Node.js (Master Aggregator) 
-       │ (POST /safety/evaluate)
-       ▼
-FastAPI (port 8000)
-       │
-       ├── 1. In-Memory Artifacts (Loaded once at startup)
-       │      ├── model.joblib (RandomForestRegressor)
-       │      ├── explainer.joblib (SHAP TreeExplainer)
-       │      └── punjab_safety_base.parquet (GeoPandas DataFrame)
-       │
-       ├── 2. Spatial Query (O(1) lookup)
-       │      └── Uses `gdf.sindex.nearest()` to find the closest 1km grid cell
-       │
-       ├── 3. Model Inference
-       │      └── Predicts base geographic safety score
-       │
-       └── 4. SHAP Explainability
-              └── Calculates exactly which features (elevation, vegetation, PM2.5, etc.) influenced the score, and by how much.
+```mermaid
+graph TD
+    Node[Node.js Master Aggregator] -- "POST /safety/evaluate" --> Fast[FastAPI Server :8000]
+    
+    Fast --> Mem[1. In-Memory Artifacts]
+    Mem --> Model[model.joblib]
+    Mem --> Exp[explainer.joblib]
+    Mem --> Geo[punjab_safety_base.parquet]
+    
+    Fast --> Query[2. Spatial Query]
+    Query --> SIndex[GeoPandas sindex.nearest]
+    
+    Fast --> Inf[3. Model Inference]
+    Inf --> Predict[Base geographic safety score]
+    
+    Fast --> SHAP[4. SHAP Explainability]
+    SHAP --> Weights[Calculate feature influences]
 ```
 
 ---

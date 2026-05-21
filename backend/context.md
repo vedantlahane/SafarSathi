@@ -296,26 +296,33 @@ Indexes: `geom` (GiST), `type`, `osmId`, `isActive`
 
 ### Entity Relationship Diagram
 
-```
-tourists ─────────────────────────────────────┐
-   │                                           │
-   ├──< alerts >──── police_departments        │
-   │        │              │                  │
-   │        └── nearestStationId              │
-   │             resolvedBy                   │
-   ├──< tourist_location_logs                 │
-   ├──< notifications                         │
-   └──< blockchain_logs                       │
-                                               │
-travel_advisories ──── police_departments      │
-   (createdBy)                                 │
-                                               │
-risk_zones ────────────────────────────────────┘
-   (geom, polygonCoordinates)
-   
-audit_logs (standalone — references anything by ID string)
-tourist_pois (standalone — OSM data)
-police_departments (standalone — also admin users)
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    tourists ||--o{ alerts : "triggers"
+    tourists ||--o{ tourist_location_logs : "records"
+    tourists ||--o{ notifications : "receives"
+    tourists ||--o{ blockchain_logs : "has"
+
+    police_departments ||--o{ alerts : "resolves"
+    police_departments ||--o{ travel_advisories : "creates"
+
+    alerts }|--|| police_departments : "nearestStationId"
+    alerts }|--o| police_departments : "resolvedBy"
+
+    risk_zones {
+        string geom
+        string polygonCoordinates
+    }
+    
+    tourist_pois {
+        string osmId
+    }
+    
+    audit_logs {
+        string targetCollection
+    }
 ```
 
 ---
@@ -653,61 +660,32 @@ Admin Response Flow:
 
 ## 10. Safety Score Master Aggregator (`/api/v1/safety`)
 
-```
-Input: { lat, lon, local_hour?, networkType?, weatherSeverity?, aqi?, batteryPct?, touristId?, gender?, medicalConditions?, age? }
-         │
-         ▼
-  Cache check: Redis key "safety:<lat>:<lon>:<hour>:<gender>" (TTL: 300s)
-  HIT → return cached result
-  MISS → proceed
-         │
-         ▼
-  Step 1: Call Python ML FastAPI (POST <ML_API_URL>/safety/evaluate, 2.5s timeout)
-    Returns: { ml_baseline, infrastructure, spatial_context }
-    │
-    ├── SUCCESS: use ML danger index
-    └── FAIL (timeout/out-of-bounds/offline): fallback to Phase 1 Heuristic Engine
-         │
-         ▼
-  Step 2: Concurrent Live DB/API Queries
-    - AQI Data (Open-Meteo API)
-    - IMD Weather Warnings (India Met Dept, OAuth JWT)
-    - PostgreSQL gatherContext() (Police ETA, Hospital ETA, Risk Zones)
-         │
-         ▼
-  Step 3: Danger Index Synthesis (The Engines)
-    danger = ML_hazard_score
-    danger += AQI_modifier (Toxic +1.5)
-    danger += IMD_weather_modifier (Orange/Red +2.0)
-    danger += Telemetry_modifier (Battery <15% +1.5, No Network +1.0)
-    danger += Demographic_modifier (Lone female at night +2.0, Senior +3.0)
-    danger += Admin_Manual_Penalty (from DB tourists.admin_manual_penalty, 0-10)
-
-  Step 4: Emergency Offsets (Safety Boosts)
-    danger -= 1.5 IF Police ETA < 10 mins
-    danger -= 1.5 IF Hospital ETA < 10 mins (Also mitigates Asthma/AQI penalty)
-         │
-         ▼
-  Step 5: Panic Mitigation Math
-    If danger > 7.0 AND NOT in physical risk zone:
-       danger = 7 + 3 * (1 - exp(-(danger - 7) / 3))  ← Asymptotic soft curve
-    Else:
-       danger = clamp(danger, 0, 10)
-         │
-         ▼
-  Step 6: Safety Score
-    safety_score = 100 - danger_index × 10
-
-  Status thresholds:
-    ≥ 80 = "safe"
-    ≥ 50 = "caution"
-    < 50 = "danger" (Never reaches CRITICAL_DANGER unless physically in Risk Zone)
-         │
-         ▼
-  Cache result in Redis (300s)
-         │
-         ▼
-  Return to client
+```mermaid
+graph TD
+    A[Input: lat, lon, local_hour] --> B{Redis Cache Check}
+    B -- Hit --> C[Return Cached Score]
+    B -- Miss --> D[Call Punjab ML Engine]
+    
+    D -- Success --> E[ML Danger Index]
+    D -- Timeout/Fail --> F[Phase 1 Heuristic Fallback]
+    
+    E --> G[Combine with Live APIs]
+    F --> G
+    
+    G --> H[Add AQI + Weather Penalties]
+    H --> I[Add Telemetry Penalties]
+    I --> J[Add Admin Manual Penalty]
+    
+    J --> K{Emergency Offsets}
+    K -- Police/Hospital < 10m --> L[Subtract 1.5]
+    K -- Else --> M[No Offset]
+    
+    L --> N[Panic Mitigation Math]
+    M --> N
+    
+    N --> O[Clamp Score 0-100]
+    O --> P[Cache in Redis]
+    P --> Q[Return Safety Score]
 ```
 
 ### Phase 1 Heuristic Engine (ML Fallback)
