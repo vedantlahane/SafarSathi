@@ -160,7 +160,7 @@ export function MapView({
                 />
 
                 {/* ── Native Mapbox Controls ── */}
-                <NavigationControl position="bottom-right" showCompass={true} showZoom={true} />
+                <NavigationControl position="bottom-right" showCompass={true} showZoom={true} visualizePitch={true} />
                 <GeolocateControl 
                     position="bottom-right" 
                     trackUserLocation={true} 

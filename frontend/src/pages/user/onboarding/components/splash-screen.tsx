@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Shield, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 
 export function SplashScreen() {
@@ -19,8 +19,8 @@ export function SplashScreen() {
               "linear-gradient(135deg, color-mix(in oklch, var(--theme-primary) 80%, black), var(--theme-primary))",
           }}
         >
-          <div className="flex h-full items-center justify-center relative p-2">
-            <img src="/yatrax-logo.png" alt="YatraX Logo" className="w-full h-full object-contain z-10" />
+          <div className="flex h-full items-center justify-center relative">
+            <Shield className="h-10 w-10 text-white drop-shadow-md z-10" strokeWidth={1.5} />
             <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 rounded-3xl" />
           </div>
         </motion.div>
