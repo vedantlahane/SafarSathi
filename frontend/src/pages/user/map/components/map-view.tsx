@@ -111,6 +111,7 @@ export function MapView({
                 mapStyle="mapbox://styles/mapbox/standard"
                 mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
                 style={{ width: "100%", height: "100%" }}
+                padding={{ top: 120, bottom: 220, left: 10, right: 10 }}
                 terrain={{ source: 'mapbox-dem', exaggeration: 1.5 }}
                 attributionControl={true}
                 pitchWithRotate={true}
@@ -154,9 +155,9 @@ export function MapView({
                 />
 
                 {/* ── Native Mapbox Controls ── */}
-                <NavigationControl position="bottom-right" showCompass={true} showZoom={true} />
+                <NavigationControl position="top-right" showCompass={true} showZoom={true} />
                 <GeolocateControl 
-                    position="bottom-right" 
+                    position="top-right" 
                     trackUserLocation={true} 
                     showAccuracyCircle={true} 
                     showUserLocation={false} 

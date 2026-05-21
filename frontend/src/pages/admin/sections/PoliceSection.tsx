@@ -79,11 +79,11 @@ export function PoliceSection({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="glass-bar px-6 py-4 border-b border-white/30">
+      <div className="glass-bar px-6 py-5 border-b border-white/30">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800 tracking-tight">Police Station Management</h2>
-            <p className="text-sm text-slate-500">Manage and coordinate with police stations</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-800">Police Station Management</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1">Manage and coordinate with police stations</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="glass-thin flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-emerald-200/40">
@@ -117,14 +117,14 @@ export function PoliceSection({
       />
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4 p-6">
         {/* Map */}
-        <Card className="lg:col-span-2 overflow-hidden min-h-130 glass-elevated border-white/30" style={{boxShadow:'inset 0 0.5px 0 0 rgba(255,255,255,0.8), 0 1px 2px 0 rgba(0,0,0,0.03), 0 4px 16px -4px rgba(0,0,0,0.06), 0 12px 40px -8px rgba(0,0,0,0.04)'}}>
-          <CardHeader className="py-2.5 px-4 border-b border-white/30 bg-white/20">
-            <CardTitle className="text-sm flex items-center gap-2 font-semibold">
+        <Card className="lg:col-span-2 overflow-hidden min-h-[500px] glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
+          <CardHeader className="py-3 px-5 border-b border-white/20 glass-bar">
+            <CardTitle className="text-[13px] uppercase tracking-wider flex items-center gap-2 font-bold text-slate-500">
               <div className="relative">
                 <Shield className="w-4 h-4 text-blue-600" />
-                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
               </div>
               Police Station Locations
             </CardTitle>
@@ -143,12 +143,12 @@ export function PoliceSection({
         </Card>
 
         {/* Station List */}
-        <Card className="flex flex-col glass-card border-white/30" style={{boxShadow:'inset 0 0.5px 0 0 rgba(255,255,255,0.8), 0 1px 2px 0 rgba(0,0,0,0.03), 0 4px 16px -4px rgba(0,0,0,0.06), 0 12px 40px -8px rgba(0,0,0,0.04)'}}>
-          <CardHeader className="py-2.5 px-4 border-b border-white/30 bg-white/20">
-            <CardTitle className="text-sm flex items-center justify-between font-semibold">
+        <Card className="flex flex-col glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl">
+          <CardHeader className="py-3 px-5 border-b border-white/20 glass-bar">
+            <CardTitle className="text-[13px] uppercase tracking-wider flex items-center justify-between font-bold text-slate-500">
               <span>Stations ({filteredPolice.length})</span>
-              <Button size="sm" variant="ghost" onClick={onAddPolice} className="text-blue-600 hover:bg-blue-500/10 rounded-xl">
-                <Plus className="w-3.5 h-3.5 mr-1" /> Add
+              <Button size="sm" variant="ghost" onClick={onAddPolice} className="rounded-xl h-8 px-3 text-[11px] font-bold tracking-wide transition-all bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> Add
               </Button>
             </CardTitle>
           </CardHeader>

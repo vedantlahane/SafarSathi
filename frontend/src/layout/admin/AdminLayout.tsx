@@ -9,11 +9,6 @@ import {
   Search,
   ChevronDown,
   Shield,
-  Hospital,
-  FileWarning,
-  ScrollText,
-  Settings,
-  FileText,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,9 +31,6 @@ const NAV_ITEMS = [
   { id: "tourists", label: "Tourists", icon: Users },
   { id: "zones", label: "Risk Zones", icon: Map },
   { id: "police", label: "Police Units", icon: Building2 },
-  { id: "hospitals", label: "Hospitals", icon: Hospital },
-  { id: "advisories", label: "Advisories", icon: FileWarning },
-  { id: "auditlog", label: "Audit Log", icon: ScrollText },
 ];
 
 export default function AdminLayout() {
@@ -46,8 +38,6 @@ export default function AdminLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [alertBadgeCount, setAlertBadgeCount] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [reportsOpen, setReportsOpen] = useState(false);
 
   const handleLogout = () => {
     clearAdminSession();
@@ -166,15 +156,6 @@ export default function AdminLayout() {
                     <div className="text-xs text-slate-500">{session.email}</div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSettingsOpen(true)} className="rounded-lg mx-1">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setReportsOpen(true)} className="rounded-lg mx-1">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Reports
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-700 focus:bg-red-50/80 rounded-lg mx-1">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
@@ -216,10 +197,6 @@ export default function AdminLayout() {
           onTabChange={setActiveTab}
           globalSearch={globalSearch}
           onAlertCountUpdate={handleAlertCountUpdate}
-          settingsOpen={settingsOpen}
-          onSettingsOpenChange={setSettingsOpen}
-          reportsOpen={reportsOpen}
-          onReportsOpenChange={setReportsOpen}
         />
       </main>
     </div>

@@ -4,25 +4,23 @@ import {
   Users,
   Shield,
   MapPin,
-  Activity,
-  TrendingUp,
-  Timer,
-  CheckCircle,
-  Wifi,
-  WifiOff,
-  Database,
-  Clock,
-  Zap,
-  Hospital,
-  FileWarning,
-  BarChart3,
-  Megaphone,
-  Siren,
-  UserX,
   MapPinOff,
   Navigation,
   ChevronRight,
   Gauge,
+  Siren,
+  UserX,
+  Activity,
+  Megaphone,
+  Clock,
+  Zap,
+  CheckCircle,
+  Wifi,
+  WifiOff,
+  Database,
+  Hospital,
+  FileWarning,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -176,9 +174,9 @@ export function DashboardSection({
   };
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    <div className="p-4 space-y-6">
+      {/* Premium Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           icon={AlertTriangle}
           label="Active Alerts"
@@ -189,58 +187,31 @@ export function DashboardSection({
           onClick={() => onNavigate("alerts")}
         />
         <StatCard
-          icon={CheckCircle}
-          label="Resolved"
-          value={quickStats.resolvedAlerts}
-          color="green"
-          onClick={() => onNavigate("alerts")}
-        />
-        <StatCard
           icon={Users}
-          label="Online Tourists"
-          value={quickStats.onlineTourists}
-          change={`${tourists.length} total`}
-          changeType="neutral"
-          color="blue"
-          onClick={() => onNavigate("tourists")}
-        />
-        <StatCard
-          icon={Activity}
-          label="High Risk"
+          label="Tourists at Risk"
           value={quickStats.highRiskTourists}
+          change={`${quickStats.onlineTourists} total online`}
+          changeType="neutral"
           color={quickStats.highRiskTourists > 0 ? "red" : "green"}
           onClick={() => onNavigate("tourists")}
         />
         <StatCard
           icon={MapPin}
-          label="Active Zones"
-          value={quickStats.activeZones}
-          change={quickStats.criticalZones > 0 ? `${quickStats.criticalZones} critical` : undefined}
+          label="Critical Zones"
+          value={quickStats.criticalZones}
+          change={`${quickStats.activeZones} active zones`}
           changeType={quickStats.criticalZones > 0 ? "up" : "neutral"}
           color="purple"
           onClick={() => onNavigate("zones")}
         />
         <StatCard
           icon={Shield}
-          label="Police On Duty"
+          label="Active Police"
           value={quickStats.activePolice}
-          change={`${police.length} total`}
+          change={`${police.length} total units`}
           changeType="neutral"
-          color="green"
-          onClick={() => onNavigate("police")}
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Total Tourists"
-          value={stats?.totalTourists || tourists.length}
-          color="cyan"
-          onClick={() => onNavigate("tourists")}
-        />
-        <StatCard
-          icon={Timer}
-          label="Avg Response"
-          value={quickStats.avgResponseTimeMs > 0 ? `${Math.round(quickStats.avgResponseTimeMs / 1000)}s` : "—"}
           color="blue"
+          onClick={() => onNavigate("police")}
         />
       </div>
 
@@ -267,7 +238,7 @@ export function DashboardSection({
               </div>
             </CardTitle>
           </CardHeader>
-          <div className="h-120">
+          <div className="h-[600px] relative rounded-b-xl overflow-hidden">
             <InteractiveMap
               zones={zones}
               tourists={tourists}
@@ -301,7 +272,7 @@ export function DashboardSection({
               )}
             </CardTitle>
           </CardHeader>
-          <ScrollArea className="h-96">
+          <ScrollArea className="h-[600px]">
             <div className="p-2.5 space-y-1.5">
               {recentActivity.length > 0 ? (
                 recentActivity.map((activity, idx) => (

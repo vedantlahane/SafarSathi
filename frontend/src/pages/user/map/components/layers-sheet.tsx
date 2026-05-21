@@ -110,7 +110,7 @@ function LayersSheetInner({
                   variant={riskFilter === level ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "rounded-2xl capitalize h-10 px-4 font-semibold transition-all border-0 shadow-sm",
+                    "rounded-2xl capitalize h-auto py-2 px-4 font-semibold transition-all border-0 shadow-sm whitespace-nowrap",
                     riskFilter !== level && "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700",
                     riskFilter === level && level === "critical" && "bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/30 shadow-lg",
                     riskFilter === level && level === "high" && "bg-red-500 hover:bg-red-600 text-white shadow-red-500/30 shadow-lg",
@@ -138,7 +138,7 @@ function LayersSheetInner({
               <Button
                 variant={showLayers.zones ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
                   showLayers.zones ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
                 )}
                 onClick={() => {
@@ -152,7 +152,7 @@ function LayersSheetInner({
               <Button
                 variant={showLayers.police ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
                   showLayers.police ? "bg-blue-500 hover:bg-blue-600 text-white shadow-blue-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
                 )}
                 onClick={() => {
@@ -166,7 +166,7 @@ function LayersSheetInner({
               <Button
                 variant={showLayers.hospitals ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
                   showLayers.hospitals ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
                 )}
                 onClick={() => {
@@ -180,7 +180,7 @@ function LayersSheetInner({
               <Button
                 variant={showLayers.pois ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all duration-300 border-0 shadow-sm",
                   showLayers.pois ? "bg-indigo-500 hover:bg-indigo-600 text-white shadow-indigo-500/30 shadow-lg scale-100" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.02]"
                 )}
                 onClick={() => {
@@ -202,7 +202,7 @@ function LayersSheetInner({
             <Button
               variant={showLayers.routes ? "default" : "outline"}
               className={cn(
-                "w-full h-14 rounded-2xl gap-2 font-bold text-sm transition-all shadow-sm border-0",
+                "w-full h-auto py-4 rounded-2xl gap-2 font-bold text-sm transition-all shadow-sm border-0 whitespace-normal",
                 showLayers.routes ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               )}
               onClick={() => {
@@ -226,7 +226,7 @@ function LayersSheetInner({
               <Button
                 variant={mapboxConfig.show3dBuildings ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
                   mapboxConfig.show3dBuildings ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 )}
                 onClick={() => {
@@ -240,7 +240,7 @@ function LayersSheetInner({
               <Button
                 variant={mapboxConfig.showPointOfInterestLabels ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
                   mapboxConfig.showPointOfInterestLabels ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 )}
                 onClick={() => {
@@ -254,7 +254,7 @@ function LayersSheetInner({
               <Button
                 variant={mapboxConfig.showTransitLabels ? "default" : "outline"}
                 className={cn(
-                  "h-16 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
+                  "h-auto py-3 rounded-2xl gap-2 flex-col text-xs font-bold transition-all border-0 shadow-sm",
                   mapboxConfig.showTransitLabels ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 )}
                 onClick={() => {
@@ -276,7 +276,7 @@ function LayersSheetInner({
                   key={preset}
                   variant={mapboxConfig.lightPreset === preset ? "default" : "ghost"}
                   className={cn(
-                    "rounded-xl capitalize flex-1 shadow-none font-bold text-xs h-10",
+                    "rounded-xl capitalize flex-1 shadow-none font-bold text-xs h-auto py-2.5",
                     mapboxConfig.lightPreset === preset 
                       ? "bg-white dark:bg-slate-700 text-primary shadow-sm" 
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"

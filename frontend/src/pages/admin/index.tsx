@@ -7,9 +7,6 @@ import {
   TouristsSection,
   ZonesSection,
   PoliceSection,
-  HospitalsSection,
-  AdvisoriesSection,
-  AuditLogSection,
 } from "./sections";
 import {
   ZoneDialog,
@@ -17,8 +14,6 @@ import {
   AlertDetailDialog,
   TouristDetailDialog,
   BroadcastDialog,
-  SettingsDialog,
-  ReportsDialog,
   ConfirmDeleteDialog,
 } from "./dialogs";
 import {
@@ -26,8 +21,6 @@ import {
   useAlertActions,
   useZoneActions,
   usePoliceActions,
-  useHospitalActions,
-  useAdvisoryActions,
   useBroadcastAction,
   useAdminWS,
 } from "./hooks";
@@ -36,8 +29,6 @@ import type {
   Tourist,
   RiskZone,
   PoliceDepartment,
-  HospitalAdmin,
-  TravelAdvisoryAdmin,
   ZoneFormData,
   PoliceFormData,
   BroadcastType,
@@ -52,10 +43,6 @@ interface AdminIndexProps {
   onTabChange: (tab: string) => void;
   globalSearch?: string;
   onAlertCountUpdate?: (count: number) => void;
-  settingsOpen?: boolean;
-  onSettingsOpenChange?: (open: boolean) => void;
-  reportsOpen?: boolean;
-  onReportsOpenChange?: (open: boolean) => void;
 }
 
 export function AdminPanel({
@@ -63,10 +50,6 @@ export function AdminPanel({
   onTabChange,
   globalSearch = "",
   onAlertCountUpdate,
-  settingsOpen: externalSettingsOpen,
-  onSettingsOpenChange,
-  reportsOpen: externalReportsOpen,
-  onReportsOpenChange,
 }: AdminIndexProps) {
   // Auth state
   const session = useAdminSession();
@@ -78,8 +61,6 @@ export function AdminPanel({
   const alertActions = useAlertActions(refresh);
   const zoneActions = useZoneActions(refresh);
   const policeActions = usePoliceActions(refresh);
-  const hospitalActions = useHospitalActions(refresh);
-  const advisoryActions = useAdvisoryActions(refresh);
   const { broadcast: sendBroadcastApi } = useBroadcastAction();
 
   // Real-time WebSocket — admin room
@@ -103,21 +84,6 @@ export function AdminPanel({
         }, ...prev.alerts].slice(0, 200),
       }));
     },
-    onNewAdvisory: (rawAdvisory) => {
-      setData((prev) => ({
-        ...prev,
-        advisories: [{
-          id: String(rawAdvisory.advisoryId || rawAdvisory.id || Date.now()),
-          title: rawAdvisory.title || "New Advisory",
-          description: "",
-          severity: rawAdvisory.severity || "info",
-          region: "",
-          isActive: true,
-          issuedBy: "System",
-          issuedAt: new Date().toISOString(),
-        }, ...prev.advisories],
-      }));
-    },
   });
 
   // Dialog states
@@ -127,12 +93,6 @@ export function AdminPanel({
   const [touristDetailOpen, setTouristDetailOpen] = useState(false);
   const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-
-  // Use external settings/reports state from layout, or internal fallback
-  const settingsDialogOpen = externalSettingsOpen ?? false;
-  const setSettingsDialogOpen = onSettingsOpenChange ?? (() => {});
-  const reportsDialogOpen = externalReportsOpen ?? false;
-  const setReportsDialogOpen = onReportsOpenChange ?? (() => {});
 
   // Push active alert count up to layout for the badge
   useEffect(() => {
@@ -346,12 +306,6 @@ export function AdminPanel({
       } else if (deleteConfirmation.type === "police") {
         await policeActions.delete(deleteConfirmation.id);
         toast.success("Station deleted");
-      } else if (deleteConfirmation.type === "hospital") {
-        await hospitalActions.delete(deleteConfirmation.id);
-        toast.success("Hospital deleted");
-      } else if (deleteConfirmation.type === "advisory") {
-        await advisoryActions.delete(deleteConfirmation.id);
-        toast.success("Advisory deleted");
       }
     } catch (err) {
       toast.error("Delete failed");
@@ -359,7 +313,7 @@ export function AdminPanel({
 
     setDeleteConfirmation(null);
     setConfirmDeleteOpen(false);
-  }, [deleteConfirmation, zoneActions, policeActions, hospitalActions, advisoryActions]);
+  }, [deleteConfirmation, zoneActions, policeActions]);
 
   // Broadcast handler — real API call
   const handleBroadcast = useCallback(async (type: BroadcastType, message: string) => {
@@ -460,39 +414,6 @@ export function AdminPanel({
             onRefresh={refresh}
           />
         );
-      case "hospitals":
-        return (
-          <HospitalsSection
-            hospitals={data.hospitals}
-            isLoading={isLoading}
-            onSave={hospitalActions.save}
-            onDelete={(hospital: HospitalAdmin) => {
-              setDeleteConfirmation({ type: "hospital", id: hospital.id, name: hospital.name });
-              setConfirmDeleteOpen(true);
-            }}
-            onRefresh={refresh}
-          />
-        );
-      case "advisories":
-        return (
-          <AdvisoriesSection
-            advisories={data.advisories}
-            isLoading={isLoading}
-            onSave={advisoryActions.save}
-            onDelete={(advisory: TravelAdvisoryAdmin) => {
-              setDeleteConfirmation({ type: "advisory", id: advisory.id, name: advisory.title });
-              setConfirmDeleteOpen(true);
-            }}
-            onRefresh={refresh}
-          />
-        );
-      case "auditlog":
-        return (
-          <AuditLogSection
-            initialLogs={data.auditLogs}
-            initialTotal={data.auditLogTotal}
-          />
-        );
       default:
         return (
           <DashboardSection
@@ -551,16 +472,6 @@ export function AdminPanel({
         onOpenChange={setBroadcastDialogOpen}
         onSend={handleBroadcast}
         recipientCount={data.tourists.filter((t) => t.isActive).length}
-      />
-
-      <SettingsDialog
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
-      />
-
-      <ReportsDialog
-        open={reportsDialogOpen}
-        onOpenChange={setReportsDialogOpen}
       />
 
       <ConfirmDeleteDialog

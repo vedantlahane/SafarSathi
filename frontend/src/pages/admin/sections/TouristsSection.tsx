@@ -113,23 +113,23 @@ export function TouristsSection({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/60 bg-white/60 backdrop-blur-lg">
-        <div className="flex items-center justify-between mb-4">
+      <div className="px-6 py-5 glass-bar border-b border-white/30">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Tourist Management</h2>
-            <p className="text-sm text-slate-500">Monitor and communicate with tourists</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-800">Tourist Management</h2>
+            <p className="text-sm font-medium text-slate-500 mt-1">Monitor and communicate with tourists</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-sm font-medium text-emerald-700">{onlineCount} Online</span>
+            <div className="flex items-center gap-2.5 px-3.5 py-2 glass-thin bg-emerald-500/10 rounded-xl border border-emerald-500/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+              <span className="text-sm font-bold text-emerald-700 tracking-wide">{onlineCount} Online</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-sm font-medium text-red-700">{highRiskCount} High Risk</span>
+            <div className="flex items-center gap-2.5 px-3.5 py-2 glass-thin bg-red-500/10 rounded-xl border border-red-500/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+              <span className="text-sm font-bold text-red-700 tracking-wide">{highRiskCount} High Risk</span>
             </div>
-            <Button onClick={onBroadcast} className="bg-blue-600 hover:bg-blue-700">
-              <Radio className="w-4 h-4 mr-1.5" />
+            <Button onClick={onBroadcast} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 border-0 font-semibold px-4">
+              <Radio className="w-4 h-4 mr-2" />
               Broadcast
             </Button>
           </div>
@@ -152,16 +152,16 @@ export function TouristsSection({
       />
 
       {/* Tourist Table */}
-      <div className="flex-1 overflow-hidden">
-        <Card className="h-full m-4 flex flex-col bg-white/70 backdrop-blur-sm border-white/60">
+      <div className="flex-1 overflow-hidden p-6">
+        <Card className="h-full flex flex-col glass-card border-white/30 shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.8),0_4px_16px_-4px_rgba(0,0,0,0.06),0_12px_40px_-8px_rgba(0,0,0,0.04)] rounded-2xl overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-[40px_1fr_100px_80px_120px_100px_100px] gap-3 px-4 py-3 bg-white/50 backdrop-blur-sm border-b border-slate-200/60 text-sm font-medium text-slate-600">
-            <div>
+          <div className="grid grid-cols-[40px_1fr_100px_80px_120px_100px_100px] gap-3 px-5 py-3.5 glass-bar border-b border-white/20 text-[13px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center">
               <input
                 type="checkbox"
                 checked={selectedIds.size === filteredTourists.length && filteredTourists.length > 0}
                 onChange={handleSelectAll}
-                className="rounded border-slate-300"
+                className="rounded border-slate-300 focus:ring-blue-500/40 text-blue-600 transition-colors"
               />
             </div>
             <div>Tourist</div>
