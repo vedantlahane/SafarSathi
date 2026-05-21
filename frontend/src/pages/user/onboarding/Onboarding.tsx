@@ -7,6 +7,7 @@ import { FeatureSlides } from "./components/feature-slides";
 import { SOSTutorial } from "./components/sos-tutorial";
 import { GetStarted } from "./components/get-started";
 import { useOnboarding } from "./hooks/use-onboarding";
+import { AnimatePresence, motion } from "motion/react";
 
 export default function Onboarding() {
   const o = useOnboarding();
@@ -57,7 +58,18 @@ export default function Onboarding() {
       className="fixed inset-0 z-[60]"
       style={{ backgroundColor: "var(--theme-bg-from)" }}
     >
-      {content}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={o.step}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="h-full w-full"
+        >
+          {content}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowRight, ShieldAlert, Siren, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
+import { AnimatePresence, motion } from "motion/react";
 
 interface FeatureSlidesProps {
   onNext: () => void;
@@ -44,12 +45,22 @@ export function FeatureSlides({ onNext, onSkip }: FeatureSlidesProps) {
         Skip
       </button>
 
-      <GlassCard level={1} className="mt-8 rounded-3xl p-6 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-          <Icon className="h-7 w-7 text-primary" />
-        </div>
-        <h3 className="text-xl font-bold">{slide.title}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{slide.description}</p>
+      <GlassCard level={1} className="mt-8 rounded-3xl p-6 text-center overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Icon className="h-7 w-7 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold">{slide.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{slide.description}</p>
+          </motion.div>
+        </AnimatePresence>
       </GlassCard>
 
       <div className="mt-6 flex items-center justify-center gap-2">
