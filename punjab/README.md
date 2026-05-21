@@ -1,3 +1,12 @@
+---
+title: YatraX Geospatial ML Engine
+emoji: 🛰️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
+
 # YatraX Geospatial ML Engine (Punjab) 🛰️
 
 A high-performance, stateless Python geospatial microservice built with **FastAPI** that serves as the intelligence core of the YatraX safety ecosystem. It handles state boundary validation, unsupervised anomaly scoring, and socio-temporal nightlight analysis for Punjab, India.
