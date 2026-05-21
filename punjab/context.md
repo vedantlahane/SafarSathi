@@ -10,8 +10,8 @@
 | Language | Python 3.10+ |
 | Framework | **FastAPI** |
 | Server | **Uvicorn** (Running on port 8000) |
-| Core ML | **scikit-learn** (RandomForest/XGBoost) |
-| Explainability | **SHAP** (TreeExplainer) |
+| Core ML | **scikit-learn** (RandomForest 1.6.1) |
+| Explainability | **SHAP** (TreeExplainer) with pinned `numpy<2.0.0` |
 | Geospatial | **GeoPandas**, **Shapely** |
 | Data Processing | **Pandas**, **NumPy** |
 | Formats | `.joblib` (Model Artifacts), `.parquet` / `.shp` (Geospatial Data) |
@@ -94,7 +94,17 @@ These raw SHAP values are returned to the Node.js backend, which translates them
 
 ---
 
-## 7. Operational Best Practices
+## 7. Deployment (Hugging Face Spaces)
+The service is explicitly containerized for deployment on Hugging Face Docker Spaces.
+
+**Crucial Deployment Mechanics:**
+1. **Git LFS**: The massive `rf_safety_regressor.pkl` (475MB) and geospatial `.parquet` files MUST be tracked via Git LFS (`.gitattributes`). Pushing directly via standard HTTP will cause a `408 Request Timeout` or `unexpected disconnect`.
+2. **Dockerfile CMD**: Uses `CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]` to expose the standard HF Spaces port.
+3. **C-Extension Compatibility**: The SHAP library requires C-extensions to be built against `numpy 1.x`. Upgrading to `numpy 2.x` causes a fatal `numpy.core.multiarray failed to import` crash on container boot.
+
+---
+
+## 8. Operational Best Practices
 - **Never add live database connections to Punjab**. Keep it fully stateless.
 - **Never use exact Additivity Checks** in the SHAP explainer (`check_additivity=False`). Floating point rounding errors between Python and underlying C libraries will cause unexpected 500 errors.
 - **Deploy with Uvicorn workers**. In production, run `uvicorn main:app --workers 4` to allow concurrent ML inferences.

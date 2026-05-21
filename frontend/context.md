@@ -286,7 +286,7 @@ Step 4: GetStarted             (Continue as Guest OR Sign In → navigates to /s
 |---|---|
 | Dashboard | Stats cards + active alerts table + tourists overview |
 | Alerts | Full list with bulk-resolve, search, status filters |
-| Tourists | List with safety scores, active SOS flags, contact/track actions |
+| Tourists | List with safety scores, active SOS flags, contact/track actions. Includes `TouristDetailDialog` with Manual Override (Penalty Slider) to forcibly alter a tourist's danger index. |
 | Zones | Risk zone CRUD on map (circle draw + polygon draw modes) |
 | Police | Police department CRUD |
 

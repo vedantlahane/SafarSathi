@@ -35,7 +35,7 @@ Node.js HTTP Server (port 8081)
          │     ├── CORS (configurable origin)
          │     ├── JSON body parser (100KB limit)
          │     ├── Pino HTTP logger
-         │     ├── Rate limiters (Redis-backed)
+         │     ├── Rate limiters (Redis-backed, trust proxy enabled)
          │     ├── All API Routers (see Section 5)
          │     └── Global error handler
          │
@@ -107,6 +107,7 @@ All tables use Drizzle ORM with `pg-core`. Spatial tables use PostGIS `geography
 | `speed`, `heading`, `locationAccuracy` | doublePrecision | |
 | `lastSeen` | timestamptz | |
 | `safetyScore` | integer default 100 | 0–100 range |
+| `admin_manual_penalty` | integer default 0 | 0–10 range (admin override) |
 | `lastScoreUpdate` | timestamptz | |
 | `isActive` | boolean default true | |
 | `createdAt`, `updatedAt` | timestamptz | |
@@ -680,7 +681,8 @@ Input: { lat, lon, local_hour?, networkType?, weatherSeverity?, aqi?, batteryPct
     danger += IMD_weather_modifier (Orange/Red +2.0)
     danger += Telemetry_modifier (Battery <15% +1.5, No Network +1.0)
     danger += Demographic_modifier (Lone female at night +2.0, Senior +3.0)
-    
+    danger += Admin_Manual_Penalty (from DB tourists.admin_manual_penalty, 0-10)
+
   Step 4: Emergency Offsets (Safety Boosts)
     danger -= 1.5 IF Police ETA < 10 mins
     danger -= 1.5 IF Hospital ETA < 10 mins (Also mitigates Asthma/AQI penalty)
