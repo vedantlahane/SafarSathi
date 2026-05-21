@@ -1,25 +1,32 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useSyncExternalStore } from "react";
 import { clearSession, useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
+import { getPrefs, setPrefs, subscribePrefs } from "@/lib/store/user-prefs";
 import { useTouristProfile } from "./use-tourist-profile";
 import { useProfileEditor } from "./use-profile-editor";
 import { useEmergencyEditor } from "./use-emergency-editor";
+
+/** Reactive hook that reads from the persistent UserPrefs store. */
+function useUserPrefs() {
+  return useSyncExternalStore(subscribePrefs, getPrefs, getPrefs);
+}
 
 export function useSettings() {
   const session = useSession();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Notification preferences
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [alertSounds, setAlertSounds] = useState(true);
-  const [vibration, setVibration] = useState(true);
-  const [quietHours, setQuietHours] = useState(false);
+  // ── Persistent preferences (survive page reload) ───────────────────
+  const prefs = useUserPrefs();
 
-  // Privacy preferences
-  const [locationSharing, setLocationSharing] = useState(true);
-  const [highAccuracyGps, setHighAccuracyGps] = useState(false);
-  const [anonymousData, setAnonymousData] = useState(true);
+  const setPushNotifications = useCallback((v: boolean) => setPrefs({ pushNotifications: v }), []);
+  const setAlertSounds = useCallback((v: boolean) => setPrefs({ alertSounds: v }), []);
+  const setVibration = useCallback((v: boolean) => setPrefs({ vibration: v }), []);
+  const setQuietHours = useCallback((v: boolean) => setPrefs({ quietHours: v }), []);
+  const setLocationSharing = useCallback((v: boolean) => setPrefs({ locationSharing: v }), []);
+  const setHighAccuracyGps = useCallback((v: boolean) => setPrefs({ highAccuracyGps: v }), []);
+  const setAnonymousData = useCallback((v: boolean) => setPrefs({ anonymousData: v }), []);
+  // ──────────────────────────────────────────────────────────────────
 
   const { profile, setProfile } = useTouristProfile(session?.touristId);
 
@@ -59,19 +66,21 @@ export function useSettings() {
     loading,
     message,
     ...profileEditor,
-    pushNotifications,
+    // Notifications — now persistent
+    pushNotifications: prefs.pushNotifications,
     setPushNotifications,
-    alertSounds,
+    alertSounds: prefs.alertSounds,
     setAlertSounds,
-    vibration,
+    vibration: prefs.vibration,
     setVibration,
-    quietHours,
+    quietHours: prefs.quietHours,
     setQuietHours,
-    locationSharing,
+    // Privacy — now persistent
+    locationSharing: prefs.locationSharing,
     setLocationSharing,
-    highAccuracyGps,
+    highAccuracyGps: prefs.highAccuracyGps,
     setHighAccuracyGps,
-    anonymousData,
+    anonymousData: prefs.anonymousData,
     setAnonymousData,
     ...emergencyEditor,
     handleLogout,

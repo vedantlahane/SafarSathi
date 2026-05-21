@@ -12,6 +12,7 @@ import {
 import { useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
 import { MAP_DEFAULTS, LOCATION_POST_INTERVAL_MS } from "../constants";
+import { getPrefs } from "@/lib/store/user-prefs";
 import { useQuery } from "@tanstack/react-query";
 import {
   formatETA,
@@ -319,6 +320,10 @@ export function useMapData() {
     if (permissionState !== "granted") return;
     if (!navigator.geolocation) return;
 
+    const prefs = getPrefs();
+    // If location sharing is disabled in Settings, do not start tracking
+    if (!prefs.locationSharing) return;
+
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const p: [number, number] = [pos.coords.latitude, pos.coords.longitude];
@@ -339,7 +344,11 @@ export function useMapData() {
         }
       },
       () => { },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      {
+        enableHighAccuracy: prefs.highAccuracyGps,
+        maximumAge: prefs.highAccuracyGps ? 0 : 5000,
+        timeout: 15000,
+      }
     );
 
     return () => {

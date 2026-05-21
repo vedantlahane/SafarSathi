@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { User, Phone, MapPin, Globe, CheckCircle2, Loader2 } from "lucide-react";
+import { User, Phone, MapPin, Globe, CheckCircle2, Loader2, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -71,7 +71,8 @@ function LoggedInViewInner({ s }: { s: S }) {
                 {/* Emergency Profile */}
                 <SettingsGroup heading="Emergency Profile">
                     <EmergencyProfile
-                        emergencyContact={s.emergencyContactPhone}
+                        emergencyContactName={s.emergencyContactName}
+                        emergencyContactPhone={s.emergencyContactPhone}
                         bloodType={s.bloodType}
                         allergies={s.allergies}
                         medicalConditions={s.medicalConditions}
@@ -114,6 +115,7 @@ function LoggedInViewInner({ s }: { s: S }) {
                                 {[
                                     { icon: User, label: "Full Name", val: s.profileName, set: s.setProfileName },
                                     { icon: Phone, label: "Phone Number", val: s.profilePhone, set: s.setProfilePhone, type: "tel" },
+                                    { icon: Calendar, label: "Date of Birth", val: s.profileDateOfBirth, set: s.setProfileDateOfBirth, type: "date", ph: "YYYY-MM-DD" },
                                     { icon: MapPin, label: "Address", val: s.profileAddress, set: s.setProfileAddress },
                                     { icon: Globe, label: "Nationality", val: s.profileNationality, set: s.setProfileNationality },
                                     { icon: User, label: "Gender", val: s.profileGender, set: s.setProfileGender, ph: "Male / Female / Other" },

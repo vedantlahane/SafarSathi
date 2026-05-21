@@ -35,6 +35,7 @@ export function useProfileEditor(options: ProfileEditorOptions) {
   const [profileAddress, setProfileAddress] = useState("");
   const [profileNationality, setProfileNationality] = useState("");
   const [profileGender, setProfileGender] = useState("");
+  const [profileDateOfBirth, setProfileDateOfBirth] = useState("");
   const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function useProfileEditor(options: ProfileEditorOptions) {
     setProfileAddress(profile.address ?? "");
     setProfileNationality(profile.nationality ?? "");
     setProfileGender(profile.gender ?? "");
+    setProfileDateOfBirth(profile.dateOfBirth ?? "");
   }, [profile]);
 
   const handleProfileUpdate = useCallback(
@@ -59,6 +61,7 @@ export function useProfileEditor(options: ProfileEditorOptions) {
           address: profileAddress,
           nationality: profileNationality,
           gender: profileGender,
+          ...(profileDateOfBirth ? { dateOfBirth: profileDateOfBirth } : {}),
         };
         const updated = await updateTouristProfile(touristId, payload);
         setProfile(updated);
@@ -86,6 +89,7 @@ export function useProfileEditor(options: ProfileEditorOptions) {
       profileAddress,
       profileNationality,
       profileGender,
+      profileDateOfBirth,
       sessionName,
       sessionEmail,
       idHash,
@@ -107,6 +111,8 @@ export function useProfileEditor(options: ProfileEditorOptions) {
     setProfileNationality,
     profileGender,
     setProfileGender,
+    profileDateOfBirth,
+    setProfileDateOfBirth,
     showProfileEdit,
     setShowProfileEdit,
     handleProfileUpdate,

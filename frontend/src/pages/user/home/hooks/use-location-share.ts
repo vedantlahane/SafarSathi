@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { postLocation } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { hapticFeedback } from "@/lib/store";
+import { getPrefs } from "@/lib/store/user-prefs";
 import type { LocationShareState } from "../types";
 
 export function useLocationShare(): LocationShareState {
@@ -21,6 +22,16 @@ export function useLocationShare(): LocationShareState {
     if (!navigator.geolocation) {
       toast.error("Location unavailable", {
         description: "Your device does not support geolocation",
+      });
+      return;
+    }
+
+    const prefs = getPrefs();
+
+    // If location sharing is disabled in Settings, block the action
+    if (!prefs.locationSharing) {
+      toast.error("Location sharing is disabled", {
+        description: "Enable location sharing in Settings → Privacy",
       });
       return;
     }
@@ -56,9 +67,14 @@ export function useLocationShare(): LocationShareState {
           description: geoErr.message || "Enable location permissions to share",
         });
       },
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5_000 }
+      {
+        // Honours the High Accuracy GPS toggle from Settings
+        enableHighAccuracy: prefs.highAccuracyGps,
+        timeout: 10_000,
+        maximumAge: prefs.highAccuracyGps ? 0 : 5_000,
+      }
     );
   }, [session?.touristId]);
 
   return { loading, shared, share };
-}
+}
