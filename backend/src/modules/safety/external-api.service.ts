@@ -123,8 +123,11 @@ export const externalApiService = {
         const district = String(entry.District ?? entry.district ?? '').trim().toLowerCase();
         return district === districtName.trim().toLowerCase();
       }) ?? null;
-    } catch (error) {
-      logger.warn('IMD District Warning API Failed');
+    } catch (error: any) {
+      const msg = error?.response?.status 
+        ? `Status ${error.response.status} - ${error.message}` 
+        : error.message;
+      logger.warn({ err: msg }, 'IMD District Warning API Failed');
       return null;
     }
   },
@@ -149,8 +152,11 @@ export const externalApiService = {
         const station = String(entry.Station ?? '').trim().toLowerCase();
         return station === districtName.trim().toLowerCase();
       }) ?? null;
-    } catch (error) {
-      logger.warn('IMD Nowcast API Failed');
+    } catch (error: any) {
+      const msg = error?.response?.status 
+        ? `Status ${error.response.status} - ${error.message}` 
+        : error.message;
+      logger.warn({ err: msg }, 'IMD Nowcast API Failed');
       return null;
     }
   },
