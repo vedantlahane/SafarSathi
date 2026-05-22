@@ -194,7 +194,6 @@ function SafetyScoreHeroInner({
               // Heuristics return score 0-100 (higher = worse).
               const isSevere = factor.score >= 50 || (factor.score > 0 && factor.score < 1 && factor.trend === "down");
               const isCaution = factor.score >= 20 || (factor.score > 0 && factor.score < 1 && factor.trend === "stable");
-              const isGood = factor.trend === "up" || (!isSevere && !isCaution);
 
               const scoreColor = isSevere
                 ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
