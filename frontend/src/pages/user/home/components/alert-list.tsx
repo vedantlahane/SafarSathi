@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -27,6 +27,7 @@ const VISIBLE_COUNT = 3;
 function AlertListInner({ alerts, loading, hasSession }: AlertListProps) {
   const [selectedAlert, setSelectedAlert] = useState<AlertView | null>(null);
   const [acknowledged, setAcknowledged] = useState<Set<number>>(() => new Set());
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const visibleAlerts = alerts.slice(0, VISIBLE_COUNT);
   const hasMore = alerts.length > VISIBLE_COUNT;
@@ -53,7 +54,19 @@ function AlertListInner({ alerts, loading, hasSession }: AlertListProps) {
     <section className="space-y-2" aria-label="Recent alerts">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold">Recent Alerts</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold">Recent Alerts</h2>
+          {alerts.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
         {hasMore && (
           <Sheet>
             <SheetTrigger asChild>
@@ -100,24 +113,28 @@ function AlertListInner({ alerts, loading, hasSession }: AlertListProps) {
       </div>
 
       {/* Content */}
-      {!hasSession ? (
-        <EmptyStates variant="not-signed-in" />
-      ) : loading ? (
-        <div className="space-y-3" aria-busy="true">
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-16 w-full rounded-xl" />
-        </div>
-      ) : alerts.length === 0 ? (
-        <EmptyStates variant="all-clear" />
-      ) : (
-        <div role="list" aria-label="Recent alerts list">
-          {visibleAlerts.map((a, i) => (
-            <div key={a.id}>
-              <AlertListItem alert={a} onOpenDetail={setSelectedAlert} />
-              {i < visibleAlerts.length - 1 && <Separator />}
+      {!isCollapsed && (
+        <>
+          {!hasSession ? (
+            <EmptyStates variant="not-signed-in" />
+          ) : loading ? (
+            <div className="space-y-3" aria-busy="true">
+              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-16 w-full rounded-xl" />
             </div>
-          ))}
-        </div>
+          ) : alerts.length === 0 ? (
+            <EmptyStates variant="all-clear" />
+          ) : (
+            <div role="list" aria-label="Recent alerts list">
+              {visibleAlerts.map((a, i) => (
+                <div key={a.id}>
+                  <AlertListItem alert={a} onOpenDetail={setSelectedAlert} />
+                  {i < visibleAlerts.length - 1 && <Separator />}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <AlertDetailSheet

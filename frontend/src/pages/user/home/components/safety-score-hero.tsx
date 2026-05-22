@@ -190,9 +190,15 @@ function SafetyScoreHeroInner({
           </h3>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {factors.map((factor) => {
-              const scoreColor = factor.score >= 50
+              // ML returns SHAP (small decimals, trend "down" = bad).
+              // Heuristics return score 0-100 (higher = worse).
+              const isSevere = factor.score >= 50 || (factor.score > 0 && factor.score < 1 && factor.trend === "down");
+              const isCaution = factor.score >= 20 || (factor.score > 0 && factor.score < 1 && factor.trend === "stable");
+              const isGood = factor.trend === "up" || (!isSevere && !isCaution);
+
+              const scoreColor = isSevere
                 ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                : factor.score >= 20
+                : isCaution
                   ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
                   : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
 
@@ -206,7 +212,7 @@ function SafetyScoreHeroInner({
                       {factor.label}
                     </span>
                     <Badge variant="outline" className={`text-[10px] px-1.5 py-0.5 font-bold ${scoreColor}`}>
-                      {factor.score >= 50 ? "Severe" : factor.score >= 20 ? "Caution" : "Good"}
+                      {isSevere ? "Severe" : isCaution ? "Caution" : "Good"}
                     </Badge>
                   </div>
                   {factor.detail && (
