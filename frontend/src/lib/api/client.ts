@@ -21,7 +21,14 @@ api.interceptors.response.use(
     (error) => {
         let errMsg = `Request failed with status ${error.response?.status}`;
         if (error.response?.data) {
-            errMsg = error.response.data.message || error.response.data.error || errMsg;
+            const data = error.response.data;
+            errMsg = data.message || data.error || errMsg;
+            if (data.details && Array.isArray(data.details)) {
+                const detailMessages = data.details.map((d: any) => `${d.path}: ${d.message}`).join(', ');
+                if (detailMessages) {
+                    errMsg = `${errMsg} - ${detailMessages}`;
+                }
+            }
         }
         return Promise.reject(new Error(errMsg));
     }
